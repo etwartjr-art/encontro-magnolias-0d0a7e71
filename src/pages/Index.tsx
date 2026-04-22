@@ -1,68 +1,66 @@
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin } from "lucide-react";
-import heroImage from "@/assets/magnolia-hero.jpg";
+import bannerImage from "@/assets/magnolia-banner.png";
+import grupoImage from "@/assets/magnolias-grupo.jpeg";
 import branchImage from "@/assets/magnolia-branch.png";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-ivory text-foreground overflow-x-hidden">
-      {/* HERO */}
-      <header className="relative min-h-screen flex flex-col items-center justify-center px-6 py-16 gradient-soft">
+      {/* HERO BANNER */}
+      <header className="relative w-full">
         <img
-          src={branchImage}
-          alt=""
-          aria-hidden="true"
-          className="absolute top-0 left-0 w-48 md:w-72 opacity-70 -translate-x-10 -translate-y-6 animate-float"
+          src={bannerImage}
+          alt="3º Encontro das Magnólias"
+          className="w-full h-auto object-cover"
         />
-        <img
-          src={branchImage}
-          alt=""
-          aria-hidden="true"
-          className="absolute bottom-0 right-0 w-48 md:w-72 opacity-70 translate-x-10 translate-y-6 rotate-180 animate-float"
-        />
+      </header>
 
-        <div className="relative z-10 max-w-3xl text-center animate-fade-up">
-          <p className="uppercase tracking-[0.4em] text-xs md:text-sm text-rose-deep mb-8">
-            Um encontro para mulheres
+      {/* INTRO */}
+      <section className="py-20 md:py-28 px-6 gradient-soft">
+        <div className="max-w-2xl mx-auto text-center animate-fade-up">
+          <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-6">
+            Mulheres que florescem na presença de Deus
           </p>
-
-          <div className="flex items-center justify-center gap-4 mb-6">
+          <div className="flex items-center justify-center gap-4 mb-8">
             <span className="h-px w-12 bg-rose-dusty" />
             <span className="font-display italic text-rose-dusty text-lg">terceira edição</span>
             <span className="h-px w-12 bg-rose-dusty" />
           </div>
 
-          <h1 className="font-display text-6xl md:text-8xl lg:text-9xl leading-[0.95] text-rose-deep mb-2">
-            Encontro
+          <h1 className="font-display text-4xl md:text-5xl text-foreground/90 leading-tight mb-8">
+            Com grande alegria,
+            <br />
+            <span className="italic text-rose-deep">convidamos você</span>
           </h1>
-          <h2 className="font-display italic text-4xl md:text-6xl lg:text-7xl text-foreground/80 mb-10">
-            das Magnólias
-          </h2>
 
-          <p className="max-w-xl mx-auto text-foreground/70 text-base md:text-lg leading-relaxed mb-12 font-light">
-            Uma tarde dedicada ao florescer da alma — entre conversas suaves,
-            comunhão e a beleza de pertencer a um jardim que se cuida.
+          <p className="text-foreground/70 text-base md:text-lg leading-relaxed font-light">
+            Para o nosso terceiro encontro, um momento preparado com muito{" "}
+            <span className="italic text-rose-deep">amor, fé e propósito</span>.
+            Um tempo para mulheres que desejam crescer em Deus, fortalecer
+            laços e viver o extraordinário dEle.
           </p>
-
-          <Button
-            size="lg"
-            className="bg-rose-deep hover:bg-rose-deep/90 text-primary-foreground rounded-none px-12 py-6 text-sm tracking-[0.3em] uppercase font-light transition-elegant shadow-petal"
-            style={{ backgroundColor: "hsl(var(--rose-deep))" }}
-          >
-            Garantir meu lugar
-          </Button>
-
-          <div className="mt-16 flex items-center justify-center gap-2 text-sage">
-            <span className="h-px w-8 bg-sage/50" />
-            <span className="text-xs tracking-widest uppercase">Goiânia · 2025</span>
-            <span className="h-px w-8 bg-sage/50" />
-          </div>
         </div>
-      </header>
+      </section>
 
       {/* VERSE */}
-      <section className="relative py-28 md:py-40 px-6 bg-ivory">
-        <div className="max-w-3xl mx-auto text-center">
+      <section className="relative py-28 md:py-36 px-6 bg-ivory overflow-hidden">
+        <img
+          src={branchImage}
+          alt=""
+          aria-hidden="true"
+          className="absolute -left-16 top-10 w-56 opacity-40 -rotate-12 animate-float"
+          loading="lazy"
+        />
+        <img
+          src={branchImage}
+          alt=""
+          aria-hidden="true"
+          className="absolute -right-16 bottom-10 w-56 opacity-40 rotate-[200deg] animate-float"
+          loading="lazy"
+        />
+
+        <div className="relative max-w-3xl mx-auto text-center">
           <div className="inline-block mb-10">
             <div className="w-16 h-px bg-rose-dusty mx-auto mb-6" />
             <p className="uppercase tracking-[0.4em] text-xs text-rose-deep">Salmos 1:3</p>
@@ -83,37 +81,19 @@ const Index = () => {
         </div>
       </section>
 
-      {/* HERO IMAGE BAND */}
-      <section className="relative h-[60vh] md:h-[80vh] overflow-hidden">
-        <img
-          src={heroImage}
-          alt="Flores de magnólia em aquarela"
-          className="absolute inset-0 w-full h-full object-cover"
-          width={1600}
-          height={1200}
-          loading="lazy"
-        />
-        <div className="absolute inset-0 gradient-veil" />
-        <div className="absolute inset-0 flex items-end justify-center pb-16 px-6">
-          <p className="font-display italic text-2xl md:text-4xl text-rose-deep text-center max-w-2xl">
-            "como flores que se abrem ao tempo certo"
-          </p>
-        </div>
-      </section>
-
       {/* DETAILS */}
-      <section className="py-28 md:py-40 px-6 bg-cream">
+      <section className="py-24 md:py-32 px-6 bg-cream">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-20">
+          <div className="text-center mb-16">
             <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-6">O Encontro</p>
-            <h2 className="font-display text-5xl md:text-7xl text-foreground">
+            <h2 className="font-display text-5xl md:text-6xl text-foreground">
               Reserve a <span className="italic text-rose-deep">data</span>
             </h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-px bg-rose-dusty/30">
             {[
-              { icon: Calendar, label: "Data", value: "22 de Maio", sub: "Quinta-feira" },
+              { icon: Calendar, label: "Data", value: "23 de Maio", sub: "Sexta-feira" },
               { icon: Clock, label: "Horário", value: "15:30h", sub: "Recepção a partir das 15h" },
               { icon: MapPin, label: "Local", value: "Goiânia", sub: "Endereço enviado após inscrição" },
             ].map(({ icon: Icon, label, value, sub }) => (
@@ -131,19 +111,49 @@ const Index = () => {
         </div>
       </section>
 
-      {/* INVITATION */}
-      <section className="relative py-28 md:py-40 px-6 bg-ivory overflow-hidden">
+      {/* GRUPO PHOTO */}
+      <section className="py-24 md:py-32 px-6 bg-ivory">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 md:gap-20 items-center">
+          <div className="relative">
+            <div className="absolute -inset-4 bg-rose-soft/40 -z-10" />
+            <img
+              src={grupoImage}
+              alt="Mulheres do grupo Magnólias"
+              className="w-full h-auto object-cover shadow-petal"
+              loading="lazy"
+            />
+          </div>
+
+          <div>
+            <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-6">Magnólias</p>
+            <h2 className="font-display text-4xl md:text-5xl text-foreground mb-8 leading-tight">
+              Mulheres que florescem na <span className="italic text-rose-deep">presença de Deus</span>
+            </h2>
+            <p className="text-foreground/70 text-base md:text-lg leading-relaxed font-light mb-6">
+              Venha fazer parte desse momento especial.
+            </p>
+            <p className="font-display italic text-2xl md:text-3xl text-rose-deep leading-snug">
+              Você é preciosa, escolhida e chamada para florescer.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* INVITATION CTA */}
+      <section className="relative py-28 md:py-36 px-6 gradient-soft overflow-hidden">
         <img
           src={branchImage}
           alt=""
           aria-hidden="true"
           className="absolute -left-20 top-1/2 -translate-y-1/2 w-80 opacity-30 -rotate-45"
+          loading="lazy"
         />
         <img
           src={branchImage}
           alt=""
           aria-hidden="true"
           className="absolute -right-20 top-1/2 -translate-y-1/2 w-80 opacity-30 rotate-[135deg]"
+          loading="lazy"
         />
 
         <div className="relative max-w-2xl mx-auto text-center">
@@ -155,13 +165,13 @@ const Index = () => {
           </h2>
           <p className="text-foreground/70 text-base md:text-lg leading-relaxed mb-12 font-light">
             Como a magnólia que floresce em sua estação própria, cada mulher
-            tem um tempo de desabrochar. Venha viver essa tarde de comunhão,
-            adoração e palavras que cuidam.
+            tem um tempo de desabrochar. Reserve seu lugar nesta tarde de
+            comunhão, adoração e palavras que cuidam.
           </p>
 
           <Button
             size="lg"
-            className="bg-rose-deep hover:bg-rose-deep/90 rounded-none px-12 py-6 text-sm tracking-[0.3em] uppercase font-light transition-elegant shadow-petal"
+            className="rounded-none px-12 py-6 text-sm tracking-[0.3em] uppercase font-light transition-elegant shadow-petal"
             style={{ backgroundColor: "hsl(var(--rose-deep))", color: "hsl(var(--primary-foreground))" }}
           >
             Quero participar
@@ -180,7 +190,7 @@ const Index = () => {
             Encontro das Magnólias
           </p>
           <p className="text-xs tracking-[0.3em] uppercase text-sage">
-            Terceira Edição · Goiânia · Maio 2025
+            Terceira Edição · Goiânia · 23 de Maio · 15:30h
           </p>
         </div>
       </footer>
