@@ -18,24 +18,24 @@ const Index = () => {
       </header>
 
       {/* INTRO */}
-      <section className="py-20 md:py-28 px-6 gradient-soft">
+      <section className="py-14 sm:py-20 md:py-28 px-5 sm:px-6 gradient-soft">
         <div className="max-w-2xl mx-auto text-center animate-fade-up">
-          <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-6">
+          <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-5 sm:mb-6">
             Mulheres que florescem na presença de Deus
           </p>
-          <div className="flex items-center justify-center gap-4 mb-8">
-            <span className="h-px w-12 bg-rose-dusty" />
-            <span className="font-display italic text-rose-dusty text-lg">terceira edição</span>
-            <span className="h-px w-12 bg-rose-dusty" />
+          <div className="flex items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <span className="h-px w-8 sm:w-12 bg-rose-dusty" />
+            <span className="font-display italic text-rose-dusty text-base sm:text-lg">terceira edição</span>
+            <span className="h-px w-8 sm:w-12 bg-rose-dusty" />
           </div>
 
-          <h1 className="font-display text-4xl md:text-5xl text-foreground/90 leading-tight mb-8">
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl text-foreground/90 leading-tight mb-6 sm:mb-8">
             Com grande alegria,
             <br />
             <span className="italic text-rose-deep">convidamos você</span>
           </h1>
 
-          <p className="text-foreground/70 text-base md:text-lg leading-relaxed font-light">
+          <p className="text-foreground/70 text-sm sm:text-base md:text-lg leading-relaxed font-light">
             Para o nosso terceiro encontro, um momento preparado com muito{" "}
             <span className="italic text-rose-deep">amor, fé e propósito</span>.
             Um tempo para mulheres que desejam crescer em Deus, fortalecer
@@ -45,30 +45,30 @@ const Index = () => {
       </section>
 
       {/* VERSE */}
-      <section className="relative py-28 md:py-36 px-6 bg-ivory overflow-hidden">
+      <section className="relative py-20 sm:py-28 md:py-36 px-5 sm:px-6 bg-ivory overflow-hidden">
         <img
           src={branchImage}
           alt=""
           aria-hidden="true"
-          className="absolute -left-16 top-10 w-56 opacity-40 -rotate-12 animate-float"
+          className="absolute -left-12 sm:-left-16 top-6 sm:top-10 w-36 sm:w-56 opacity-30 sm:opacity-40 -rotate-12 animate-float pointer-events-none"
           loading="lazy"
         />
         <img
           src={branchImage}
           alt=""
           aria-hidden="true"
-          className="absolute -right-16 bottom-10 w-56 opacity-40 rotate-[200deg] animate-float"
+          className="absolute -right-12 sm:-right-16 bottom-6 sm:bottom-10 w-36 sm:w-56 opacity-30 sm:opacity-40 rotate-[200deg] animate-float pointer-events-none"
           loading="lazy"
         />
 
         <div className="relative max-w-3xl mx-auto text-center">
-          <div className="inline-block mb-10">
-            <div className="w-16 h-px bg-rose-dusty mx-auto mb-6" />
-            <p className="uppercase tracking-[0.4em] text-xs text-rose-deep">Salmos 1:3</p>
-            <div className="w-16 h-px bg-rose-dusty mx-auto mt-6" />
+          <div className="inline-block mb-8 sm:mb-10">
+            <div className="w-12 sm:w-16 h-px bg-rose-dusty mx-auto mb-4 sm:mb-6" />
+            <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep">Salmos 1:3</p>
+            <div className="w-12 sm:w-16 h-px bg-rose-dusty mx-auto mt-4 sm:mt-6" />
           </div>
 
-          <blockquote className="font-display italic text-2xl md:text-4xl lg:text-5xl leading-relaxed text-foreground/85">
+          <blockquote className="font-display italic text-xl sm:text-2xl md:text-4xl lg:text-5xl leading-relaxed text-foreground/85">
             "Pois será como a árvore plantada
             <br className="hidden md:block" />
             junto a ribeiros de águas,
@@ -83,16 +83,16 @@ const Index = () => {
       </section>
 
       {/* DETAILS */}
-      <section className="py-24 md:py-32 px-6 bg-cream">
+      <section className="py-16 sm:py-24 md:py-32 px-5 sm:px-6 bg-cream">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-6">O Encontro</p>
-            <h2 className="font-display text-5xl md:text-6xl text-foreground">
+          <div className="text-center mb-12 sm:mb-16">
+            <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-4 sm:mb-6">O Encontro</p>
+            <h2 className="font-display text-4xl sm:text-5xl md:text-6xl text-foreground">
               Reserve a <span className="italic text-rose-deep">data</span>
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-px bg-rose-dusty/30">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-rose-dusty/30">
             {[
               { icon: Calendar, label: "Data", value: "23 de Maio", sub: "Sexta-feira" },
               { icon: Clock, label: "Horário", value: "15:30h", sub: "Recepção a partir das 15h" },
@@ -100,24 +100,24 @@ const Index = () => {
             ].map(({ icon: Icon, label, value, sub }) => (
               <div
                 key={label}
-                className="bg-ivory p-12 text-center transition-elegant hover:bg-rose-soft/30 group"
+                className="bg-ivory p-8 sm:p-12 text-center transition-elegant hover:bg-rose-soft/30 group"
               >
-                <Icon className="w-7 h-7 mx-auto mb-6 text-rose-deep group-hover:scale-110 transition-elegant" strokeWidth={1.2} />
-                <p className="uppercase tracking-[0.3em] text-xs text-sage mb-4">{label}</p>
-                <p className="font-display text-3xl md:text-4xl text-foreground mb-2">{value}</p>
-                <p className="text-sm text-muted-foreground font-light">{sub}</p>
+                <Icon className="w-7 h-7 mx-auto mb-4 sm:mb-6 text-rose-deep group-hover:scale-110 transition-elegant" strokeWidth={1.2} />
+                <p className="uppercase tracking-[0.3em] text-[10px] sm:text-xs text-sage mb-3 sm:mb-4">{label}</p>
+                <p className="font-display text-2xl sm:text-3xl md:text-4xl text-foreground mb-1.5 sm:mb-2">{value}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground font-light">{sub}</p>
               </div>
             ))}
           </div>
 
           {/* INSCRIÇÃO */}
-          <div className="mt-24 md:mt-32">
-            <div className="text-center mb-12">
-              <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-6">Inscrição</p>
-              <h3 className="font-display text-4xl md:text-5xl text-foreground">
+          <div className="mt-16 sm:mt-24 md:mt-32">
+            <div className="text-center mb-10 sm:mb-12">
+              <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-4 sm:mb-6">Inscrição</p>
+              <h3 className="font-display text-3xl sm:text-4xl md:text-5xl text-foreground">
                 Valor da <span className="italic text-rose-deep">inscrição</span>
               </h3>
-              <p className="mt-4 text-foreground/60 font-light max-w-md mx-auto">
+              <p className="mt-3 sm:mt-4 text-sm sm:text-base text-foreground/60 font-light max-w-md mx-auto">
                 Preencha seus dados e venha florescer conosco.
               </p>
             </div>
