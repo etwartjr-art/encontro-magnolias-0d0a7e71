@@ -208,7 +208,7 @@ export const SubscriptionForm = () => {
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
         ) : (
           <span className="flex items-center justify-center gap-3 flex-wrap">
-            <span>Garantir minha vaga</span>
+            <span>Valor da inscrição</span>
             <span
               className="font-display text-2xl md:text-3xl tracking-normal normal-case px-4 py-1.5 rounded-sm shadow-inner"
               style={{ backgroundColor: "hsl(var(--foreground))", color: "hsl(var(--ivory))" }}
