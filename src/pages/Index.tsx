@@ -127,10 +127,10 @@ const Index = () => {
       </section>
 
       {/* GRUPO PHOTO */}
-      <section className="py-24 md:py-32 px-6 bg-ivory">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 md:gap-20 items-center">
+      <section className="py-16 sm:py-24 md:py-32 px-5 sm:px-6 bg-ivory">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 sm:gap-12 md:gap-20 items-center">
           <div className="relative">
-            <div className="absolute -inset-4 bg-rose-soft/40 -z-10" />
+            <div className="absolute -inset-3 sm:-inset-4 bg-rose-soft/40 -z-10" />
             <img
               src={grupoImage}
               alt="Mulheres do grupo Magnólias"
@@ -139,15 +139,15 @@ const Index = () => {
             />
           </div>
 
-          <div>
-            <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-6">Magnólias</p>
-            <h2 className="font-display text-4xl md:text-5xl text-foreground mb-8 leading-tight">
+          <div className="text-center md:text-left">
+            <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-4 sm:mb-6">Magnólias</p>
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl text-foreground mb-6 sm:mb-8 leading-tight">
               Mulheres que florescem na <span className="italic text-rose-deep">presença de Deus</span>
             </h2>
-            <p className="text-foreground/70 text-base md:text-lg leading-relaxed font-light mb-6">
+            <p className="text-foreground/70 text-sm sm:text-base md:text-lg leading-relaxed font-light mb-5 sm:mb-6">
               Venha fazer parte desse momento especial.
             </p>
-            <p className="font-display italic text-2xl md:text-3xl text-rose-deep leading-snug">
+            <p className="font-display italic text-xl sm:text-2xl md:text-3xl text-rose-deep leading-snug">
               Você é preciosa, escolhida e chamada para florescer.
             </p>
           </div>
@@ -155,30 +155,30 @@ const Index = () => {
       </section>
 
       {/* INVITATION CTA */}
-      <section className="relative py-28 md:py-36 px-6 gradient-soft overflow-hidden">
+      <section className="relative py-20 sm:py-28 md:py-36 px-5 sm:px-6 gradient-soft overflow-hidden">
         <img
           src={branchImage}
           alt=""
           aria-hidden="true"
-          className="absolute -left-20 top-1/2 -translate-y-1/2 w-80 opacity-30 -rotate-45"
+          className="absolute -left-16 sm:-left-20 top-1/2 -translate-y-1/2 w-56 sm:w-80 opacity-20 sm:opacity-30 -rotate-45 pointer-events-none"
           loading="lazy"
         />
         <img
           src={branchImage}
           alt=""
           aria-hidden="true"
-          className="absolute -right-20 top-1/2 -translate-y-1/2 w-80 opacity-30 rotate-[135deg]"
+          className="absolute -right-16 sm:-right-20 top-1/2 -translate-y-1/2 w-56 sm:w-80 opacity-20 sm:opacity-30 rotate-[135deg] pointer-events-none"
           loading="lazy"
         />
 
         <div className="relative max-w-2xl mx-auto text-center">
-          <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-8">Convite</p>
-          <h2 className="font-display text-4xl md:text-6xl text-foreground mb-10 leading-tight">
+          <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-6 sm:mb-8">Convite</p>
+          <h2 className="font-display text-3xl sm:text-4xl md:text-6xl text-foreground mb-8 sm:mb-10 leading-tight">
             Você está convidada
             <br />
             <span className="italic text-rose-deep">a florescer</span>
           </h2>
-          <p className="text-foreground/70 text-base md:text-lg leading-relaxed mb-12 font-light">
+          <p className="text-foreground/70 text-sm sm:text-base md:text-lg leading-relaxed mb-10 sm:mb-12 font-light">
             Como a magnólia que floresce em sua estação própria, cada mulher
             tem um tempo de desabrochar. Reserve seu lugar nesta tarde de
             comunhão, adoração e palavras que cuidam.
@@ -186,25 +186,25 @@ const Index = () => {
 
           <Button
             size="lg"
-            className="rounded-none px-12 py-6 text-sm tracking-[0.3em] uppercase font-light transition-elegant shadow-petal"
+            className="rounded-none px-8 sm:px-12 py-5 sm:py-6 text-xs sm:text-sm tracking-[0.25em] sm:tracking-[0.3em] uppercase font-light transition-elegant shadow-petal"
             style={{ backgroundColor: "hsl(var(--rose-deep))", color: "hsl(var(--primary-foreground))" }}
           >
             Quero participar
           </Button>
 
-          <p className="mt-8 text-xs tracking-widest uppercase text-sage">
+          <p className="mt-6 sm:mt-8 text-[10px] sm:text-xs tracking-widest uppercase text-sage">
             Vagas limitadas
           </p>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="py-16 px-6 bg-cream border-t border-rose-dusty/30">
+      <footer className="py-12 sm:py-16 px-5 sm:px-6 bg-cream border-t border-rose-dusty/30">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="font-display italic text-2xl text-rose-deep mb-3">
+          <p className="font-display italic text-xl sm:text-2xl text-rose-deep mb-3">
             Encontro das Magnólias
           </p>
-          <p className="text-xs tracking-[0.3em] uppercase text-sage">
+          <p className="text-[10px] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] uppercase text-sage leading-relaxed">
             Terceira Edição · Goiânia · 23 de Maio · 15:30h
           </p>
         </div>
