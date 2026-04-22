@@ -1,35 +1,21 @@
 import { useState } from "react";
 import { z } from "zod";
+import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Heart } from "lucide-react";
+import { Loader2, Heart, ExternalLink } from "lucide-react";
+
+const KIWIFY_CHECKOUT_URL = "https://pay.kiwify.com.br/KEIHMK5";
 
 const subscriptionSchema = z.object({
-  full_name: z
-    .string()
-    .trim()
-    .min(2, { message: "Informe seu nome completo" })
-    .max(120, { message: "Nome muito longo" }),
-  email: z
-    .string()
-    .trim()
-    .email({ message: "E-mail inválido" })
-    .max(255, { message: "E-mail muito longo" }),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\(\d{2}\)\s\d{5}-\d{4}$/, {
-      message: "Telefone inválido. Use (11) 91234-5678",
-    }),
-  prayer_request: z
-    .string()
-    .trim()
-    .max(1000, { message: "Pedido de oração muito longo" })
-    .optional(),
+  full_name: z.string().trim().min(2, { message: "Informe seu nome completo" }).max(120, { message: "Nome muito longo" }),
+  email: z.string().trim().email({ message: "E-mail inválido" }).max(255, { message: "E-mail muito longo" }),
+  phone: z.string().trim().regex(/^\(\d{2}\)\s\d{5}-\d{4}$/, { message: "Telefone inválido. Use (11) 91234-5678" }),
+  prayer_request: z.string().trim().max(1000, { message: "Pedido de oração muito longo" }).optional(),
 });
 
 const formatPhone = (value: string) => {
@@ -39,16 +25,18 @@ const formatPhone = (value: string) => {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
+type SuccessData = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+};
+
 export const SubscriptionForm = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [form, setForm] = useState({
-    full_name: "",
-    email: "",
-    phone: "",
-    prayer_request: "",
-  });
+  const [success, setSuccess] = useState<SuccessData | null>(null);
+  const [form, setForm] = useState({ full_name: "", email: "", phone: "", prayer_request: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,15 +54,19 @@ export const SubscriptionForm = () => {
     }
 
     setLoading(true);
-    const { error } = await supabase.from("subscriptions").insert({
-      full_name: result.data.full_name,
-      email: result.data.email,
-      phone: result.data.phone,
-      prayer_request: result.data.prayer_request || null,
-    });
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .insert({
+        full_name: result.data.full_name,
+        email: result.data.email,
+        phone: result.data.phone,
+        prayer_request: result.data.prayer_request || null,
+      })
+      .select("id, full_name, email, phone")
+      .single();
     setLoading(false);
 
-    if (error) {
+    if (error || !data) {
       toast({
         title: "Não foi possível enviar",
         description: "Tente novamente em instantes.",
@@ -83,24 +75,69 @@ export const SubscriptionForm = () => {
       return;
     }
 
-    setSubmitted(true);
+    setSuccess(data as SuccessData);
     toast({
-      title: "Inscrição recebida 🌸",
-      description: "Em breve enviaremos os detalhes do pagamento.",
+      title: "Inscrição registrada 🌸",
+      description: "Abrindo o pagamento em uma nova aba...",
     });
+
+    // Open Kiwify checkout in a new tab
+    window.open(KIWIFY_CHECKOUT_URL, "_blank", "noopener,noreferrer");
   };
 
-  if (submitted) {
+  if (success) {
+    const qrPayload = JSON.stringify({
+      evento: "3º Encontro das Magnólias",
+      data: "23/05/2025 - 15:30h",
+      local: "Goiânia",
+      inscricao: success.id,
+      nome: success.full_name,
+      email: success.email,
+      telefone: success.phone,
+    });
+
     return (
-      <div className="max-w-xl mx-auto bg-ivory border border-rose-dusty/40 p-12 md:p-16 text-center shadow-petal animate-fade-up">
+      <div className="max-w-2xl mx-auto bg-ivory border border-rose-dusty/40 p-8 md:p-14 text-center shadow-petal animate-fade-up">
         <Heart className="w-10 h-10 mx-auto text-rose-deep mb-6" strokeWidth={1.2} />
-        <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-4">Inscrição recebida</p>
-        <h3 className="font-display text-3xl md:text-4xl text-foreground mb-6">
-          Que alegria ter você <span className="italic text-rose-deep">conosco</span>
+        <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-4">Convite de entrada</p>
+        <h3 className="font-display text-3xl md:text-5xl text-foreground mb-4">
+          Que alegria, <span className="italic text-rose-deep">{success.full_name.split(" ")[0]}</span>!
         </h3>
-        <p className="text-foreground/70 font-light leading-relaxed">
-          Em instantes você receberá no seu e-mail os detalhes para confirmar o
-          pagamento e garantir sua vaga.
+        <p className="text-foreground/70 font-light leading-relaxed max-w-md mx-auto mb-10">
+          Sua inscrição foi registrada. Conclua o pagamento na aba aberta e
+          apresente este QR Code na entrada do evento.
+        </p>
+
+        <div className="inline-block bg-white p-6 border border-rose-dusty/40 shadow-soft mb-8">
+          <QRCodeSVG
+            value={qrPayload}
+            size={220}
+            level="M"
+            fgColor="#9d4d5a"
+            bgColor="#ffffff"
+          />
+        </div>
+
+        <div className="border-t border-rose-dusty/30 pt-8 mb-8 space-y-3 text-left max-w-sm mx-auto">
+          <Row label="Nome" value={success.full_name} />
+          <Row label="E-mail" value={success.email} />
+          <Row label="Telefone" value={success.phone} />
+          <Row label="Data" value="23 de Maio · 15:30h" />
+          <Row label="Local" value="Goiânia" />
+          <Row label="Código" value={success.id.slice(0, 8).toUpperCase()} />
+        </div>
+
+        <Button
+          onClick={() => window.open(KIWIFY_CHECKOUT_URL, "_blank", "noopener,noreferrer")}
+          className="rounded-none px-10 py-6 text-sm tracking-[0.25em] uppercase font-light transition-elegant shadow-petal"
+          style={{ backgroundColor: "hsl(var(--rose-deep))", color: "hsl(var(--primary-foreground))" }}
+        >
+          <ExternalLink className="w-4 h-4 mr-2" />
+          Reabrir pagamento
+        </Button>
+
+        <p className="mt-6 text-xs tracking-widest uppercase text-sage">
+          Salve esta tela ou tire um print
         </p>
       </div>
     );
@@ -113,10 +150,7 @@ export const SubscriptionForm = () => {
       noValidate
     >
       <div className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="full_name" className="uppercase tracking-[0.2em] text-xs text-rose-deep font-light">
-            Nome completo
-          </Label>
+        <Field id="full_name" label="Nome completo" error={errors.full_name}>
           <Input
             id="full_name"
             value={form.full_name}
@@ -125,13 +159,9 @@ export const SubscriptionForm = () => {
             maxLength={120}
             className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
           />
-          {errors.full_name && <p className="text-xs text-destructive">{errors.full_name}</p>}
-        </div>
+        </Field>
 
-        <div className="space-y-2">
-          <Label htmlFor="email" className="uppercase tracking-[0.2em] text-xs text-rose-deep font-light">
-            E-mail
-          </Label>
+        <Field id="email" label="E-mail" error={errors.email}>
           <Input
             id="email"
             type="email"
@@ -141,13 +171,9 @@ export const SubscriptionForm = () => {
             maxLength={255}
             className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
           />
-          {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-        </div>
+        </Field>
 
-        <div className="space-y-2">
-          <Label htmlFor="phone" className="uppercase tracking-[0.2em] text-xs text-rose-deep font-light">
-            Telefone
-          </Label>
+        <Field id="phone" label="Telefone" error={errors.phone}>
           <Input
             id="phone"
             type="tel"
@@ -157,13 +183,9 @@ export const SubscriptionForm = () => {
             placeholder="(11) 91234-5678"
             className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
           />
-          {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
-        </div>
+        </Field>
 
-        <div className="space-y-2">
-          <Label htmlFor="prayer_request" className="uppercase tracking-[0.2em] text-xs text-rose-deep font-light">
-            Pedido de oração <span className="text-muted-foreground normal-case tracking-normal">(opcional)</span>
-          </Label>
+        <Field id="prayer_request" label="Pedido de oração (opcional)" error={errors.prayer_request}>
           <Textarea
             id="prayer_request"
             value={form.prayer_request}
@@ -173,8 +195,7 @@ export const SubscriptionForm = () => {
             rows={4}
             className="rounded-none border border-rose-dusty/50 bg-transparent focus-visible:ring-0 focus-visible:border-rose-deep resize-none text-base"
           />
-          {errors.prayer_request && <p className="text-xs text-destructive">{errors.prayer_request}</p>}
-        </div>
+        </Field>
       </div>
 
       <Button
@@ -184,19 +205,44 @@ export const SubscriptionForm = () => {
         style={{ backgroundColor: "hsl(var(--rose-deep))", color: "hsl(var(--primary-foreground))" }}
       >
         {loading ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...
-          </>
+          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
         ) : (
           <>Garantir minha vaga &nbsp;·&nbsp; R$ 39,90</>
         )}
       </Button>
 
       <p className="mt-6 text-center text-xs tracking-widest uppercase text-sage">
-        Vagas limitadas
+        Pagamento seguro via Kiwify
       </p>
     </form>
   );
 };
+
+const Field = ({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) => (
+  <div className="space-y-2">
+    <Label htmlFor={id} className="uppercase tracking-[0.2em] text-xs text-rose-deep font-light">
+      {label}
+    </Label>
+    {children}
+    {error && <p className="text-xs text-destructive">{error}</p>}
+  </div>
+);
+
+const Row = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex justify-between gap-4 text-sm">
+    <span className="uppercase tracking-[0.2em] text-xs text-sage shrink-0">{label}</span>
+    <span className="text-foreground font-light text-right truncate">{value}</span>
+  </div>
+);
 
 export default SubscriptionForm;
