@@ -201,16 +201,16 @@ export const SubscriptionForm = () => {
       <Button
         type="submit"
         disabled={loading}
-        className="w-full mt-10 rounded-none py-7 text-sm tracking-[0.25em] uppercase font-light transition-elegant shadow-petal disabled:opacity-70"
+        className="w-full mt-8 md:mt-10 rounded-none h-auto min-h-[64px] md:min-h-[72px] py-4 md:py-5 px-4 md:px-6 text-[11px] md:text-sm tracking-[0.2em] md:tracking-[0.25em] uppercase font-light transition-elegant shadow-petal disabled:opacity-70 whitespace-normal"
         style={{ backgroundColor: "hsl(var(--rose-deep))", color: "hsl(var(--primary-foreground))" }}
       >
         {loading ? (
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
         ) : (
-          <span className="flex items-center justify-center gap-3 flex-wrap">
+          <span className="flex items-center justify-center gap-2.5 md:gap-4 flex-wrap leading-tight">
             <span>Valor da inscrição</span>
             <span
-              className="font-display text-2xl md:text-3xl tracking-normal normal-case px-4 py-1.5 rounded-sm shadow-inner"
+              className="font-display text-xl md:text-3xl tracking-normal normal-case px-3 md:px-4 py-1 md:py-1.5 rounded-sm shadow-inner leading-none"
               style={{ backgroundColor: "hsl(var(--foreground))", color: "hsl(var(--ivory))" }}
             >
               R$ 39,90
