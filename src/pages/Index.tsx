@@ -3,6 +3,7 @@ import { Calendar, Clock, MapPin } from "lucide-react";
 import bannerImage from "@/assets/magnolia-banner.png";
 import grupoImage from "@/assets/magnolias-grupo.jpeg";
 import branchImage from "@/assets/magnolia-branch.png";
+import { SubscriptionForm } from "@/components/SubscriptionForm";
 
 const Index = () => {
   return (
@@ -107,6 +108,20 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground font-light">{sub}</p>
               </div>
             ))}
+          </div>
+
+          {/* INSCRIÇÃO */}
+          <div className="mt-24 md:mt-32">
+            <div className="text-center mb-12">
+              <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-6">Inscrição</p>
+              <h3 className="font-display text-4xl md:text-5xl text-foreground">
+                Garanta sua <span className="italic text-rose-deep">vaga</span>
+              </h3>
+              <p className="mt-4 text-foreground/60 font-light max-w-md mx-auto">
+                Preencha seus dados e venha florescer conosco.
+              </p>
+            </div>
+            <SubscriptionForm />
           </div>
         </div>
       </section>
