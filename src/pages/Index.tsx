@@ -115,7 +115,7 @@ const Index = () => {
             <div className="text-center mb-12">
               <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-6">Inscrição</p>
               <h3 className="font-display text-4xl md:text-5xl text-foreground">
-                Garanta sua <span className="italic text-rose-deep">vaga</span>
+                Valor da <span className="italic text-rose-deep">inscrição</span>
               </h3>
               <p className="mt-4 text-foreground/60 font-light max-w-md mx-auto">
                 Preencha seus dados e venha florescer conosco.

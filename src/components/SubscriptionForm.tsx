@@ -207,7 +207,15 @@ export const SubscriptionForm = () => {
         {loading ? (
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
         ) : (
-          <>Garantir minha vaga &nbsp;·&nbsp; R$ 39,90</>
+          <span className="flex items-center justify-center gap-3 flex-wrap">
+            <span>Garantir minha vaga</span>
+            <span
+              className="font-display text-2xl md:text-3xl tracking-normal normal-case px-4 py-1.5 rounded-sm shadow-inner"
+              style={{ backgroundColor: "hsl(var(--foreground))", color: "hsl(var(--ivory))" }}
+            >
+              R$ 39,90
+            </span>
+          </span>
         )}
       </Button>
 
