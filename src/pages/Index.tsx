@@ -16,11 +16,19 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-ivory text-foreground overflow-x-hidden">
       {/* HERO BANNER */}
-      <header className="relative w-full">
+      <header className="relative w-full overflow-hidden">
         <img
           src={bannerImage}
           alt="3º Encontro das Magnólias"
-          className="w-full h-auto object-cover"
+          className="w-full h-auto object-cover animate-ken-burns will-change-transform"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 animate-shimmer mix-blend-soft-light"
+          style={{
+            background:
+              "radial-gradient(60% 50% at 50% 50%, hsl(var(--rose-soft) / 0.55) 0%, transparent 70%)",
+          }}
         />
       </header>
 
