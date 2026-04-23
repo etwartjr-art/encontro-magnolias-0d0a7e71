@@ -75,15 +75,15 @@ const Index = () => {
             <div className="w-12 sm:w-16 h-px bg-rose-dusty mx-auto mt-4 sm:mt-6" />
           </div>
 
-          <blockquote className="font-display italic text-xl sm:text-2xl md:text-4xl lg:text-5xl leading-relaxed text-foreground/85">
+          <blockquote className="font-display italic text-base sm:text-2xl md:text-4xl lg:text-5xl leading-relaxed text-foreground/85 px-2">
             "Pois será como a árvore plantada
-            <br className="hidden md:block" />
+            <br />
             junto a ribeiros de águas,
-            <br className="hidden md:block" />
+            <br />
             a qual dá o seu fruto na estação própria,
-            <br className="hidden md:block" />
+            <br />
             <span className="text-rose-deep">e cujas folhas não caem;</span>
-            <br className="hidden md:block" />
+            <br />
             e tudo quanto fizer prosperará."
           </blockquote>
         </div>
