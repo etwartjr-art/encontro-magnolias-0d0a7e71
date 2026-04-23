@@ -144,7 +144,7 @@ const Index = () => {
           </div>
 
           {/* INSCRIÇÃO */}
-          <div className="mt-20 sm:mt-28 md:mt-36">
+          <div className="mt-20 sm:mt-28 md:mt-36 max-w-2xl mx-auto">
             <div className="text-center mb-14 sm:mb-16 md:mb-20">
               <h3 className="font-display uppercase tracking-[0.3em] sm:tracking-[0.4em] text-3xl sm:text-4xl md:text-5xl text-rose-deep">
                 Inscrição
