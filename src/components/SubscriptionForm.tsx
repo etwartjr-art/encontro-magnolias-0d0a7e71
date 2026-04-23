@@ -28,7 +28,6 @@ const formatPhone = (value: string) => {
 type SuccessData = {
   id: string;
   full_name: string;
-  email: string;
   phone: string;
 };
 
@@ -36,7 +35,7 @@ export const SubscriptionForm = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<SuccessData | null>(null);
-  const [form, setForm] = useState({ full_name: "", email: "", phone: "", prayer_request: "" });
+  const [form, setForm] = useState({ full_name: "", phone: "", prayer_request: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
