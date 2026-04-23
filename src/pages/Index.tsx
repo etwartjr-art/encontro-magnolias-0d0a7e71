@@ -218,6 +218,7 @@ const Index = () => {
 
           <Button
             size="lg"
+            onClick={() => document.getElementById("inscricao")?.scrollIntoView({ behavior: "smooth", block: "start" })}
             className="rounded-none px-8 sm:px-12 py-5 sm:py-6 text-xs sm:text-sm tracking-[0.25em] sm:tracking-[0.3em] uppercase font-light transition-elegant shadow-petal"
             style={{ backgroundColor: "hsl(var(--rose-deep))", color: "hsl(var(--primary-foreground))" }}
           >
