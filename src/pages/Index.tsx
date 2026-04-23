@@ -4,6 +4,7 @@ import bannerImage from "@/assets/magnolia-banner.png";
 import grupoImage from "@/assets/magnolias-grupo.jpeg";
 import branchImage from "@/assets/magnolia-branch.png";
 import { SubscriptionForm } from "@/components/SubscriptionForm";
+import { Reveal } from "@/components/Reveal";
 import {
   EVENT_ADDRESS,
   formatStreetLine,
@@ -76,7 +77,7 @@ const Index = () => {
           loading="lazy"
         />
 
-        <div className="relative max-w-3xl mx-auto text-center">
+        <Reveal variant="up" className="relative max-w-3xl mx-auto text-center">
           <div className="inline-block mb-8 sm:mb-10">
             <div className="w-12 sm:w-16 h-px bg-rose-dusty mx-auto mb-4 sm:mb-6" />
             <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep">Salmos 1:3</p>
@@ -94,39 +95,41 @@ const Index = () => {
             <br />
             e tudo quanto fizer prosperará."
           </blockquote>
-        </div>
+        </Reveal>
       </section>
 
       {/* DETAILS */}
       <section className="py-16 sm:py-24 md:py-32 px-5 sm:px-6 bg-cream">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16">
+          <Reveal variant="up" className="text-center mb-12 sm:mb-16">
             <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-4 sm:mb-6">O Encontro</p>
             <h2 className="font-display text-4xl sm:text-5xl md:text-6xl text-foreground">
               Reserve a <span className="italic text-rose-deep">data</span>
             </h2>
-          </div>
+          </Reveal>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-rose-dusty/30">
             {[
               { icon: Calendar, label: "Data", value: "23 de Maio", sub: "Sábado" },
               { icon: Clock, label: "Horário", value: "15:30h", sub: "" },
               { icon: MapPin, label: "Local", value: "Goiânia", sub: "Santa Genoveva · GO" },
-            ].map(({ icon: Icon, label, value, sub }) => (
-              <div
+            ].map(({ icon: Icon, label, value, sub }, i) => (
+              <Reveal
                 key={label}
+                variant="up"
+                delay={i * 120}
                 className="bg-ivory p-8 sm:p-12 text-center transition-elegant hover:bg-rose-soft/30 group"
               >
                 <Icon className="w-7 h-7 mx-auto mb-4 sm:mb-6 text-rose-deep group-hover:scale-110 transition-elegant" strokeWidth={1.2} />
                 <p className="uppercase tracking-[0.3em] text-[10px] sm:text-xs text-sage mb-3 sm:mb-4">{label}</p>
                 <p className="font-display text-2xl sm:text-3xl md:text-4xl text-foreground mb-1.5 sm:mb-2">{value}</p>
                 <p className="text-xs sm:text-sm text-muted-foreground font-light">{sub}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
 
           {/* ENDEREÇO COMPLETO */}
-          <div className="mt-12 sm:mt-16 max-w-2xl mx-auto bg-ivory border border-rose-dusty/40 p-8 sm:p-10 text-center shadow-soft">
+          <Reveal variant="up" className="mt-12 sm:mt-16 max-w-2xl mx-auto bg-ivory border border-rose-dusty/40 p-8 sm:p-10 text-center shadow-soft">
             <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-4">
               Endereço do Encontro
             </p>
@@ -149,7 +152,7 @@ const Index = () => {
               <MapPin className="w-3.5 h-3.5" strokeWidth={1.4} />
               Ver no Google Maps
             </a>
-          </div>
+          </Reveal>
 
           {/* INSCRIÇÃO */}
           <div id="inscricao" className="mt-20 sm:mt-28 md:mt-36 max-w-2xl mx-auto scroll-mt-24">
@@ -169,7 +172,7 @@ const Index = () => {
       {/* GRUPO PHOTO */}
       <section className="py-16 sm:py-24 md:py-32 px-5 sm:px-6 bg-ivory">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 sm:gap-12 md:gap-20 items-center">
-          <div className="relative">
+          <Reveal variant="left" className="relative">
             <div className="absolute -inset-3 sm:-inset-4 bg-rose-soft/40 -z-10" />
             <img
               src={grupoImage}
@@ -177,9 +180,9 @@ const Index = () => {
               className="w-full h-auto object-cover shadow-petal"
               loading="lazy"
             />
-          </div>
+          </Reveal>
 
-          <div className="text-center md:text-left">
+          <Reveal variant="right" delay={150} className="text-center md:text-left">
             <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-4 sm:mb-6">Magnólias</p>
             <h2 className="font-display text-3xl sm:text-4xl md:text-5xl text-foreground mb-6 sm:mb-8 leading-tight">
               Mulheres que florescem na <span className="italic text-rose-deep">presença de Deus</span>
@@ -190,7 +193,7 @@ const Index = () => {
             <p className="font-display italic text-xl sm:text-2xl md:text-3xl text-rose-deep leading-snug">
               Você é preciosa, escolhida e chamada para florescer.
             </p>
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -211,7 +214,7 @@ const Index = () => {
           loading="lazy"
         />
 
-        <div className="relative max-w-2xl mx-auto text-center">
+        <Reveal variant="up" className="relative max-w-2xl mx-auto text-center">
           <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-6 sm:mb-8">Convite</p>
           <h2 className="font-display text-3xl sm:text-4xl md:text-6xl text-foreground mb-8 sm:mb-10 leading-tight">
             Você está convidada
@@ -236,7 +239,7 @@ const Index = () => {
           <p className="mt-6 sm:mt-8 text-[10px] sm:text-xs tracking-widest uppercase text-sage">
             Vagas limitadas
           </p>
-        </div>
+        </Reveal>
       </section>
 
       {/* FOOTER */}
