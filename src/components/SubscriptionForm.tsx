@@ -53,6 +53,9 @@ export const SubscriptionForm = () => {
       return;
     }
 
+    // Open checkout immediately within the user gesture to avoid popup blockers
+    const checkoutWindow = window.open(KIWIFY_CHECKOUT_URL, "_blank", "noopener,noreferrer");
+
     setLoading(true);
     const { data, error } = await supabase
       .from("subscriptions")
@@ -78,12 +81,11 @@ export const SubscriptionForm = () => {
     setSuccess(data as SuccessData);
     toast({
       title: "Inscrição registrada 🌸",
-      description: "Redirecionando para o pagamento...",
+      description: "Abrindo o pagamento seguro...",
     });
 
-    // Try to open in a new tab; if blocked, redirect in the same tab
-    const popup = window.open(KIWIFY_CHECKOUT_URL, "_blank", "noopener,noreferrer");
-    if (!popup || popup.closed || typeof popup.closed === "undefined") {
+    // If popup was blocked, redirect in the same tab
+    if (!checkoutWindow || checkoutWindow.closed || typeof checkoutWindow.closed === "undefined") {
       window.location.href = KIWIFY_CHECKOUT_URL;
     }
   };
