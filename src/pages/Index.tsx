@@ -101,8 +101,8 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-rose-dusty/30">
             {[
-              { icon: Calendar, label: "Data", value: "23 de Maio", sub: "Sexta-feira" },
-              { icon: Clock, label: "Horário", value: "15:30h", sub: "Recepção a partir das 15h" },
+              { icon: Calendar, label: "Data", value: "23 de Maio", sub: "Sábado" },
+              { icon: Clock, label: "Horário", value: "15:30h", sub: "" },
               { icon: MapPin, label: "Local", value: "Goiânia", sub: "Santa Genoveva · GO" },
             ].map(({ icon: Icon, label, value, sub }) => (
               <div
