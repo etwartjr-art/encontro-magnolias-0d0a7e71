@@ -210,11 +210,11 @@ export const SubscriptionForm = () => {
         {loading ? (
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
         ) : (
-          <span className="flex items-center justify-center gap-4 sm:gap-5 flex-nowrap leading-tight">
-            <span className="tracking-[0.25em] uppercase text-[12px] sm:text-sm font-light">
+          <span className="flex items-center justify-center gap-4 sm:gap-6 flex-nowrap leading-tight">
+            <span className="tracking-[0.2em] sm:tracking-[0.25em] uppercase text-sm sm:text-base md:text-lg font-light">
               Valor da inscrição
             </span>
-            <span className="tracking-[0.25em] uppercase text-[12px] sm:text-sm font-light">
+            <span className="tracking-[0.2em] sm:tracking-[0.25em] uppercase text-sm sm:text-base md:text-lg font-light">
               R$ 39,90
             </span>
           </span>
