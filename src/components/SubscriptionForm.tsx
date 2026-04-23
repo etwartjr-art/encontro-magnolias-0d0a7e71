@@ -95,7 +95,6 @@ export const SubscriptionForm = () => {
       local: formatFullAddress(),
       inscricao: success.id,
       nome: success.full_name,
-      email: success.email,
       telefone: success.phone,
     });
 
