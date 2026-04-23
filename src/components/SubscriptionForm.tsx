@@ -93,8 +93,8 @@ export const SubscriptionForm = () => {
   if (success) {
     const qrPayload = JSON.stringify({
       evento: "3º Encontro das Magnólias",
-      data: "23/05/2025 - 15:30h",
-      local: "Goiânia",
+      data: "23/05/2026 - 15:30h",
+      local: "Condomínio Ecopar - Av. João Leite, 1031, Qd 01 Lt 35 Casa 33, Santa Genoveva, Goiânia/GO - CEP 74672-020",
       inscricao: success.id,
       nome: success.full_name,
       email: success.email,
@@ -128,7 +128,7 @@ export const SubscriptionForm = () => {
           <Row label="E-mail" value={success.email} />
           <Row label="Telefone" value={success.phone} />
           <Row label="Data" value="23 de Maio · 15:30h" />
-          <Row label="Local" value="Goiânia" />
+          <Row label="Local" value="Cond. Ecopar · Goiânia/GO" />
           <Row label="Código" value={success.id.slice(0, 8).toUpperCase()} />
         </div>
 

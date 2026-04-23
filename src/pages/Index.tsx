@@ -96,7 +96,7 @@ const Index = () => {
             {[
               { icon: Calendar, label: "Data", value: "23 de Maio", sub: "Sexta-feira" },
               { icon: Clock, label: "Horário", value: "15:30h", sub: "Recepção a partir das 15h" },
-              { icon: MapPin, label: "Local", value: "Goiânia", sub: "Endereço enviado após inscrição" },
+              { icon: MapPin, label: "Local", value: "Goiânia", sub: "Santa Genoveva · GO" },
             ].map(({ icon: Icon, label, value, sub }) => (
               <div
                 key={label}
@@ -108,6 +108,32 @@ const Index = () => {
                 <p className="text-xs sm:text-sm text-muted-foreground font-light">{sub}</p>
               </div>
             ))}
+          </div>
+
+          {/* ENDEREÇO COMPLETO */}
+          <div className="mt-12 sm:mt-16 max-w-2xl mx-auto bg-ivory border border-rose-dusty/40 p-8 sm:p-10 text-center shadow-soft">
+            <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-4">
+              Endereço do Encontro
+            </p>
+            <p className="font-display text-xl sm:text-2xl md:text-3xl text-foreground leading-snug">
+              Condomínio Ecopar
+            </p>
+            <p className="mt-3 text-sm sm:text-base text-foreground/70 font-light leading-relaxed">
+              Av. João Leite, 1031 · Qd 01 · Lt 35 · Casa 33
+              <br />
+              Santa Genoveva · Goiânia — GO
+              <br />
+              CEP 74672-020
+            </p>
+            <a
+              href="https://www.google.com/maps/search/?api=1&query=Av.+Jo%C3%A3o+Leite%2C+1031%2C+Santa+Genoveva%2C+Goi%C3%A2nia+-+GO%2C+74672-020"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mt-6 uppercase tracking-[0.25em] text-[10px] sm:text-xs text-rose-deep border-b border-rose-deep/40 hover:border-rose-deep pb-1 transition-elegant"
+            >
+              <MapPin className="w-3.5 h-3.5" strokeWidth={1.4} />
+              Ver no Google Maps
+            </a>
           </div>
 
           {/* INSCRIÇÃO */}
