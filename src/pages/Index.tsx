@@ -4,6 +4,13 @@ import bannerImage from "@/assets/magnolia-banner.png";
 import grupoImage from "@/assets/magnolias-grupo.jpeg";
 import branchImage from "@/assets/magnolia-branch.png";
 import { SubscriptionForm } from "@/components/SubscriptionForm";
+import {
+  EVENT_ADDRESS,
+  formatStreetLine,
+  formatLocalityLine,
+  formatCepLine,
+  googleMapsUrl,
+} from "@/lib/eventAddress";
 
 const Index = () => {
   return (
