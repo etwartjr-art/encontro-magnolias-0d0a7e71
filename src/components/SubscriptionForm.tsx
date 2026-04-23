@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Heart, ExternalLink } from "lucide-react";
+import { formatFullAddress } from "@/lib/eventAddress";
 
 const KIWIFY_CHECKOUT_URL = "https://pay.kiwify.com.br/KEIHMK5";
 
@@ -94,7 +95,7 @@ export const SubscriptionForm = () => {
     const qrPayload = JSON.stringify({
       evento: "3º Encontro das Magnólias",
       data: "23/05/2026 - 15:30h",
-      local: "Condomínio Ecopar - Av. João Leite, 1031, Qd 01 Lt 35 Casa 33, Santa Genoveva, Goiânia/GO - CEP 74672-020",
+      local: formatFullAddress(),
       inscricao: success.id,
       nome: success.full_name,
       email: success.email,

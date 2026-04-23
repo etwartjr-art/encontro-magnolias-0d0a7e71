@@ -4,6 +4,13 @@ import bannerImage from "@/assets/magnolia-banner.png";
 import grupoImage from "@/assets/magnolias-grupo.jpeg";
 import branchImage from "@/assets/magnolia-branch.png";
 import { SubscriptionForm } from "@/components/SubscriptionForm";
+import {
+  EVENT_ADDRESS,
+  formatStreetLine,
+  formatLocalityLine,
+  formatCepLine,
+  googleMapsUrl,
+} from "@/lib/eventAddress";
 
 const Index = () => {
   return (
@@ -116,17 +123,17 @@ const Index = () => {
               Endereço do Encontro
             </p>
             <p className="font-display text-xl sm:text-2xl md:text-3xl text-foreground leading-snug">
-              Condomínio Ecopar
+              {EVENT_ADDRESS.venue}
             </p>
             <p className="mt-3 text-sm sm:text-base text-foreground/70 font-light leading-relaxed">
-              Av. João Leite, 1031 · Qd 01 · Lt 35 · Casa 33
+              {formatStreetLine()}
               <br />
-              Santa Genoveva · Goiânia — GO
+              {formatLocalityLine()}
               <br />
-              CEP 74672-020
+              {formatCepLine()}
             </p>
             <a
-              href="https://www.google.com/maps/search/?api=1&query=Av.+Jo%C3%A3o+Leite%2C+1031%2C+Santa+Genoveva%2C+Goi%C3%A2nia+-+GO%2C+74672-020"
+              href={googleMapsUrl()}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 mt-6 uppercase tracking-[0.25em] text-[10px] sm:text-xs text-rose-deep border-b border-rose-deep/40 hover:border-rose-deep pb-1 transition-elegant"
