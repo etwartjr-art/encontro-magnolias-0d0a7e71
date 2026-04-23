@@ -122,7 +122,6 @@ export const SubscriptionForm = () => {
 
         <div className="border-t border-rose-dusty/30 pt-8 mb-8 space-y-3 text-left max-w-sm mx-auto">
           <Row label="Nome" value={success.full_name} />
-          <Row label="E-mail" value={success.email} />
           <Row label="Telefone" value={success.phone} />
           <Row label="Data" value="23 de Maio · 15:30h" />
           <Row label="Local" value="Cond. Ecopar · Goiânia/GO" />
