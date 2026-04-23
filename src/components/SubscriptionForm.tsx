@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Heart, ExternalLink } from "lucide-react";
+import { formatFullAddress } from "@/lib/eventAddress";
 
 const KIWIFY_CHECKOUT_URL = "https://pay.kiwify.com.br/KEIHMK5";
 
