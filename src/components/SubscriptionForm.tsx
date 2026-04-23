@@ -14,7 +14,6 @@ const KIWIFY_CHECKOUT_URL = "https://pay.kiwify.com.br/KEIHMK5";
 
 const subscriptionSchema = z.object({
   full_name: z.string().trim().min(2, { message: "Informe seu nome completo" }).max(120, { message: "Nome muito longo" }),
-  email: z.string().trim().email({ message: "E-mail inválido" }).max(255, { message: "E-mail muito longo" }),
   phone: z.string().trim().regex(/^\(\d{2}\)\s\d{5}-\d{4}$/, { message: "Telefone inválido. Use (11) 91234-5678" }),
   prayer_request: z.string().trim().max(1000, { message: "Pedido de oração muito longo" }).optional(),
 });
