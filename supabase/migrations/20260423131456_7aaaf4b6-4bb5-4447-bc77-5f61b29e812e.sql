@@ -1,0 +1,1 @@
+ALTER TABLE public.subscriptions ALTER COLUMN email DROP NOT NULL;

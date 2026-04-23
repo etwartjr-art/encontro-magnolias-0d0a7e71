@@ -14,7 +14,6 @@ const KIWIFY_CHECKOUT_URL = "https://pay.kiwify.com.br/KEIHMK5";
 
 const subscriptionSchema = z.object({
   full_name: z.string().trim().min(2, { message: "Informe seu nome completo" }).max(120, { message: "Nome muito longo" }),
-  email: z.string().trim().email({ message: "E-mail inválido" }).max(255, { message: "E-mail muito longo" }),
   phone: z.string().trim().regex(/^\(\d{2}\)\s\d{5}-\d{4}$/, { message: "Telefone inválido. Use (11) 91234-5678" }),
   prayer_request: z.string().trim().max(1000, { message: "Pedido de oração muito longo" }).optional(),
 });
@@ -29,7 +28,6 @@ const formatPhone = (value: string) => {
 type SuccessData = {
   id: string;
   full_name: string;
-  email: string;
   phone: string;
 };
 
@@ -37,7 +35,7 @@ export const SubscriptionForm = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<SuccessData | null>(null);
-  const [form, setForm] = useState({ full_name: "", email: "", phone: "", prayer_request: "" });
+  const [form, setForm] = useState({ full_name: "", phone: "", prayer_request: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,11 +60,10 @@ export const SubscriptionForm = () => {
       .from("subscriptions")
       .insert({
         full_name: result.data.full_name,
-        email: result.data.email,
         phone: result.data.phone,
         prayer_request: result.data.prayer_request || null,
       })
-      .select("id, full_name, email, phone")
+      .select("id, full_name, phone")
       .single();
     setLoading(false);
 
@@ -98,7 +95,6 @@ export const SubscriptionForm = () => {
       local: formatFullAddress(),
       inscricao: success.id,
       nome: success.full_name,
-      email: success.email,
       telefone: success.phone,
     });
 
@@ -126,7 +122,6 @@ export const SubscriptionForm = () => {
 
         <div className="border-t border-rose-dusty/30 pt-8 mb-8 space-y-3 text-left max-w-sm mx-auto">
           <Row label="Nome" value={success.full_name} />
-          <Row label="E-mail" value={success.email} />
           <Row label="Telefone" value={success.phone} />
           <Row label="Data" value="23 de Maio · 15:30h" />
           <Row label="Local" value="Cond. Ecopar · Goiânia/GO" />
@@ -167,17 +162,7 @@ export const SubscriptionForm = () => {
           />
         </Field>
 
-        <Field id="email" label="E-mail" error={errors.email}>
-          <Input
-            id="email"
-            type="email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            placeholder=""
-            maxLength={255}
-            className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
-          />
-        </Field>
+
 
         <Field id="phone" label="Telefone" error={errors.phone}>
           <Input
