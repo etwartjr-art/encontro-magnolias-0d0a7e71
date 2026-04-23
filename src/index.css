@@ -114,4 +114,17 @@
     to { opacity: 1; transform: translateY(0); }
   }
   .animate-fade-up { animation: fade-up 1.2s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+  @keyframes ken-burns {
+    0%   { transform: scale(1) translate(0, 0); }
+    50%  { transform: scale(1.06) translate(-0.5%, -0.8%); }
+    100% { transform: scale(1) translate(0, 0); }
+  }
+  .animate-ken-burns { animation: ken-burns 18s ease-in-out infinite; transform-origin: center; }
+
+  @keyframes shimmer {
+    0%, 100% { opacity: 0; transform: translateX(-30%) translateY(0); }
+    50%      { opacity: 0.6; transform: translateX(30%) translateY(-2%); }
+  }
+  .animate-shimmer { animation: shimmer 9s ease-in-out infinite; }
 }
