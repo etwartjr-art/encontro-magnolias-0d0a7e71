@@ -144,7 +144,7 @@ const Index = () => {
           </div>
 
           {/* INSCRIÇÃO */}
-          <div className="mt-20 sm:mt-28 md:mt-36 max-w-2xl mx-auto">
+          <div id="inscricao" className="mt-20 sm:mt-28 md:mt-36 max-w-2xl mx-auto scroll-mt-24">
             <div className="text-center mb-6 sm:mb-8">
               <h3 className="font-display uppercase tracking-[0.3em] sm:tracking-[0.4em] text-3xl sm:text-4xl md:text-5xl text-rose-deep">
                 Inscrição
@@ -218,6 +218,7 @@ const Index = () => {
 
           <Button
             size="lg"
+            onClick={() => document.getElementById("inscricao")?.scrollIntoView({ behavior: "smooth", block: "start" })}
             className="rounded-none px-8 sm:px-12 py-5 sm:py-6 text-xs sm:text-sm tracking-[0.25em] sm:tracking-[0.3em] uppercase font-light transition-elegant shadow-petal"
             style={{ backgroundColor: "hsl(var(--rose-deep))", color: "hsl(var(--primary-foreground))" }}
           >
