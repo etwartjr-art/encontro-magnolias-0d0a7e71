@@ -164,17 +164,7 @@ export const SubscriptionForm = () => {
           />
         </Field>
 
-        <Field id="email" label="E-mail" error={errors.email}>
-          <Input
-            id="email"
-            type="email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            placeholder=""
-            maxLength={255}
-            className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
-          />
-        </Field>
+
 
         <Field id="phone" label="Telefone" error={errors.phone}>
           <Input
