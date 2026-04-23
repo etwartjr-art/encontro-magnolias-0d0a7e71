@@ -60,11 +60,10 @@ export const SubscriptionForm = () => {
       .from("subscriptions")
       .insert({
         full_name: result.data.full_name,
-        email: result.data.email,
         phone: result.data.phone,
         prayer_request: result.data.prayer_request || null,
       })
-      .select("id, full_name, email, phone")
+      .select("id, full_name, phone")
       .single();
     setLoading(false);
 
