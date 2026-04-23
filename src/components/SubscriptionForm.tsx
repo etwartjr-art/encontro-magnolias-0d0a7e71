@@ -78,11 +78,14 @@ export const SubscriptionForm = () => {
     setSuccess(data as SuccessData);
     toast({
       title: "Inscrição registrada 🌸",
-      description: "Abrindo o pagamento em uma nova aba...",
+      description: "Redirecionando para o pagamento...",
     });
 
-    // Open Kiwify checkout in a new tab
-    window.open(KIWIFY_CHECKOUT_URL, "_blank", "noopener,noreferrer");
+    // Try to open in a new tab; if blocked, redirect in the same tab
+    const popup = window.open(KIWIFY_CHECKOUT_URL, "_blank", "noopener,noreferrer");
+    if (!popup || popup.closed || typeof popup.closed === "undefined") {
+      window.location.href = KIWIFY_CHECKOUT_URL;
+    }
   };
 
   if (success) {
@@ -207,12 +210,11 @@ export const SubscriptionForm = () => {
         {loading ? (
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
         ) : (
-          <span className="flex items-center justify-center gap-2.5 md:gap-4 flex-wrap leading-tight">
-            <span>Valor da inscrição</span>
-            <span
-              className="font-display text-xl md:text-3xl tracking-normal normal-case px-3 md:px-4 py-1 md:py-1.5 rounded-sm shadow-inner leading-none"
-              style={{ backgroundColor: "hsl(var(--foreground))", color: "hsl(var(--ivory))" }}
-            >
+          <span className="flex items-center justify-center gap-3 md:gap-5 flex-wrap leading-tight">
+            <span className="tracking-[0.25em] uppercase text-[11px] md:text-sm font-light">
+              Valor da inscrição
+            </span>
+            <span className="tracking-[0.25em] uppercase text-[13px] md:text-base font-normal">
               R$ 39,90
             </span>
           </span>
