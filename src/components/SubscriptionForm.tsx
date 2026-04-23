@@ -173,7 +173,7 @@ export const SubscriptionForm = () => {
             type="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            placeholder="seu@email.com"
+            placeholder=""
             maxLength={255}
             className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
           />
