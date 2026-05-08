@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Heart, ExternalLink } from "lucide-react";
 import { formatFullAddress } from "@/lib/eventAddress";
 
-const KIWIFY_CHECKOUT_URL = "https://pay.kiwify.com.br/KEIHMK5";
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfYBonhqAqs9HaRoo_VhAjPQxmR7DtOe-oVMO31Jy26-Trqew/viewform?usp=dialog";
 
 const subscriptionSchema = z.object({
   full_name: z.string().trim().min(2, { message: "Informe seu nome completo" }).max(120, { message: "Nome muito longo" }),
@@ -52,8 +52,8 @@ export const SubscriptionForm = () => {
       return;
     }
 
-    // Open checkout immediately within the user gesture to avoid popup blockers
-    const checkoutWindow = window.open(KIWIFY_CHECKOUT_URL, "_blank", "noopener,noreferrer");
+    // Open form immediately within the user gesture to avoid popup blockers
+    const checkoutWindow = window.open(FORM_URL, "_blank", "noopener,noreferrer");
 
     setLoading(true);
     const { data, error } = await supabase
@@ -79,12 +79,12 @@ export const SubscriptionForm = () => {
     setSuccess(data as SuccessData);
     toast({
       title: "Inscrição registrada 🌸",
-      description: "Abrindo o pagamento seguro...",
+      description: "Abrindo o formulário de inscrição...",
     });
 
     // If popup was blocked, redirect in the same tab
     if (!checkoutWindow || checkoutWindow.closed || typeof checkoutWindow.closed === "undefined") {
-      window.location.href = KIWIFY_CHECKOUT_URL;
+      window.location.href = FORM_URL;
     }
   };
 
@@ -106,8 +106,8 @@ export const SubscriptionForm = () => {
           Que alegria, <span className="italic text-rose-deep">{success.full_name.split(" ")[0]}</span>!
         </h3>
         <p className="text-foreground/70 font-light leading-relaxed max-w-md mx-auto mb-10">
-          Sua inscrição foi registrada. Conclua o pagamento na aba aberta e
-          apresente este QR Code na entrada do evento.
+          Sua inscrição foi registrada. Finalize preenchendo o formulário na
+          aba aberta e apresente este QR Code na entrada do evento.
         </p>
 
         <div className="inline-block bg-white p-6 border border-rose-dusty/40 shadow-soft mb-8">
@@ -124,17 +124,17 @@ export const SubscriptionForm = () => {
           <Row label="Nome" value={success.full_name} />
           <Row label="Telefone" value={success.phone} />
           <Row label="Data" value="23 de Maio · 15:30h" />
-          <Row label="Local" value="Cond. Ecopar · Goiânia/GO" />
+          <Row label="Local" value="Cond. Ecopark · Goiânia/GO" />
           <Row label="Código" value={success.id.slice(0, 8).toUpperCase()} />
         </div>
 
         <Button
-          onClick={() => window.open(KIWIFY_CHECKOUT_URL, "_blank", "noopener,noreferrer")}
+          onClick={() => window.open(FORM_URL, "_blank", "noopener,noreferrer")}
           className="rounded-none px-10 py-6 text-sm tracking-[0.25em] uppercase font-light transition-elegant shadow-petal"
           style={{ backgroundColor: "hsl(var(--rose-deep))", color: "hsl(var(--primary-foreground))" }}
         >
           <ExternalLink className="w-4 h-4 mr-2" />
-          Reabrir pagamento
+          Reabrir formulário
         </Button>
 
         <p className="mt-6 text-xs tracking-widest uppercase text-sage">
@@ -198,19 +198,14 @@ export const SubscriptionForm = () => {
         {loading ? (
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
         ) : (
-          <span className="flex items-center justify-center gap-4 sm:gap-6 flex-nowrap leading-tight">
-            <span className="tracking-[0.2em] sm:tracking-[0.25em] uppercase text-sm sm:text-base md:text-lg font-light">
-              Valor da inscrição
-            </span>
-            <span className="tracking-[0.2em] sm:tracking-[0.25em] uppercase text-sm sm:text-base md:text-lg font-light">
-              R$ 39,90
-            </span>
+          <span className="tracking-[0.2em] sm:tracking-[0.3em] uppercase text-sm sm:text-base md:text-lg font-light">
+            Inscrição Gratuita
           </span>
         )}
       </Button>
 
       <p className="mt-6 text-center text-xs tracking-widest uppercase text-sage">
-        Pagamento seguro via Kiwify
+        Inscrição via formulário
       </p>
     </form>
   );
