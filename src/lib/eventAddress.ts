@@ -6,7 +6,7 @@ import { z } from "zod";
  * gerar QR codes, links de mapa, metadados, etc.
  */
 const rawEventAddress = {
-  venue: "Condomínio Ecopar",
+  venue: "Condomínio Ecopark",
   street: "Av. João Leite",
   number: "1031",
   block: "01", // Quadra
