@@ -4,7 +4,6 @@ import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Heart, ExternalLink } from "lucide-react";
@@ -14,28 +13,18 @@ const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfYBonhqAqs9HaRoo_VhA
 
 const subscriptionSchema = z.object({
   full_name: z.string().trim().min(2, { message: "Informe seu nome completo" }).max(120, { message: "Nome muito longo" }),
-  phone: z.string().trim().regex(/^\(\d{2}\)\s\d{5}-\d{4}$/, { message: "Telefone inválido. Use (11) 91234-5678" }),
-  prayer_request: z.string().trim().max(1000, { message: "Pedido de oração muito longo" }).optional(),
 });
-
-const formatPhone = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 2) return digits.length ? `(${digits}` : "";
-  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-};
 
 type SuccessData = {
   id: string;
   full_name: string;
-  phone: string;
 };
 
 export const SubscriptionForm = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<SuccessData | null>(null);
-  const [form, setForm] = useState({ full_name: "", phone: "", prayer_request: "" });
+  const [form, setForm] = useState({ full_name: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,17 +42,16 @@ export const SubscriptionForm = () => {
     }
 
     // Open form immediately within the user gesture to avoid popup blockers
-    const checkoutWindow = window.open(FORM_URL, "_blank", "noopener,noreferrer");
+    const formWindow = window.open(FORM_URL, "_blank", "noopener,noreferrer");
 
     setLoading(true);
     const { data, error } = await supabase
       .from("subscriptions")
       .insert({
         full_name: result.data.full_name,
-        phone: result.data.phone,
-        prayer_request: result.data.prayer_request || null,
+        phone: "",
       })
-      .select("id, full_name, phone")
+      .select("id, full_name")
       .single();
     setLoading(false);
 
@@ -82,8 +70,7 @@ export const SubscriptionForm = () => {
       description: "Abrindo o formulário de inscrição...",
     });
 
-    // If popup was blocked, redirect in the same tab
-    if (!checkoutWindow || checkoutWindow.closed || typeof checkoutWindow.closed === "undefined") {
+    if (!formWindow || formWindow.closed || typeof formWindow.closed === "undefined") {
       window.location.href = FORM_URL;
     }
   };
@@ -95,7 +82,6 @@ export const SubscriptionForm = () => {
       local: formatFullAddress(),
       inscricao: success.id,
       nome: success.full_name,
-      telefone: success.phone,
     });
 
     return (
@@ -122,7 +108,6 @@ export const SubscriptionForm = () => {
 
         <div className="border-t border-rose-dusty/30 pt-8 mb-8 space-y-3 text-left max-w-sm mx-auto">
           <Row label="Nome" value={success.full_name} />
-          <Row label="Telefone" value={success.phone} />
           <Row label="Data" value="23 de Maio · 15:30h" />
           <Row label="Local" value="Cond. Ecopark · Goiânia/GO" />
           <Row label="Código" value={success.id.slice(0, 8).toUpperCase()} />
@@ -155,36 +140,10 @@ export const SubscriptionForm = () => {
           <Input
             id="full_name"
             value={form.full_name}
-            onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+            onChange={(e) => setForm({ full_name: e.target.value })}
             placeholder="Seu nome"
             maxLength={120}
             className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
-          />
-        </Field>
-
-
-
-        <Field id="phone" label="Telefone" error={errors.phone}>
-          <Input
-            id="phone"
-            type="tel"
-            inputMode="tel"
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
-            placeholder="(11) 91234-5678"
-            className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
-          />
-        </Field>
-
-        <Field id="prayer_request" label="Pedido de oração (opcional)" error={errors.prayer_request}>
-          <Textarea
-            id="prayer_request"
-            value={form.prayer_request}
-            onChange={(e) => setForm({ ...form, prayer_request: e.target.value })}
-            placeholder="Compartilhe o que está em seu coração..."
-            maxLength={1000}
-            rows={4}
-            className="rounded-none border border-rose-dusty/50 bg-transparent focus-visible:ring-0 focus-visible:border-rose-deep resize-none text-base"
           />
         </Field>
       </div>
