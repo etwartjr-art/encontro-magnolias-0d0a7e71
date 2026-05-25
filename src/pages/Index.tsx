@@ -14,8 +14,8 @@ const Index = () => {
       <header className="relative w-full overflow-hidden">
         <img
           src={bannerImage}
-          alt="3º Encontro das Magnólias"
-          className="w-full h-auto object-cover animate-ken-burns will-change-transform"
+          alt="4º Encontro das Magnólias"
+          className="w-full h-auto object-cover animate-ken-burns will-change-transform scale-110"
         />
         <div
           aria-hidden="true"
