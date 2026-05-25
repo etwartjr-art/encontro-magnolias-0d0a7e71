@@ -5,13 +5,7 @@ import grupoImage from "@/assets/magnolias-grupo.jpeg";
 import branchImage from "@/assets/magnolia-branch.png";
 import { SubscriptionForm } from "@/components/SubscriptionForm";
 import { Reveal } from "@/components/Reveal";
-import {
-  EVENT_ADDRESS,
-  formatStreetLine,
-  formatLocalityLine,
-  formatCepLine,
-  googleMapsUrl,
-} from "@/lib/eventAddress";
+// Endereço não exibido nesta edição — local a definir
 
 const Index = () => {
   return (
@@ -110,9 +104,9 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-rose-dusty/30">
             {[
-              { icon: Calendar, label: "Data", value: "23 de Maio", sub: "Sábado" },
+              { icon: Calendar, label: "Data", value: "27 de Junho", sub: "Sábado" },
               { icon: Clock, label: "Horário", value: "15:30h", sub: "" },
-              { icon: MapPin, label: "Local", value: "Goiânia", sub: "Santa Genoveva · GO" },
+              { icon: MapPin, label: "Local", value: "Goiânia", sub: "" },
             ].map(({ icon: Icon, label, value, sub }, i) => (
               <Reveal
                 key={label}
@@ -134,24 +128,8 @@ const Index = () => {
               Endereço do Encontro
             </p>
             <p className="font-display text-xl sm:text-2xl md:text-3xl text-foreground leading-snug">
-              {EVENT_ADDRESS.venue}
+              Local a Definir
             </p>
-            <p className="mt-3 text-sm sm:text-base text-foreground/70 font-light leading-relaxed">
-              {formatStreetLine()}
-              <br />
-              {formatLocalityLine()}
-              <br />
-              {formatCepLine()}
-            </p>
-            <a
-              href={googleMapsUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-6 uppercase tracking-[0.25em] text-[10px] sm:text-xs text-rose-deep border-b border-rose-deep/40 hover:border-rose-deep pb-1 transition-elegant"
-            >
-              <MapPin className="w-3.5 h-3.5" strokeWidth={1.4} />
-              Ver no Google Maps
-            </a>
           </Reveal>
 
           {/* INSCRIÇÃO */}
@@ -249,7 +227,7 @@ const Index = () => {
             Encontro das Magnólias
           </p>
           <p className="text-[10px] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] uppercase text-sage leading-relaxed">
-            Terceira Edição · Goiânia · 23 de Maio · 15:30h
+            Terceira Edição · Goiânia · 27 de Junho · 15:30h
           </p>
         </div>
       </footer>
