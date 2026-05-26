@@ -77,9 +77,9 @@ export const SubscriptionForm = () => {
 
   if (success) {
     const qrPayload = JSON.stringify({
-      evento: "3º Encontro das Magnólias",
-      data: "23/05/2026 - 15:30h",
-      local: formatFullAddress(),
+      evento: "4º Encontro das Magnólias",
+      data: "27/06/2026 - 15:30h",
+      local: "Local a Definir",
       inscricao: success.id,
       nome: success.full_name,
     });
@@ -108,8 +108,8 @@ export const SubscriptionForm = () => {
 
         <div className="border-t border-rose-dusty/30 pt-8 mb-8 space-y-3 text-left max-w-sm mx-auto">
           <Row label="Nome" value={success.full_name} />
-          <Row label="Data" value="23 de Maio · 15:30h" />
-          <Row label="Local" value="Cond. Ecopark · Goiânia/GO" />
+          <Row label="Data" value="27 de Junho · 15:30h" />
+          <Row label="Local" value="Local a Definir" />
           <Row label="Código" value={success.id.slice(0, 8).toUpperCase()} />
         </div>
 
@@ -158,7 +158,7 @@ export const SubscriptionForm = () => {
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
         ) : (
           <span className="tracking-[0.2em] sm:tracking-[0.3em] uppercase text-sm sm:text-base md:text-lg font-light">
-            Inscrição Gratuita
+            Inscrição R$39,90
           </span>
         )}
       </Button>
