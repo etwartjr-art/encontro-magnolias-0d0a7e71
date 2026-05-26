@@ -3,6 +3,7 @@ import { Calendar, Clock, MapPin } from "lucide-react";
 import bannerImage from "@/assets/magnolia-banner.png";
 import grupoImage from "@/assets/magnolias-grupo.jpeg";
 import branchImage from "@/assets/magnolia-branch.png";
+import qrPagamento from "@/assets/qr-pagamento.png";
 import { SubscriptionForm } from "@/components/SubscriptionForm";
 import { Reveal } from "@/components/Reveal";
 // Endereço não exibido nesta edição — local a definir
@@ -138,6 +139,15 @@ const Index = () => {
               <h3 className="font-display uppercase tracking-[0.3em] sm:tracking-[0.4em] text-3xl sm:text-4xl md:text-5xl text-rose-deep">
                 Inscrição
               </h3>
+              <div className="mt-6 sm:mt-8 flex justify-center">
+                <img
+                  src={qrPagamento}
+                  alt="QR Code para pagamento da inscrição - R$ 39,90"
+                  className="w-56 sm:w-64 md:w-72 h-auto"
+                  style={{ filter: "hue-rotate(310deg) saturate(0.8)" }}
+                  loading="lazy"
+                />
+              </div>
               <p className="mt-3 sm:mt-4 text-sm sm:text-base text-foreground/60 font-light max-w-md mx-auto">
                 Preencha seus dados e venha florescer conosco.
               </p>
