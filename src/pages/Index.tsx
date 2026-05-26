@@ -137,7 +137,7 @@ const Index = () => {
           <div id="inscricao" className="mt-20 sm:mt-28 md:mt-36 max-w-2xl mx-auto scroll-mt-24">
             <div className="text-center mb-6 sm:mb-8">
               <h3 className="font-display uppercase tracking-[0.3em] sm:tracking-[0.4em] text-3xl sm:text-4xl md:text-5xl text-rose-deep">
-                Inscrição
+                Inscrição R$ 39,90
               </h3>
               <p className="mt-3 sm:mt-4 font-display sm:text-3xl text-rose-deep/90 text-4xl">
                 ​
