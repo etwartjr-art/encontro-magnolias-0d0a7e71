@@ -139,6 +139,9 @@ const Index = () => {
               <h3 className="font-display uppercase tracking-[0.3em] sm:tracking-[0.4em] text-3xl sm:text-4xl md:text-5xl text-rose-deep">
                 Inscrição
               </h3>
+              <p className="mt-3 sm:mt-4 font-display text-2xl sm:text-3xl text-rose-deep/90">
+                R$ 39,90
+              </p>
               <div className="mt-6 sm:mt-8 flex justify-center">
                 <img
                   src={qrPagamento}
