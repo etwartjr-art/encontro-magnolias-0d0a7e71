@@ -35,7 +35,7 @@ const Index = () => {
           </p>
           <div className="flex items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8">
             <span className="h-px w-8 sm:w-12 bg-rose-dusty" />
-            <span className="font-display italic text-rose-dusty text-base sm:text-lg">terceira edição</span>
+            <span className="font-display italic text-rose-dusty text-base sm:text-lg">quarta edição</span>
             <span className="h-px w-8 sm:w-12 bg-rose-dusty" />
           </div>
 
@@ -46,7 +46,7 @@ const Index = () => {
           </h1>
 
           <p className="text-foreground/70 text-sm sm:text-base md:text-lg leading-relaxed font-light">
-            Para o nosso terceiro encontro, um momento preparado com muito{" "}
+            Para o nosso quarto encontro, um momento preparado com muito{" "}
             <span className="italic text-rose-deep">amor, fé e propósito</span>.
             Um tempo para mulheres que desejam crescer em Deus, fortalecer
             laços e viver o extraordinário dEle.
@@ -227,7 +227,7 @@ const Index = () => {
             Encontro das Magnólias
           </p>
           <p className="text-[10px] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] uppercase text-sage leading-relaxed">
-            Terceira Edição · Goiânia · 27 de Junho · 15:30h
+            Quarta Edição · Goiânia · 27 de Junho · 15:30h
           </p>
         </div>
       </footer>
