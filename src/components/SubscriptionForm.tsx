@@ -158,7 +158,7 @@ export const SubscriptionForm = () => {
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
         ) : (
           <span className="tracking-[0.2em] sm:tracking-[0.3em] uppercase text-sm sm:text-base md:text-lg font-light">
-            Inscrição R$39,90
+            Inscrição ​
           </span>
         )}
       </Button>

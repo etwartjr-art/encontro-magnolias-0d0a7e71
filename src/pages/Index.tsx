@@ -140,12 +140,12 @@ const Index = () => {
                 Inscrição
               </h3>
               <p className="mt-3 sm:mt-4 font-display text-2xl sm:text-3xl text-rose-deep/90">
-                R$ 39,90
+                ​
               </p>
               <div className="mt-6 sm:mt-8 flex justify-center">
                 <img
                   src={qrPagamento}
-                  alt="QR Code para pagamento da inscrição - R$ 39,90"
+                  alt="QR Code para pagamento da inscrição"
                   className="w-56 sm:w-64 md:w-72 h-auto"
                   loading="lazy"
                 />
