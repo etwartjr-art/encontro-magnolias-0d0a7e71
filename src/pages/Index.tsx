@@ -144,7 +144,6 @@ const Index = () => {
                   src={qrPagamento}
                   alt="QR Code para pagamento da inscrição - R$ 39,90"
                   className="w-56 sm:w-64 md:w-72 h-auto"
-                  style={{ filter: "hue-rotate(310deg) saturate(0.8)" }}
                   loading="lazy"
                 />
               </div>
