@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Heart, ExternalLink } from "lucide-react";
 
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfYBonhqAqs9HaRoo_VhAjPQxmR7DtOe-oVMO31Jy26-Trqew/viewform?usp=dialog";
+const PAYMENT_URL = "https://payfast.greenn.com.br/pre-checkout/7pny4c2";
 
 const subscriptionSchema = z.object({
   full_name: z.string().trim().min(2, { message: "Informe seu nome completo" }).max(120, { message: "Nome muito longo" }),
@@ -53,7 +54,7 @@ export const SubscriptionForm = () => {
       return;
     }
 
-    const formWindow = window.open(FORM_URL, "_blank", "noopener,noreferrer");
+    const paymentWindow = window.open(PAYMENT_URL, "_blank", "noopener,noreferrer");
 
     setLoading(true);
     const { data, error } = await supabase
@@ -81,8 +82,8 @@ export const SubscriptionForm = () => {
       description: "Abrindo o formulário de inscrição...",
     });
 
-    if (!formWindow || formWindow.closed || typeof formWindow.closed === "undefined") {
-      window.location.href = FORM_URL;
+    if (!paymentWindow || paymentWindow.closed || typeof paymentWindow.closed === "undefined") {
+      window.location.href = PAYMENT_URL;
     }
   };
 
@@ -125,7 +126,7 @@ export const SubscriptionForm = () => {
         </div>
 
         <Button
-          onClick={() => window.open(FORM_URL, "_blank", "noopener,noreferrer")}
+          onClick={() => window.open(PAYMENT_URL, "_blank", "noopener,noreferrer")}
           className="rounded-none px-10 py-6 text-sm tracking-[0.25em] uppercase font-light transition-elegant shadow-petal"
           style={{ backgroundColor: "#98545B", color: "hsl(var(--primary-foreground))" }}
         >
