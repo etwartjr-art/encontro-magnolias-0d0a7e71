@@ -82,8 +82,8 @@ export const SubscriptionForm = () => {
       description: "Abrindo o formulário de inscrição...",
     });
 
-    if (!formWindow || formWindow.closed || typeof formWindow.closed === "undefined") {
-      window.location.href = FORM_URL;
+    if (!paymentWindow || paymentWindow.closed || typeof paymentWindow.closed === "undefined") {
+      window.location.href = PAYMENT_URL;
     }
   };
 
