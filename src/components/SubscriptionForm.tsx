@@ -126,7 +126,7 @@ export const SubscriptionForm = () => {
         </div>
 
         <Button
-          onClick={() => window.open(FORM_URL, "_blank", "noopener,noreferrer")}
+          onClick={() => window.open(PAYMENT_URL, "_blank", "noopener,noreferrer")}
           className="rounded-none px-10 py-6 text-sm tracking-[0.25em] uppercase font-light transition-elegant shadow-petal"
           style={{ backgroundColor: "#98545B", color: "hsl(var(--primary-foreground))" }}
         >
