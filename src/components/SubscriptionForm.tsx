@@ -54,7 +54,7 @@ export const SubscriptionForm = () => {
       return;
     }
 
-    const formWindow = window.open(FORM_URL, "_blank", "noopener,noreferrer");
+    const paymentWindow = window.open(PAYMENT_URL, "_blank", "noopener,noreferrer");
 
     setLoading(true);
     const { data, error } = await supabase
