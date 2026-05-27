@@ -7,12 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Heart, ExternalLink } from "lucide-react";
-import { formatFullAddress } from "@/lib/eventAddress";
 
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfYBonhqAqs9HaRoo_VhAjPQxmR7DtOe-oVMO31Jy26-Trqew/viewform?usp=dialog";
 
 const subscriptionSchema = z.object({
   full_name: z.string().trim().min(2, { message: "Informe seu nome completo" }).max(120, { message: "Nome muito longo" }),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\(\d{2}\) \d{5}-\d{4}$/, { message: "Informe um celular válido (00) 00000-0000" }),
 });
 
 type SuccessData = {
@@ -20,11 +23,20 @@ type SuccessData = {
   full_name: string;
 };
 
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  const len = digits.length;
+  if (len === 0) return "";
+  if (len < 3) return `(${digits}`;
+  if (len < 8) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
 export const SubscriptionForm = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<SuccessData | null>(null);
-  const [form, setForm] = useState({ full_name: "" });
+  const [form, setForm] = useState({ full_name: "", phone: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,7 +53,6 @@ export const SubscriptionForm = () => {
       return;
     }
 
-    // Open form immediately within the user gesture to avoid popup blockers
     const formWindow = window.open(FORM_URL, "_blank", "noopener,noreferrer");
 
     setLoading(true);
@@ -49,7 +60,7 @@ export const SubscriptionForm = () => {
       .from("subscriptions")
       .insert({
         full_name: result.data.full_name,
-        phone: "",
+        phone: result.data.phone,
       })
       .select("id, full_name")
       .single();
@@ -116,7 +127,7 @@ export const SubscriptionForm = () => {
         <Button
           onClick={() => window.open(FORM_URL, "_blank", "noopener,noreferrer")}
           className="rounded-none px-10 py-6 text-sm tracking-[0.25em] uppercase font-light transition-elegant shadow-petal"
-          style={{ backgroundColor: "hsl(var(--rose-deep))", color: "hsl(var(--primary-foreground))" }}
+          style={{ backgroundColor: "#98545B", color: "hsl(var(--primary-foreground))" }}
         >
           <ExternalLink className="w-4 h-4 mr-2" />
           Reabrir formulário
@@ -140,9 +151,22 @@ export const SubscriptionForm = () => {
           <Input
             id="full_name"
             value={form.full_name}
-            onChange={(e) => setForm({ full_name: e.target.value })}
+            onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
             placeholder="Seu nome"
             maxLength={120}
+            className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
+          />
+        </Field>
+
+        <Field id="phone" label="Número de celular" error={errors.phone}>
+          <Input
+            id="phone"
+            type="tel"
+            inputMode="numeric"
+            value={form.phone}
+            onChange={(e) => setForm((f) => ({ ...f, phone: formatPhone(e.target.value) }))}
+            placeholder="(00) 00000-0000"
+            maxLength={16}
             className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
           />
         </Field>
@@ -152,13 +176,13 @@ export const SubscriptionForm = () => {
         type="submit"
         disabled={loading}
         className="w-full mt-10 rounded-none h-auto min-h-[68px] py-5 px-6 transition-elegant shadow-petal disabled:opacity-70 whitespace-normal"
-        style={{ backgroundColor: "hsl(var(--rose-deep))", color: "hsl(var(--primary-foreground))" }}
+        style={{ backgroundColor: "#98545B", color: "hsl(var(--primary-foreground))" }}
       >
         {loading ? (
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
         ) : (
           <span className="tracking-[0.2em] sm:tracking-[0.3em] uppercase text-sm sm:text-base md:text-lg font-light">
-            Inscrição ​
+            Inscrição — R$ 39,00
           </span>
         )}
       </Button>

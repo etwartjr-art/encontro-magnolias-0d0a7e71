@@ -139,9 +139,6 @@ const Index = () => {
               <h3 className="font-display uppercase tracking-[0.3em] sm:tracking-[0.4em] text-3xl sm:text-4xl md:text-5xl text-rose-deep">
                 Inscrição
               </h3>
-              <p className="mt-3 sm:mt-4 font-display sm:text-3xl text-rose-deep/90 text-4xl">
-                R$39,90
-              </p>
               <p className="mt-3 sm:mt-4 text-sm sm:text-base text-foreground/60 font-light max-w-md mx-auto">
                 Preencha seus dados e venha florescer conosco.
               </p>
