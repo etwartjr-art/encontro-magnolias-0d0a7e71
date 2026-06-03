@@ -128,8 +128,10 @@ const Index = () => {
             <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-4">
               Endereço do Encontro
             </p>
-            <p className="font-display text-xl sm:text-2xl md:text-3xl text-foreground leading-snug">
-              Local a Definir
+            <p className="font-display sm:text-2xl md:text-3xl text-foreground leading-snug font-serif text-lg text-center border-0">
+              Rua T-29 Nº 875, SETOR BUENO<br />
+              GOIÂNIA - GO.<br />
+              RESIDENCIAL SUBLIME
             </p>
           </Reveal>
 
