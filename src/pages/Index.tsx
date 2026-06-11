@@ -129,9 +129,8 @@ const Index = () => {
               Endereço do Encontro
             </p>
             <p className="font-display sm:text-2xl md:text-3xl text-foreground leading-snug font-serif text-lg text-center border-0">
-              Rua T-29 Nº 875, SETOR BUENO<br />
-              GOIÂNIA - GO.<br />
-              RESIDENCIAL SUBLIME
+              RUA T-37 NÚMERO 2962 EDIFÍCIO ART RESIDENCE SETOR BUENO<br />
+              GOIÂNIA - GO.
             </p>
           </Reveal>
 
