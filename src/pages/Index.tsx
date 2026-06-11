@@ -128,7 +128,7 @@ const Index = () => {
             <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-4">
               Endereço do Encontro
             </p>
-            <p className="font-display sm:text-2xl md:text-3xl text-foreground leading-snug font-serif text-lg text-center border-0">
+            <p className="font-['Arial_Black'] text-foreground leading-snug text-lg text-center">
               RUA T-37 NÚMERO 2962 EDIFÍCIO ART RESIDENCE SETOR BUENO<br />
               GOIÂNIA - GO.
             </p>
