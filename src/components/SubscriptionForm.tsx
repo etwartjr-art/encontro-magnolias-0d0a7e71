@@ -223,6 +223,7 @@ export const SubscriptionForm = () => {
 const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void }) => {
   const [status, setStatus] = useState<StatusValue>("pendente");
   const [checking, setChecking] = useState(false);
+  const [ticketToken, setTicketToken] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
 
   const checkoutUrl = data.celular
@@ -231,9 +232,9 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
 
   const fetchStatus = async () => {
     setChecking(true);
-    const { data: row } = await supabase
-      .rpc("verificar_status_inscricao", { p_id: data.id })
-      .maybeSingle();
+    const { data: row } = await supabase.functions.invoke("verificar-status", {
+      body: { id: data.id },
+    });
     setChecking(false);
     if (row?.status) setStatus(row.status as StatusValue);
   };
@@ -250,14 +251,22 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
   const isPaid = status === "pago";
   const isRejected = status === "recusado" || status === "chargeback" || status === "reembolsado";
 
-  const qrPayload = JSON.stringify({
-    evento: "5º Encontro das Magnólias",
-    data: "25/07/2026 - 15:30h",
-    local: "SALÃO DE FESTAS · RUA T-30 Nº 1284, SETOR BUENO\nRESIDENCIAL BUENO PARK · GOIÂNIA - GO.",
-    inscricao: data.id,
-    nome: data.nome,
-    status,
-  });
+  // Solicita ticket assinado ao servidor SOMENTE quando o pagamento está confirmado.
+  // O QR só é válido se o backend concordar que a inscrição está paga.
+  useEffect(() => {
+    if (!isPaid || ticketToken) return;
+    let cancelled = false;
+    (async () => {
+      const { data: res, error } = await supabase.functions.invoke("emitir-ticket", {
+        body: { id: data.id },
+      });
+      if (cancelled) return;
+      if (!error && res?.token) setTicketToken(res.token as string);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isPaid, data.id, ticketToken]);
 
   return (
     <div className="max-w-2xl mx-auto bg-ivory border border-rose-dusty/40 p-8 md:p-14 text-center shadow-petal animate-fade-up">
@@ -279,9 +288,15 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
           : "Finalize o pagamento na aba aberta. Esta tela atualiza automaticamente assim que a Greenn confirmar."}
       </p>
 
-      {isPaid && (
+      {isPaid && ticketToken && (
         <div className="inline-block bg-white p-6 border border-rose-dusty/40 shadow-soft mb-8">
-          <QRCodeSVG value={qrPayload} size={220} level="M" fgColor="#9d4d5a" bgColor="#ffffff" />
+          <QRCodeSVG value={ticketToken} size={220} level="M" fgColor="#9d4d5a" bgColor="#ffffff" />
+        </div>
+      )}
+
+      {isPaid && !ticketToken && (
+        <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-sage mb-8">
+          <Loader2 className="w-3 h-3 animate-spin" /> Gerando ticket seguro...
         </div>
       )}
 
