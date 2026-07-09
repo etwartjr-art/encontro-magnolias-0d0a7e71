@@ -64,15 +64,13 @@ export const SubscriptionForm = () => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return;
     (async () => {
-      const { data, error } = await supabase.functions.invoke("verificar-status", {
-        body: { id: stored },
-      });
-      if (error) return;
-      if (!data?.found) {
+      const { data, error } = await supabase
+        .rpc("verificar_status_inscricao", { p_id: stored })
+        .maybeSingle();
+      if (error || !data) {
         localStorage.removeItem(STORAGE_KEY);
         return;
       }
-      // Só reabre a tela se ainda não paga (para permitir nova inscrição depois).
       setSuccess({
         id: stored,
         nome: data.nome,
