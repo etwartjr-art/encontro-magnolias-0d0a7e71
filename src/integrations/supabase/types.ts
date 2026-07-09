@@ -170,14 +170,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      verificar_status_inscricao: {
-        Args: { _id: string }
-        Returns: {
-          nome: string
-          pago_em: string
-          status: Database["public"]["Enums"]["inscricao_status"]
-        }[]
-      }
     }
     Enums: {
       app_role: "admin" | "user"
