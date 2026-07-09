@@ -16,8 +16,8 @@ const Index = () => {
         <img
           src={bannerImage}
           alt="5º Encontro das Magnólias"
-          width={1600}
-          height={900}
+          width={1280}
+          height={853}
           fetchPriority="high"
           decoding="async"
           className="w-full h-auto object-cover animate-ken-burns will-change-transform scale-110"
