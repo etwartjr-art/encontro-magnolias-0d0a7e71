@@ -105,7 +105,7 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-rose-dusty/30">
             {[
-              { icon: Calendar, label: "Data", value: "27 de Junho", sub: "Sábado" },
+              { icon: Calendar, label: "Data", value: "25 de Julho", sub: "Sábado" },
               { icon: Clock, label: "Horário", value: "15:30h", sub: "" },
               { icon: MapPin, label: "Local", value: "Goiânia", sub: "" },
             ].map(({ icon: Icon, label, value, sub }, i) => (
@@ -229,7 +229,7 @@ const Index = () => {
             Encontro das Magnólias
           </p>
           <p className="text-[10px] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] uppercase text-sage leading-relaxed">
-            Quarta Edição · Goiânia · 27 de Junho · 15:30h
+            Quarta Edição · Goiânia · 25 de Julho · 15:30h
           </p>
         </div>
       </footer>
