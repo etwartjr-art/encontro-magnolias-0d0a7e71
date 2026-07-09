@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Heart, ExternalLink, CheckCircle2, Clock, XCircle } from "lucide-react";
 
-const PAYMENT_BASE_URL = "https://payfast.greenn.com.br/pre-checkout/7pny4c2";
+const PAYMENT_BASE_URL = "https://payfast.greenn.com.br/pre-checkout/jmsez6d";
 const STORAGE_KEY = "magnolias.inscricao.id";
 const VALOR = 39.9;
 
