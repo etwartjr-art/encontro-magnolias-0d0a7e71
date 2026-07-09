@@ -129,7 +129,7 @@ const Index = () => {
               Endereço do Encontro
             </p>
             <p className="font-['Arial_Black'] text-foreground leading-snug text-lg text-center">
-              RUA T-37 NÚMERO 2962 EDIFÍCIO ART RESIDENCE SETOR BUENO<br />
+              RUA T-30 N 1284, SETOR BUENO BUENO PARK RESIDENCIAL<br />
               GOIÂNIA - GO.
             </p>
           </Reveal>
