@@ -64,17 +64,18 @@ export const SubscriptionForm = () => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return;
     (async () => {
-      const { data, error } = await supabase.rpc("verificar_status_inscricao", { _id: stored });
+      const { data, error } = await supabase.functions.invoke("verificar-status", {
+        body: { id: stored },
+      });
       if (error) return;
-      const row = Array.isArray(data) ? data[0] : null;
-      if (!row) {
+      if (!data?.found) {
         localStorage.removeItem(STORAGE_KEY);
         return;
       }
       // Só reabre a tela se ainda não paga (para permitir nova inscrição depois).
       setSuccess({
         id: stored,
-        nome: row.nome,
+        nome: data.nome,
         email: "",
         celular: "",
       });
@@ -232,9 +233,10 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
 
   const fetchStatus = async () => {
     setChecking(true);
-    const { data: rows } = await supabase.rpc("verificar_status_inscricao", { _id: data.id });
+    const { data: row } = await supabase.functions.invoke("verificar-status", {
+      body: { id: data.id },
+    });
     setChecking(false);
-    const row = Array.isArray(rows) ? rows[0] : null;
     if (row?.status) setStatus(row.status as StatusValue);
   };
 
