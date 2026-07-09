@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin } from "lucide-react";
 import bannerImage from "@/assets/magnolia-banner.png";
-import grupoImage from "@/assets/magnolias-grupo.jpeg";
+
 import branchImage from "@/assets/magnolia-branch.png";
 
 import { SubscriptionForm } from "@/components/SubscriptionForm";
