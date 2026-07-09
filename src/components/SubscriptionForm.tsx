@@ -253,7 +253,7 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
   const qrPayload = JSON.stringify({
     evento: "5º Encontro das Magnólias",
     data: "25/07/2026 - 15:30h",
-    local: "RUA T-30 N 1284, SETOR BUENO BUENO PARK RESIDENCIAL\nGOIÂNIA - GO.",
+    local: "SALÃO DE FESTAS · RUA T-30 N 1284, SETOR BUENO BUENO PARK RESIDENCIAL\nGOIÂNIA - GO.",
     inscricao: data.id,
     nome: data.nome,
     status,
@@ -289,7 +289,7 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
         <Row label="Nome" value={data.nome} />
         {data.email && <Row label="E-mail" value={data.email} />}
         <Row label="Data" value="25 de Julho · 15:30h" />
-        <Row label="Local" value="RUA T-30 N 1284 · SETOR BUENO BUENO PARK RESIDENCIAL · GOIÂNIA - GO" />
+        <Row label="Local" value="SALÃO DE FESTAS · RUA T-30 N 1284 · SETOR BUENO BUENO PARK RESIDENCIAL · GOIÂNIA - GO" />
         <Row label="Código" value={data.id.slice(0, 8).toUpperCase()} />
       </div>
 
