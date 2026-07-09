@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.verificar_status_inscricao(uuid);
