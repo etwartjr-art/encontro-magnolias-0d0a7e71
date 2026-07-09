@@ -1,11 +1,14 @@
+import { lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Calendar, Clock, MapPin, Loader2 } from "lucide-react";
 import bannerAsset from "@/assets/magnolia-banner.webp.asset.json";
 const bannerImage = bannerAsset.url;
 
 import branchImage from "@/assets/magnolia-branch.webp";
 
-import { SubscriptionForm } from "@/components/SubscriptionForm";
+const SubscriptionForm = lazy(() =>
+  import("@/components/SubscriptionForm").then((m) => ({ default: m.SubscriptionForm })),
+);
 import { Reveal } from "@/components/Reveal";
 // Endereço não exibido nesta edição — local a definir
 
