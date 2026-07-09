@@ -37,7 +37,9 @@ import {
   DollarSign,
   Clock,
   CheckCircle2,
+  ArrowLeft,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 type StatusInscricao =
   | "pendente"
@@ -337,6 +339,16 @@ const Admin = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="rounded-none uppercase tracking-[0.2em] text-xs"
+            >
+              <Link to="/">
+                <ArrowLeft className="w-4 h-4 mr-2" /> Voltar ao site
+              </Link>
+            </Button>
             <Button
               variant="outline"
               size="sm"
