@@ -9,41 +9,46 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Heart, ExternalLink, CheckCircle2, Clock, XCircle } from "lucide-react";
 
 const PAYMENT_BASE_URL = "https://payfast.greenn.com.br/pre-checkout/7pny4c2";
+const STORAGE_KEY = "magnolias.inscricao.id";
+const VALOR = 39.9;
 
 const subscriptionSchema = z.object({
-  full_name: z.string().trim().min(2, { message: "Informe seu nome completo" }).max(120, { message: "Nome muito longo" }),
+  nome: z.string().trim().min(2, { message: "Informe seu nome completo" }).max(120, { message: "Nome muito longo" }),
   email: z.string().trim().email({ message: "Informe um e-mail válido" }).max(255),
-  phone: z
+  celular: z
     .string()
     .trim()
     .regex(/^\(\d{2}\) \d{5}-\d{4}$/, { message: "Informe um celular válido (00) 00000-0000" }),
 });
 
-type SuccessData = {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string; // digits only
-};
-
 type StatusValue = "pendente" | "pago" | "recusado" | "reembolsado" | "chargeback";
 
-const formatPhone = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-  const len = digits.length;
-  if (len === 0) return "";
-  if (len < 3) return `(${digits}`;
-  if (len < 8) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+type SuccessData = {
+  id: string;
+  nome: string;
+  email: string;
+  celular: string; // 13 dígitos com DDI 55
 };
 
-const onlyDigits = (v: string) => v.replace(/\D/g, "");
+const formatPhoneMask = (value: string) => {
+  const d = value.replace(/\D/g, "").slice(0, 11);
+  if (d.length === 0) return "";
+  if (d.length < 3) return `(${d}`;
+  if (d.length < 8) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+};
 
-const buildCheckoutUrl = (fullName: string, email: string, phoneDigits: string) => {
+// Retorna 13 dígitos: 55 + DDD + número.
+const toE164Digits = (masked: string) => {
+  const d = masked.replace(/\D/g, "");
+  return `55${d}`;
+};
+
+const buildCheckoutUrl = (nome: string, email: string, celular13: string) => {
   const url = new URL(PAYMENT_BASE_URL);
-  url.searchParams.set("fn", fullName);
+  url.searchParams.set("fn", nome);
   url.searchParams.set("em", email);
-  url.searchParams.set("ph", phoneDigits);
+  url.searchParams.set("ph", celular13);
   return url.toString();
 };
 
@@ -51,8 +56,30 @@ export const SubscriptionForm = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<SuccessData | null>(null);
-  const [form, setForm] = useState({ full_name: "", email: "", phone: "" });
+  const [form, setForm] = useState({ nome: "", email: "", celular: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Retoma inscrição pendente salva no navegador.
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return;
+    (async () => {
+      const { data, error } = await supabase.rpc("verificar_status_inscricao", { _id: stored });
+      if (error) return;
+      const row = Array.isArray(data) ? data[0] : null;
+      if (!row) {
+        localStorage.removeItem(STORAGE_KEY);
+        return;
+      }
+      // Só reabre a tela se ainda não paga (para permitir nova inscrição depois).
+      setSuccess({
+        id: stored,
+        nome: row.nome,
+        email: "",
+        celular: "",
+      });
+    })();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,22 +95,23 @@ export const SubscriptionForm = () => {
       return;
     }
 
-    const phoneDigits = onlyDigits(result.data.phone);
+    const celular13 = toE164Digits(result.data.celular);
     const email = result.data.email.toLowerCase();
-    const checkoutUrl = buildCheckoutUrl(result.data.full_name, email, phoneDigits);
+    const checkoutUrl = buildCheckoutUrl(result.data.nome, email, celular13);
 
-    // Abre a aba do checkout antes do await (evita bloqueio de pop-up).
+    // Abre a aba antes do await para não ser bloqueada.
     const paymentWindow = window.open(checkoutUrl, "_blank", "noopener,noreferrer");
 
     setLoading(true);
     const { data, error } = await supabase
       .from("inscricoes")
       .insert({
-        full_name: result.data.full_name,
+        nome: result.data.nome,
         email,
-        phone: phoneDigits,
+        celular: celular13,
+        valor: VALOR,
       })
-      .select("id, full_name, email, phone")
+      .select("id, nome, email, celular")
       .single();
     setLoading(false);
 
@@ -96,11 +124,12 @@ export const SubscriptionForm = () => {
       return;
     }
 
+    localStorage.setItem(STORAGE_KEY, data.id);
     setSuccess({
       id: data.id,
-      full_name: data.full_name,
+      nome: data.nome,
       email: data.email ?? email,
-      phone: data.phone,
+      celular: data.celular,
     });
     toast({
       title: "Inscrição registrada 🌸",
@@ -113,7 +142,16 @@ export const SubscriptionForm = () => {
   };
 
   if (success) {
-    return <SuccessPanel data={success} />;
+    return (
+      <SuccessPanel
+        data={success}
+        onNew={() => {
+          localStorage.removeItem(STORAGE_KEY);
+          setSuccess(null);
+          setForm({ nome: "", email: "", celular: "" });
+        }}
+      />
+    );
   }
 
   return (
@@ -123,11 +161,11 @@ export const SubscriptionForm = () => {
       noValidate
     >
       <div className="space-y-6">
-        <Field id="full_name" label="Nome completo" error={errors.full_name}>
+        <Field id="nome" label="Nome completo" error={errors.nome}>
           <Input
-            id="full_name"
-            value={form.full_name}
-            onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
+            id="nome"
+            value={form.nome}
+            onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
             placeholder="Seu nome"
             maxLength={120}
             className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
@@ -147,13 +185,13 @@ export const SubscriptionForm = () => {
           />
         </Field>
 
-        <Field id="phone" label="Número de celular" error={errors.phone}>
+        <Field id="celular" label="Número de celular" error={errors.celular}>
           <Input
-            id="phone"
+            id="celular"
             type="tel"
             inputMode="numeric"
-            value={form.phone}
-            onChange={(e) => setForm((f) => ({ ...f, phone: formatPhone(e.target.value) }))}
+            value={form.celular}
+            onChange={(e) => setForm((f) => ({ ...f, celular: formatPhoneMask(e.target.value) }))}
             placeholder="(00) 00000-0000"
             maxLength={16}
             className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
@@ -183,18 +221,20 @@ export const SubscriptionForm = () => {
   );
 };
 
-const SuccessPanel = ({ data }: { data: SuccessData }) => {
+const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void }) => {
   const [status, setStatus] = useState<StatusValue>("pendente");
   const [checking, setChecking] = useState(false);
   const timerRef = useRef<number | null>(null);
 
-  const checkoutUrl = buildCheckoutUrl(data.full_name, data.email, data.phone);
+  const checkoutUrl = data.celular
+    ? buildCheckoutUrl(data.nome, data.email, data.celular)
+    : PAYMENT_BASE_URL;
 
   const fetchStatus = async () => {
     setChecking(true);
-    const { data: rows } = await supabase.rpc("get_inscricao_status", { _phone: data.phone });
+    const { data: rows } = await supabase.rpc("verificar_status_inscricao", { _id: data.id });
     setChecking(false);
-    const row = Array.isArray(rows) ? rows[0] : rows;
+    const row = Array.isArray(rows) ? rows[0] : null;
     if (row?.status) setStatus(row.status as StatusValue);
   };
 
@@ -205,7 +245,7 @@ const SuccessPanel = ({ data }: { data: SuccessData }) => {
       if (timerRef.current) window.clearInterval(timerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [data.id]);
 
   const isPaid = status === "pago";
   const isRejected = status === "recusado" || status === "chargeback" || status === "reembolsado";
@@ -215,7 +255,7 @@ const SuccessPanel = ({ data }: { data: SuccessData }) => {
     data: "25/07/2026 - 15:30h",
     local: "RUA T-37 NÚMERO 2962 EDIFÍCIO ART RESIDENCE SETOR BUENO\nGOIÂNIA - GO.",
     inscricao: data.id,
-    nome: data.full_name,
+    nome: data.nome,
     status,
   });
 
@@ -226,7 +266,7 @@ const SuccessPanel = ({ data }: { data: SuccessData }) => {
         {isPaid ? "Vaga confirmada" : "Inscrição registrada"}
       </p>
       <h3 className="font-display text-3xl md:text-5xl text-foreground mb-4">
-        Que alegria, <span className="italic text-rose-deep">{data.full_name.split(" ")[0]}</span>!
+        Que alegria, <span className="italic text-rose-deep">{data.nome.split(" ")[0]}</span>!
       </h3>
 
       <StatusBadge status={status} checking={checking} />
@@ -246,14 +286,14 @@ const SuccessPanel = ({ data }: { data: SuccessData }) => {
       )}
 
       <div className="border-t border-rose-dusty/30 pt-8 mb-8 space-y-3 text-left max-w-sm mx-auto">
-        <Row label="Nome" value={data.full_name} />
-        <Row label="E-mail" value={data.email} />
+        <Row label="Nome" value={data.nome} />
+        {data.email && <Row label="E-mail" value={data.email} />}
         <Row label="Data" value="25 de Julho · 15:30h" />
         <Row label="Local" value="RUA T-37 Nº 2962 · EDIFÍCIO ART RESIDENCE · SETOR BUENO · GOIÂNIA - GO" />
         <Row label="Código" value={data.id.slice(0, 8).toUpperCase()} />
       </div>
 
-      {!isPaid && (
+      {!isPaid && data.celular && (
         <Button
           onClick={() => window.open(checkoutUrl, "_blank", "noopener,noreferrer")}
           className="rounded-none px-10 py-6 text-sm tracking-[0.25em] uppercase font-light transition-elegant shadow-petal"
@@ -264,9 +304,13 @@ const SuccessPanel = ({ data }: { data: SuccessData }) => {
         </Button>
       )}
 
-      <p className="mt-6 text-xs tracking-widest uppercase text-sage">
-        {isPaid ? "Salve esta tela ou tire um print" : "Verificando status automaticamente..."}
-      </p>
+      <button
+        type="button"
+        onClick={onNew}
+        className="block mx-auto mt-6 text-xs tracking-widest uppercase text-sage hover:text-rose-deep transition-colors"
+      >
+        {isPaid ? "Nova inscrição" : "Descartar e recomeçar"}
+      </button>
     </div>
   );
 };
