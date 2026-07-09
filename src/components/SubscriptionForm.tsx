@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Heart, ExternalLink } from "lucide-react";
+import { Loader2, Heart, ExternalLink, CheckCircle2, Clock, XCircle } from "lucide-react";
 
-const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfYBonhqAqs9HaRoo_VhAjPQxmR7DtOe-oVMO31Jy26-Trqew/viewform?usp=dialog";
-const PAYMENT_URL = "https://payfast.greenn.com.br/pre-checkout/7pny4c2";
+const PAYMENT_BASE_URL = "https://payfast.greenn.com.br/pre-checkout/7pny4c2";
 
 const subscriptionSchema = z.object({
   full_name: z.string().trim().min(2, { message: "Informe seu nome completo" }).max(120, { message: "Nome muito longo" }),
+  email: z.string().trim().email({ message: "Informe um e-mail válido" }).max(255),
   phone: z
     .string()
     .trim()
@@ -22,7 +22,11 @@ const subscriptionSchema = z.object({
 type SuccessData = {
   id: string;
   full_name: string;
+  email: string;
+  phone: string; // digits only
 };
+
+type StatusValue = "pendente" | "pago" | "recusado" | "reembolsado" | "chargeback";
 
 const formatPhone = (value: string) => {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -33,11 +37,21 @@ const formatPhone = (value: string) => {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
+const onlyDigits = (v: string) => v.replace(/\D/g, "");
+
+const buildCheckoutUrl = (fullName: string, email: string, phoneDigits: string) => {
+  const url = new URL(PAYMENT_BASE_URL);
+  url.searchParams.set("fn", fullName);
+  url.searchParams.set("em", email);
+  url.searchParams.set("ph", phoneDigits);
+  return url.toString();
+};
+
 export const SubscriptionForm = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<SuccessData | null>(null);
-  const [form, setForm] = useState({ full_name: "", phone: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", phone: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,16 +68,22 @@ export const SubscriptionForm = () => {
       return;
     }
 
-    const paymentWindow = window.open(PAYMENT_URL, "_blank", "noopener,noreferrer");
+    const phoneDigits = onlyDigits(result.data.phone);
+    const email = result.data.email.toLowerCase();
+    const checkoutUrl = buildCheckoutUrl(result.data.full_name, email, phoneDigits);
+
+    // Abre a aba do checkout antes do await (evita bloqueio de pop-up).
+    const paymentWindow = window.open(checkoutUrl, "_blank", "noopener,noreferrer");
 
     setLoading(true);
     const { data, error } = await supabase
-      .from("subscriptions")
+      .from("inscricoes")
       .insert({
         full_name: result.data.full_name,
-        phone: result.data.phone,
+        email,
+        phone: phoneDigits,
       })
-      .select("id, full_name")
+      .select("id, full_name, email, phone")
       .single();
     setLoading(false);
 
@@ -76,69 +96,24 @@ export const SubscriptionForm = () => {
       return;
     }
 
-    setSuccess(data as SuccessData);
+    setSuccess({
+      id: data.id,
+      full_name: data.full_name,
+      email: data.email ?? email,
+      phone: data.phone,
+    });
     toast({
       title: "Inscrição registrada 🌸",
-      description: "Abrindo o formulário de inscrição...",
+      description: "Abrindo o checkout da Greenn...",
     });
 
-    if (!paymentWindow || paymentWindow.closed || typeof paymentWindow.closed === "undefined") {
-      window.location.href = PAYMENT_URL;
+    if (!paymentWindow || paymentWindow.closed) {
+      window.location.href = checkoutUrl;
     }
   };
 
   if (success) {
-    const qrPayload = JSON.stringify({
-      evento: "4º Encontro das Magnólias",
-      data: "27/06/2026 - 15:30h",
-      local: "RUA T-37 NÚMERO 2962 EDIFÍCIO ART RESIDENCE SETOR BUENO\nGOIÂNIA - GO.",
-      inscricao: success.id,
-      nome: success.full_name,
-    });
-
-    return (
-      <div className="max-w-2xl mx-auto bg-ivory border border-rose-dusty/40 p-8 md:p-14 text-center shadow-petal animate-fade-up">
-        <Heart className="w-10 h-10 mx-auto text-rose-deep mb-6" strokeWidth={1.2} />
-        <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-4">Convite de entrada</p>
-        <h3 className="font-display text-3xl md:text-5xl text-foreground mb-4">
-          Que alegria, <span className="italic text-rose-deep">{success.full_name.split(" ")[0]}</span>!
-        </h3>
-        <p className="text-foreground/70 font-light leading-relaxed max-w-md mx-auto mb-10">
-          Sua inscrição foi registrada. Finalize preenchendo o formulário na
-          aba aberta e apresente este QR Code na entrada do evento.
-        </p>
-
-        <div className="inline-block bg-white p-6 border border-rose-dusty/40 shadow-soft mb-8">
-          <QRCodeSVG
-            value={qrPayload}
-            size={220}
-            level="M"
-            fgColor="#9d4d5a"
-            bgColor="#ffffff"
-          />
-        </div>
-
-        <div className="border-t border-rose-dusty/30 pt-8 mb-8 space-y-3 text-left max-w-sm mx-auto">
-          <Row label="Nome" value={success.full_name} />
-          <Row label="Data" value="27 de Junho · 15:30h" />
-          <Row label="Local" value="RUA T-37 NÚMERO 2962 EDIFÍCIO ART RESIDENCE SETOR BUENO, GOIÂNIA - GO" />
-          <Row label="Código" value={success.id.slice(0, 8).toUpperCase()} />
-        </div>
-
-        <Button
-          onClick={() => window.open(PAYMENT_URL, "_blank", "noopener,noreferrer")}
-          className="rounded-none px-10 py-6 text-sm tracking-[0.25em] uppercase font-light transition-elegant shadow-petal"
-          style={{ backgroundColor: "#98545B", color: "hsl(var(--primary-foreground))" }}
-        >
-          <ExternalLink className="w-4 h-4 mr-2" />
-          Reabrir formulário
-        </Button>
-
-        <p className="mt-6 text-xs tracking-widest uppercase text-sage">
-          Salve esta tela ou tire um print
-        </p>
-      </div>
-    );
+    return <SuccessPanel data={success} />;
   }
 
   return (
@@ -155,6 +130,19 @@ export const SubscriptionForm = () => {
             onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
             placeholder="Seu nome"
             maxLength={120}
+            className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
+          />
+        </Field>
+
+        <Field id="email" label="E-mail" error={errors.email}>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={form.email}
+            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            placeholder="voce@email.com"
+            maxLength={255}
             className="rounded-none border-0 border-b border-rose-dusty/50 bg-transparent px-0 focus-visible:ring-0 focus-visible:border-rose-deep h-12 text-base"
           />
         </Field>
@@ -189,9 +177,116 @@ export const SubscriptionForm = () => {
       </Button>
 
       <p className="mt-6 text-center text-xs tracking-widest uppercase text-sage">
-        Inscrição via formulário
+        Pagamento seguro via Greenn
       </p>
     </form>
+  );
+};
+
+const SuccessPanel = ({ data }: { data: SuccessData }) => {
+  const [status, setStatus] = useState<StatusValue>("pendente");
+  const [checking, setChecking] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  const checkoutUrl = buildCheckoutUrl(data.full_name, data.email, data.phone);
+
+  const fetchStatus = async () => {
+    setChecking(true);
+    const { data: rows } = await supabase.rpc("get_inscricao_status", { _phone: data.phone });
+    setChecking(false);
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    if (row?.status) setStatus(row.status as StatusValue);
+  };
+
+  useEffect(() => {
+    fetchStatus();
+    timerRef.current = window.setInterval(fetchStatus, 8000);
+    return () => {
+      if (timerRef.current) window.clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const isPaid = status === "pago";
+  const isRejected = status === "recusado" || status === "chargeback" || status === "reembolsado";
+
+  const qrPayload = JSON.stringify({
+    evento: "5º Encontro das Magnólias",
+    data: "25/07/2026 - 15:30h",
+    local: "RUA T-37 NÚMERO 2962 EDIFÍCIO ART RESIDENCE SETOR BUENO\nGOIÂNIA - GO.",
+    inscricao: data.id,
+    nome: data.full_name,
+    status,
+  });
+
+  return (
+    <div className="max-w-2xl mx-auto bg-ivory border border-rose-dusty/40 p-8 md:p-14 text-center shadow-petal animate-fade-up">
+      <Heart className="w-10 h-10 mx-auto text-rose-deep mb-6" strokeWidth={1.2} />
+      <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-4">
+        {isPaid ? "Vaga confirmada" : "Inscrição registrada"}
+      </p>
+      <h3 className="font-display text-3xl md:text-5xl text-foreground mb-4">
+        Que alegria, <span className="italic text-rose-deep">{data.full_name.split(" ")[0]}</span>!
+      </h3>
+
+      <StatusBadge status={status} checking={checking} />
+
+      <p className="text-foreground/70 font-light leading-relaxed max-w-md mx-auto mt-6 mb-10">
+        {isPaid
+          ? "Seu pagamento foi confirmado. Apresente este QR Code na entrada do evento."
+          : isRejected
+          ? "Não conseguimos confirmar seu pagamento. Você pode tentar novamente pelo botão abaixo."
+          : "Finalize o pagamento na aba aberta. Esta tela atualiza automaticamente assim que a Greenn confirmar."}
+      </p>
+
+      {isPaid && (
+        <div className="inline-block bg-white p-6 border border-rose-dusty/40 shadow-soft mb-8">
+          <QRCodeSVG value={qrPayload} size={220} level="M" fgColor="#9d4d5a" bgColor="#ffffff" />
+        </div>
+      )}
+
+      <div className="border-t border-rose-dusty/30 pt-8 mb-8 space-y-3 text-left max-w-sm mx-auto">
+        <Row label="Nome" value={data.full_name} />
+        <Row label="E-mail" value={data.email} />
+        <Row label="Data" value="25 de Julho · 15:30h" />
+        <Row label="Local" value="RUA T-37 Nº 2962 · EDIFÍCIO ART RESIDENCE · SETOR BUENO · GOIÂNIA - GO" />
+        <Row label="Código" value={data.id.slice(0, 8).toUpperCase()} />
+      </div>
+
+      {!isPaid && (
+        <Button
+          onClick={() => window.open(checkoutUrl, "_blank", "noopener,noreferrer")}
+          className="rounded-none px-10 py-6 text-sm tracking-[0.25em] uppercase font-light transition-elegant shadow-petal"
+          style={{ backgroundColor: "#98545B", color: "hsl(var(--primary-foreground))" }}
+        >
+          <ExternalLink className="w-4 h-4 mr-2" />
+          {isRejected ? "Tentar novamente" : "Reabrir checkout"}
+        </Button>
+      )}
+
+      <p className="mt-6 text-xs tracking-widest uppercase text-sage">
+        {isPaid ? "Salve esta tela ou tire um print" : "Verificando status automaticamente..."}
+      </p>
+    </div>
+  );
+};
+
+const StatusBadge = ({ status, checking }: { status: StatusValue; checking: boolean }) => {
+  const map: Record<StatusValue, { icon: React.ElementType; label: string; className: string }> = {
+    pago: { icon: CheckCircle2, label: "Pagamento confirmado", className: "bg-sage/15 text-sage border-sage/40" },
+    pendente: { icon: Clock, label: "Aguardando pagamento", className: "bg-rose-soft/40 text-rose-deep border-rose-dusty/50" },
+    recusado: { icon: XCircle, label: "Pagamento recusado", className: "bg-destructive/10 text-destructive border-destructive/40" },
+    reembolsado: { icon: XCircle, label: "Pagamento reembolsado", className: "bg-destructive/10 text-destructive border-destructive/40" },
+    chargeback: { icon: XCircle, label: "Chargeback", className: "bg-destructive/10 text-destructive border-destructive/40" },
+  };
+  const cfg = map[status];
+  const Icon = cfg.icon;
+  return (
+    <div className={`inline-flex items-center gap-2 px-4 py-2 border text-xs tracking-[0.2em] uppercase ${cfg.className}`}>
+      <Icon className="w-4 h-4" strokeWidth={1.5} />
+      {cfg.label}
+      {checking && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
+    </div>
   );
 };
 
@@ -218,7 +313,7 @@ const Field = ({
 const Row = ({ label, value }: { label: string; value: string }) => (
   <div className="flex justify-between gap-4 text-sm">
     <span className="uppercase tracking-[0.2em] text-xs text-sage shrink-0">{label}</span>
-    <span className="text-foreground font-light text-right truncate">{value}</span>
+    <span className="text-foreground font-light text-right">{value}</span>
   </div>
 );
 

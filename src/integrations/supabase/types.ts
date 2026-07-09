@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      inscricoes: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          greenn_payload: Json | null
+          greenn_sale_id: string | null
+          id: string
+          paid_at: string | null
+          phone: string
+          status: Database["public"]["Enums"]["inscricao_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          greenn_payload?: Json | null
+          greenn_sale_id?: string | null
+          id?: string
+          paid_at?: string | null
+          phone: string
+          status?: Database["public"]["Enums"]["inscricao_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          greenn_payload?: Json | null
+          greenn_sale_id?: string | null
+          id?: string
+          paid_at?: string | null
+          phone?: string
+          status?: Database["public"]["Enums"]["inscricao_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -67,6 +106,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_inscricao_status: {
+        Args: { _phone: string }
+        Returns: {
+          full_name: string
+          paid_at: string
+          status: Database["public"]["Enums"]["inscricao_status"]
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -77,6 +124,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      inscricao_status:
+        | "pendente"
+        | "pago"
+        | "recusado"
+        | "reembolsado"
+        | "chargeback"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -205,6 +258,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      inscricao_status: [
+        "pendente",
+        "pago",
+        "recusado",
+        "reembolsado",
+        "chargeback",
+      ],
     },
   },
 } as const
