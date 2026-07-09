@@ -149,33 +149,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* GRUPO PHOTO */}
-      <section className="py-16 sm:py-24 md:py-32 px-5 sm:px-6 bg-ivory">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 sm:gap-12 md:gap-20 items-center">
-          <Reveal variant="left" className="relative">
-            <div className="absolute -inset-3 sm:-inset-4 bg-rose-soft/40 -z-10" />
-            <img
-              src={grupoImage}
-              alt="Mulheres do grupo Magnólias"
-              className="w-full h-auto object-cover shadow-petal"
-              loading="lazy"
-            />
-          </Reveal>
-
-          <Reveal variant="right" delay={150} className="text-center md:text-left">
-            <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-4 sm:mb-6">Magnólias</p>
-            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl text-foreground mb-6 sm:mb-8 leading-tight">
-              Mulheres que florescem na <span className="italic text-rose-deep">presença de Deus</span>
-            </h2>
-            <p className="text-foreground/70 text-sm sm:text-base md:text-lg leading-relaxed font-light mb-5 sm:mb-6">
-              Venha fazer parte desse momento especial.
-            </p>
-            <p className="font-display italic text-xl sm:text-2xl md:text-3xl text-rose-deep leading-snug">
-              Você é preciosa, escolhida e chamada para florescer.
-            </p>
-          </Reveal>
-        </div>
-      </section>
 
       {/* INVITATION CTA */}
       <section className="relative py-20 sm:py-28 md:py-36 px-5 sm:px-6 gradient-soft overflow-hidden">
