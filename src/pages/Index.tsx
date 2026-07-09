@@ -204,6 +204,12 @@ const Index = () => {
           <p className="text-[10px] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] uppercase text-sage leading-relaxed">
             QUINTA EDIÇÃO · GOIÂNIA · 25 DE JULHO · 15:30H
           </p>
+          <a
+            href="/admin"
+            className="mt-6 inline-block text-[10px] tracking-[0.3em] uppercase text-sage/50 hover:text-rose-deep transition-elegant"
+          >
+            Admin
+          </a>
         </div>
       </footer>
     </div>
