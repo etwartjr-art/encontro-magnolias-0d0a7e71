@@ -74,19 +74,20 @@ Deno.serve(async (req) => {
   }
 
   // Valida token secreto na URL (?token=...) — a Greenn não assina o payload.
+  // Fail-closed: se o segredo não estiver configurado, rejeita tudo.
   const expectedToken = Deno.env.get("GREENN_WEBHOOK_TOKEN");
-  if (expectedToken) {
-    const url = new URL(req.url);
-    const providedToken =
-      url.searchParams.get("token") ||
-      req.headers.get("x-webhook-token") ||
-      "";
-    if (providedToken !== expectedToken) {
-      console.warn("greenn-webhook: token inválido ou ausente");
-      return json({ error: "unauthorized" }, 401);
-    }
-  } else {
-    console.warn("greenn-webhook: GREENN_WEBHOOK_TOKEN não configurado — aceitando sem validação");
+  if (!expectedToken) {
+    console.error("greenn-webhook: GREENN_WEBHOOK_TOKEN não configurado — rejeitando requisição");
+    return json({ error: "server_misconfigured" }, 503);
+  }
+  const url = new URL(req.url);
+  const providedToken =
+    url.searchParams.get("token") ||
+    req.headers.get("x-webhook-token") ||
+    "";
+  if (providedToken !== expectedToken) {
+    console.warn("greenn-webhook: token inválido ou ausente");
+    return json({ error: "unauthorized" }, 401);
   }
 
   let payload: Record<string, unknown> = {};
