@@ -26,7 +26,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LogOut, Users, FileJson, RefreshCw } from "lucide-react";
+import {
+  Loader2,
+  LogOut,
+  Users,
+  FileJson,
+  RefreshCw,
+  Download,
+  Pencil,
+  DollarSign,
+  Clock,
+  CheckCircle2,
+} from "lucide-react";
 
 type StatusInscricao =
   | "pendente"
@@ -70,6 +81,14 @@ const STATUS_OPTIONS: { value: StatusInscricao | "todos"; label: string }[] = [
   { value: "chargeback", label: "Chargeback" },
 ];
 
+const EDITABLE_STATUSES: StatusInscricao[] = [
+  "pendente",
+  "pago",
+  "recusado",
+  "reembolsado",
+  "chargeback",
+];
+
 const statusVariant = (s: StatusInscricao) => {
   switch (s) {
     case "pago":
@@ -87,6 +106,11 @@ const statusVariant = (s: StatusInscricao) => {
 const formatBRL = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+const csvEscape = (v: unknown) => {
+  const s = v == null ? "" : String(v);
+  return `"${s.replace(/"/g, '""')}"`;
+};
+
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -99,6 +123,7 @@ const Admin = () => {
   const [selected, setSelected] = useState<Inscricao | null>(null);
   const [logs, setLogs] = useState<WebhookLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [savingStatus, setSavingStatus] = useState<string | null>(null);
 
   const loadData = async () => {
     const { data, error } = await supabase
@@ -173,6 +198,17 @@ const Admin = () => {
     return c;
   }, [items]);
 
+  const stats = useMemo(() => {
+    const pagas = items.filter((i) => i.status === "pago");
+    const receita = pagas.reduce((sum, i) => sum + Number(i.valor), 0);
+    return {
+      total: items.length,
+      pagas: pagas.length,
+      pendentes: items.filter((i) => i.status === "pendente").length,
+      receita,
+    };
+  }, [items]);
+
   const openDetails = async (inscricao: Inscricao) => {
     setSelected(inscricao);
     setLogs([]);
@@ -208,6 +244,81 @@ const Admin = () => {
     navigate("/auth", { replace: true });
   };
 
+  const updateStatus = async (id: string, novo: StatusInscricao) => {
+    setSavingStatus(id);
+    const patch: Record<string, unknown> = { status: novo };
+    if (novo === "pago") patch.pago_em = new Date().toISOString();
+    const { error } = await supabase
+      .from("inscricoes")
+      .update(patch)
+      .eq("id", id);
+    setSavingStatus(null);
+    if (error) {
+      toast({
+        title: "Erro ao atualizar",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({ title: "Status atualizado" });
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === id
+          ? {
+              ...i,
+              status: novo,
+              pago_em:
+                novo === "pago"
+                  ? (patch.pago_em as string)
+                  : novo === "pendente"
+                  ? null
+                  : i.pago_em,
+            }
+          : i
+      )
+    );
+  };
+
+  const exportCSV = () => {
+    const headers = [
+      "Data",
+      "Nome",
+      "Email",
+      "Celular",
+      "Valor",
+      "Status",
+      "Método",
+      "Pago em",
+      "Greenn Sale ID",
+    ];
+    const rows = filtered.map((i) => [
+      new Date(i.criado_em).toLocaleString("pt-BR"),
+      i.nome,
+      i.email,
+      i.celular,
+      Number(i.valor).toFixed(2).replace(".", ","),
+      i.status,
+      i.metodo_pagamento ?? "",
+      i.pago_em ? new Date(i.pago_em).toLocaleString("pt-BR") : "",
+      i.greenn_sale_id ?? "",
+    ]);
+    const csv =
+      "\uFEFF" +
+      [headers, ...rows]
+        .map((r) => r.map(csvEscape).join(";"))
+        .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `inscricoes-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <main className="min-h-screen bg-background px-4 py-10">
       <div className="max-w-6xl mx-auto">
@@ -237,6 +348,15 @@ const Admin = () => {
               Atualizar
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              onClick={exportCSV}
+              disabled={filtered.length === 0}
+              className="rounded-none uppercase tracking-[0.2em] text-xs"
+            >
+              <Download className="w-4 h-4 mr-2" /> Exportar CSV
+            </Button>
+            <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
@@ -246,6 +366,30 @@ const Admin = () => {
             </Button>
           </div>
         </header>
+
+        {/* STATS */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+          <StatCard
+            icon={Users}
+            label="Inscrições"
+            value={String(stats.total)}
+          />
+          <StatCard
+            icon={CheckCircle2}
+            label="Pagas"
+            value={String(stats.pagas)}
+          />
+          <StatCard
+            icon={Clock}
+            label="Pendentes"
+            value={String(stats.pendentes)}
+          />
+          <StatCard
+            icon={DollarSign}
+            label="Receita (pagas)"
+            value={formatBRL(stats.receita)}
+          />
+        </div>
 
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="w-56">
@@ -315,12 +459,36 @@ const Admin = () => {
                       {formatBRL(Number(i.valor))}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={statusVariant(i.status)}
-                        className="uppercase tracking-wider text-[10px]"
-                      >
-                        {i.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={statusVariant(i.status)}
+                          className="uppercase tracking-wider text-[10px]"
+                        >
+                          {i.status}
+                        </Badge>
+                        <Select
+                          value={i.status}
+                          onValueChange={(v) =>
+                            updateStatus(i.id, v as StatusInscricao)
+                          }
+                          disabled={savingStatus === i.id}
+                        >
+                          <SelectTrigger className="rounded-none h-7 w-8 p-0 border-none bg-transparent hover:bg-muted [&>svg:last-child]:hidden justify-center">
+                            {savingStatus === i.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                            )}
+                          </SelectTrigger>
+                          <SelectContent>
+                            {EDITABLE_STATUSES.map((s) => (
+                              <SelectItem key={s} value={s}>
+                                {s}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </TableCell>
                     <TableCell className="text-xs text-foreground/70 whitespace-nowrap">
                       {i.pago_em
@@ -450,5 +618,23 @@ const Admin = () => {
     </main>
   );
 };
+
+const StatCard = ({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  label: string;
+  value: string;
+}) => (
+  <div className="bg-ivory border border-rose-dusty/40 p-4 shadow-soft">
+    <div className="flex items-center gap-2 mb-2 text-rose-deep">
+      <Icon className="w-4 h-4" strokeWidth={1.4} />
+      <p className="uppercase tracking-[0.2em] text-[10px]">{label}</p>
+    </div>
+    <p className="font-display text-2xl md:text-3xl text-foreground">{value}</p>
+  </div>
+);
 
 export default Admin;
