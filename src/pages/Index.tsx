@@ -36,7 +36,7 @@ const Index = () => {
           </p>
           <div className="flex items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8">
             <span className="h-px w-8 sm:w-12 bg-rose-dusty" />
-            <span className="font-display italic text-rose-dusty text-base sm:text-lg">quarta edição</span>
+            <span className="font-display italic text-rose-dusty text-base sm:text-lg">quinta edição</span>
             <span className="h-px w-8 sm:w-12 bg-rose-dusty" />
           </div>
 
@@ -229,7 +229,7 @@ const Index = () => {
             Encontro das Magnólias
           </p>
           <p className="text-[10px] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] uppercase text-sage leading-relaxed">
-            Quarta Edição · Goiânia · 25 de Julho · 15:30h
+            QUINTA EDIÇÃO · GOIÂNIA · 25 DE JULHO · 15:30H
           </p>
         </div>
       </footer>
