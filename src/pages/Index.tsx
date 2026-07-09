@@ -15,7 +15,7 @@ const Index = () => {
       <header className="relative w-full overflow-hidden">
         <img
           src={bannerImage}
-          alt="4º Encontro das Magnólias"
+          alt="5º Encontro das Magnólias"
           className="w-full h-auto object-cover animate-ken-burns will-change-transform scale-110"
         />
         <div
@@ -47,7 +47,7 @@ const Index = () => {
           </h1>
 
           <p className="text-foreground/70 text-sm sm:text-base md:text-lg leading-relaxed font-light">
-            Para o nosso quarto encontro, um momento preparado com muito{" "}
+            Para o nosso quinto encontro, um momento preparado com muito{" "}
             <span className="italic text-rose-deep">amor, fé e propósito</span>.
             Um tempo para mulheres que desejam crescer em Deus, fortalecer
             laços e viver o extraordinário dEle.
