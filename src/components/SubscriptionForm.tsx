@@ -231,9 +231,9 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
 
   const fetchStatus = async () => {
     setChecking(true);
-    const { data: row } = await supabase.functions.invoke("verificar-status", {
-      body: { id: data.id },
-    });
+    const { data: row } = await supabase
+      .rpc("verificar_status_inscricao", { p_id: data.id })
+      .maybeSingle();
     setChecking(false);
     if (row?.status) setStatus(row.status as StatusValue);
   };
