@@ -99,6 +99,13 @@ Deno.serve(async (req) => {
 
   console.log("greenn-webhook payload:", JSON.stringify(payload));
 
+  // Processa apenas eventos de venda atualizados
+  const eventType = String(pick(payload, ["type"]) ?? "").toLowerCase().trim();
+  const eventName = String(pick(payload, ["event"]) ?? "").toLowerCase().trim();
+  if (eventType !== "sale" || eventName !== "saleupdated") {
+    return json({ ok: true, ignored: true, reason: "evento_nao_sale_updated", eventType, eventName });
+  }
+
   const rawStatus = String(
     pick(payload, ["currentStatus", "current_status", "status", "sale_status", "payment_status"]) ?? "",
   )
