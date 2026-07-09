@@ -14,42 +14,99 @@ export type Database = {
   }
   public: {
     Tables: {
+      greenn_webhook_logs: {
+        Row: {
+          criado_em: string
+          erro: string | null
+          event_hash: string | null
+          greenn_sale_id: string | null
+          id: string
+          inscricao_id: string | null
+          payload: Json
+          processado: boolean
+          status_mapeado: Database["public"]["Enums"]["inscricao_status"] | null
+          status_recebido: string | null
+        }
+        Insert: {
+          criado_em?: string
+          erro?: string | null
+          event_hash?: string | null
+          greenn_sale_id?: string | null
+          id?: string
+          inscricao_id?: string | null
+          payload: Json
+          processado?: boolean
+          status_mapeado?:
+            | Database["public"]["Enums"]["inscricao_status"]
+            | null
+          status_recebido?: string | null
+        }
+        Update: {
+          criado_em?: string
+          erro?: string | null
+          event_hash?: string | null
+          greenn_sale_id?: string | null
+          id?: string
+          inscricao_id?: string | null
+          payload?: Json
+          processado?: boolean
+          status_mapeado?:
+            | Database["public"]["Enums"]["inscricao_status"]
+            | null
+          status_recebido?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "greenn_webhook_logs_inscricao_id_fkey"
+            columns: ["inscricao_id"]
+            isOneToOne: false
+            referencedRelation: "inscricoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inscricoes: {
         Row: {
-          created_at: string
+          atualizado_em: string
+          celular: string
+          criado_em: string
           email: string
-          full_name: string
           greenn_payload: Json | null
           greenn_sale_id: string | null
           id: string
-          paid_at: string | null
-          phone: string
+          metodo_pagamento: string | null
+          nome: string
+          pago_em: string | null
           status: Database["public"]["Enums"]["inscricao_status"]
-          updated_at: string
+          valor: number
         }
         Insert: {
-          created_at?: string
+          atualizado_em?: string
+          celular: string
+          criado_em?: string
           email: string
-          full_name: string
           greenn_payload?: Json | null
           greenn_sale_id?: string | null
           id?: string
-          paid_at?: string | null
-          phone: string
+          metodo_pagamento?: string | null
+          nome: string
+          pago_em?: string | null
           status?: Database["public"]["Enums"]["inscricao_status"]
-          updated_at?: string
+          valor?: number
         }
         Update: {
-          created_at?: string
+          atualizado_em?: string
+          celular?: string
+          criado_em?: string
           email?: string
-          full_name?: string
           greenn_payload?: Json | null
           greenn_sale_id?: string | null
           id?: string
-          paid_at?: string | null
-          phone?: string
+          metodo_pagamento?: string | null
+          nome?: string
+          pago_em?: string | null
           status?: Database["public"]["Enums"]["inscricao_status"]
-          updated_at?: string
+          valor?: number
         }
         Relationships: []
       }
@@ -106,20 +163,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_inscricao_status: {
-        Args: { _phone: string }
-        Returns: {
-          full_name: string
-          paid_at: string
-          status: Database["public"]["Enums"]["inscricao_status"]
-        }[]
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      verificar_status_inscricao: {
+        Args: { _id: string }
+        Returns: {
+          nome: string
+          pago_em: string
+          status: Database["public"]["Enums"]["inscricao_status"]
+        }[]
       }
     }
     Enums: {
