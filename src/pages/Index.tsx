@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin } from "lucide-react";
-import bannerImage from "@/assets/magnolia-banner.webp";
+import bannerAsset from "@/assets/magnolia-banner.webp.asset.json";
+const bannerImage = bannerAsset.url;
 
 import branchImage from "@/assets/magnolia-branch.webp";
 
