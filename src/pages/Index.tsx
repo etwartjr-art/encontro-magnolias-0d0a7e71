@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin } from "lucide-react";
-import bannerImage from "@/assets/magnolia-banner.png";
+import bannerImage from "@/assets/magnolia-banner.webp";
 
-import branchImage from "@/assets/magnolia-branch.png";
+import branchImage from "@/assets/magnolia-branch.webp";
 
 import { SubscriptionForm } from "@/components/SubscriptionForm";
 import { Reveal } from "@/components/Reveal";
@@ -16,6 +16,10 @@ const Index = () => {
         <img
           src={bannerImage}
           alt="5º Encontro das Magnólias"
+          width={1280}
+          height={853}
+          fetchPriority="high"
+          decoding="async"
           className="w-full h-auto object-cover animate-ken-burns will-change-transform scale-110"
         />
         <div
