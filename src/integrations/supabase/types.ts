@@ -163,7 +163,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      verificar_status_inscricao: {
+        Args: { p_id: string }
+        Returns: {
+          nome: string
+          status: Database["public"]["Enums"]["inscricao_status"]
+          valor: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"
