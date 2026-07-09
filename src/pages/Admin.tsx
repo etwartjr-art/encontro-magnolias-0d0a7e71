@@ -626,7 +626,8 @@ const StatCard = ({
   label,
   value,
 }: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  icon: any;
   label: string;
   value: string;
 }) => (
