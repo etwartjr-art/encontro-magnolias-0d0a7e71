@@ -2,7 +2,9 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import Index from "./pages/Index.tsx";
-import { InstallPrompt } from "@/components/InstallPrompt";
+const InstallPrompt = lazy(() =>
+  import("@/components/InstallPrompt").then((m) => ({ default: m.InstallPrompt })),
+);
 
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const Auth = lazy(() => import("./pages/Auth.tsx"));
@@ -20,7 +22,9 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
-      <InstallPrompt />
+      <Suspense fallback={null}>
+        <InstallPrompt />
+      </Suspense>
     </BrowserRouter>
   </>
 );
