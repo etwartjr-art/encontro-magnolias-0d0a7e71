@@ -152,7 +152,15 @@ const Index = () => {
                 Preencha seus dados e venha florescer conosco.
               </p>
             </div>
-            <SubscriptionForm />
+            <Suspense
+              fallback={
+                <div className="max-w-xl mx-auto bg-ivory border border-rose-dusty/40 p-12 flex justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-rose-deep" />
+                </div>
+              }
+            >
+              <SubscriptionForm />
+            </Suspense>
           </div>
         </div>
       </section>
