@@ -246,8 +246,10 @@ const Admin = () => {
 
   const updateStatus = async (id: string, novo: StatusInscricao) => {
     setSavingStatus(id);
-    const patch: Record<string, unknown> = { status: novo };
-    if (novo === "pago") patch.pago_em = new Date().toISOString();
+    const pagoEmNovo =
+      novo === "pago" ? new Date().toISOString() : novo === "pendente" ? null : undefined;
+    const patch: { status: StatusInscricao; pago_em?: string | null } = { status: novo };
+    if (pagoEmNovo !== undefined) patch.pago_em = pagoEmNovo;
     const { error } = await supabase
       .from("inscricoes")
       .update(patch)
