@@ -73,6 +73,22 @@ Deno.serve(async (req) => {
     return json({ error: "method_not_allowed" }, 405);
   }
 
+  // Valida token secreto na URL (?token=...) — a Greenn não assina o payload.
+  const expectedToken = Deno.env.get("GREENN_WEBHOOK_TOKEN");
+  if (expectedToken) {
+    const url = new URL(req.url);
+    const providedToken =
+      url.searchParams.get("token") ||
+      req.headers.get("x-webhook-token") ||
+      "";
+    if (providedToken !== expectedToken) {
+      console.warn("greenn-webhook: token inválido ou ausente");
+      return json({ error: "unauthorized" }, 401);
+    }
+  } else {
+    console.warn("greenn-webhook: GREENN_WEBHOOK_TOKEN não configurado — aceitando sem validação");
+  }
+
   let payload: Record<string, unknown> = {};
   try {
     payload = await req.json();
@@ -82,7 +98,9 @@ Deno.serve(async (req) => {
 
   console.log("greenn-webhook payload:", JSON.stringify(payload));
 
-  const rawStatus = String(pick(payload, ["status", "sale_status", "payment_status"]) ?? "")
+  const rawStatus = String(
+    pick(payload, ["currentStatus", "current_status", "status", "sale_status", "payment_status"]) ?? "",
+  )
     .toLowerCase()
     .trim();
   const statusMapeado = STATUS_MAP[rawStatus] ?? null;
