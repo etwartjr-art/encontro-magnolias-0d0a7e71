@@ -1,9 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin, Loader2 } from "lucide-react";
-import bannerAsset from "@/assets/magnolia-banner.webp.asset.json";
-const bannerImage = bannerAsset.url;
-
 import branchImage from "@/assets/magnolia-branch.webp";
 
 const SubscriptionForm = lazy(() =>
@@ -18,7 +15,9 @@ const Index = () => {
       {/* HERO BANNER */}
       <header className="relative w-full overflow-hidden">
         <img
-          src={bannerImage}
+          src="/img/magnolia-banner-640.webp"
+          srcSet="/img/magnolia-banner-640.webp 640w, /img/magnolia-banner-960.webp 960w, /__l5e/assets-v1/9439e6ea-9e02-4269-b4e5-431488f11ed7/magnolia-banner.webp 1280w"
+          sizes="100vw"
           alt="5º Encontro das Magnólias"
           width={1280}
           height={853}
