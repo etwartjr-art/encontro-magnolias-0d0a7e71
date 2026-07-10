@@ -102,19 +102,16 @@ export const SubscriptionForm = () => {
     const paymentWindow = window.open(checkoutUrl, "_blank", "noopener,noreferrer");
 
     setLoading(true);
-    const { data, error } = await supabase
-      .from("inscricoes")
-      .insert({
+    const { data, error } = await supabase.functions.invoke("criar-inscricao", {
+      body: {
         nome: result.data.nome,
         email,
         celular: celular13,
-        valor: VALOR,
-      })
-      .select("id, nome, email, celular")
-      .single();
+      },
+    });
     setLoading(false);
 
-    if (error || !data) {
+    if (error || !data?.id) {
       toast({
         title: "Não foi possível enviar",
         description: "Tente novamente em instantes.",
