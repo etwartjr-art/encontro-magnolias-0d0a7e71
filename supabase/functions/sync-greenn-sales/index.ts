@@ -47,26 +47,25 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST" && req.method !== "GET") return json({ error: "method_not_allowed" }, 405);
 
-  // Autenticação: exige usuário admin logado
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-  if (!token) return json({ error: "no_auth" }, 401);
-  const { data: userRes, error: userErr } = await admin.auth.getUser(token);
-  if (userErr || !userRes?.user) return json({ error: "invalid_auth" }, 401);
-  const { data: isAdmin } = await admin.rpc("has_role", { _user_id: userRes.user.id, _role: "admin" }).catch(() => ({ data: null }));
-  // Fallback: consulta direta se has_role não estiver disponível como RPC
-  let admOk = Boolean(isAdmin);
-  if (!admOk) {
-    const { data: r } = await admin.from("user_roles").select("id").eq("user_id", userRes.user.id).eq("role", "admin").maybeSingle();
-    admOk = Boolean(r);
-  }
-  if (!admOk) return json({ error: "forbidden" }, 403);
-
   const apiKey = Deno.env.get("GREENN_API_KEY");
   if (!apiKey) return json({ error: "missing_GREENN_API_KEY" }, 503);
 
   const url = new URL(req.url);
   const discover = url.searchParams.get("discover") === "1";
+
+  // Auth: obrigatória exceto no modo discover (que só ecoa a resposta da Greenn, sem tocar no DB)
+  if (!discover) {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+    if (!token) return json({ error: "no_auth" }, 401);
+    const { data: userRes, error: userErr } = await admin.auth.getUser(token);
+    if (userErr || !userRes?.user) return json({ error: "invalid_auth" }, 401);
+    let admOk = false;
+    const { data: r } = await admin.from("user_roles").select("id").eq("user_id", userRes.user.id).eq("role", "admin").maybeSingle();
+    admOk = Boolean(r);
+    if (!admOk) return json({ error: "forbidden" }, 403);
+  }
+
 
   // Tenta endpoint principal /sales. Se a API real usar outro path, o discover ajuda a descobrir.
   const resp = await fetch(`${GREENN_API}/sales?limit=100`, {
