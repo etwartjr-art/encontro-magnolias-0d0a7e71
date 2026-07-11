@@ -182,6 +182,7 @@ const Admin = () => {
   const [syncRuns, setSyncRuns] = useState<SyncRun[]>([]);
   const [loadingSync, setLoadingSync] = useState(true);
   const [triggeringSync, setTriggeringSync] = useState(false);
+  const [webhookAlerts, setWebhookAlerts] = useState<WebhookLog[]>([]);
 
   const loadSyncRuns = async () => {
     const { data, error } = await supabase
@@ -193,6 +194,21 @@ const Admin = () => {
       .limit(10);
     if (!error) setSyncRuns((data ?? []) as unknown as SyncRun[]);
     setLoadingSync(false);
+  };
+
+  const loadWebhookAlerts = async () => {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data } = await supabase
+      .from("greenn_webhook_logs")
+      .select("id, criado_em, processado, status_recebido, status_mapeado, greenn_sale_id, erro, payload")
+      .gte("criado_em", since)
+      .order("criado_em", { ascending: false })
+      .limit(100);
+    const rows = (data ?? []) as WebhookLog[];
+    const problems = rows.filter(
+      (r) => (r.status_recebido ?? "").startsWith("__") || (r.erro && !r.processado),
+    );
+    setWebhookAlerts(problems);
   };
 
   const triggerSync = async () => {
