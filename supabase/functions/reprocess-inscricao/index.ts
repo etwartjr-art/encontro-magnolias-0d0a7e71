@@ -9,7 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const GREENN_API = Deno.env.get("GREENN_API_BASE") ?? "https://api.greenn.com.br/v1";
+const GREENN_API = Deno.env.get("GREENN_API_BASE") ?? "https://api.gdigital.com.br";
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -50,6 +50,7 @@ function json(body: unknown, status = 200) {
 }
 
 Deno.serve(async (req) => {
+  try {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
@@ -244,6 +245,17 @@ Deno.serve(async (req) => {
     atualizadas: 1,
   });
   return json({ ok: true, acao: "atualizada", match_rule: matchRule, saleId });
+  } catch (e) {
+    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    console.error("reprocess-inscricao unhandled error", msg);
+    try {
+      await recordRun({
+        sucesso: false, erro: `unhandled: ${msg}`.slice(0, 500), startedAt: Date.now(),
+        detalhes: [{ acao: "erro_reprocesso", erro: msg }],
+      });
+    } catch { /* ignore */ }
+    return json({ error: "unhandled_exception", message: msg }, 500);
+  }
 });
 
 async function recordRun(opts: {
