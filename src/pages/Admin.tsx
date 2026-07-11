@@ -1063,11 +1063,17 @@ const DetalheCard = ({
   d,
   ruleLabel,
   ruleBadge,
+  onReprocess,
+  reprocessingId,
 }: {
   d: SyncDetalhe;
   ruleLabel: Record<SyncMatchRule, string>;
   ruleBadge: (r: SyncMatchRule) => "default" | "secondary" | "outline" | "destructive";
+  onReprocess: (inscricaoId: string) => void;
+  reprocessingId: string | null;
 }) => {
+  const canReprocess = Boolean(d.id) && (d.acao?.startsWith("erro") ?? false);
+  const isReprocessing = reprocessingId === d.id;
   const rule = (d.match_rule ?? "none") as SyncMatchRule;
   const insc = d.inscricao;
   const buyer = d.buyer;
