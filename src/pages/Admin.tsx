@@ -169,7 +169,7 @@ const Admin = () => {
     const { data, error } = await supabase
       .from("sync_runs" as never)
       .select(
-        "id, iniciado_em, finalizado_em, duracao_ms, origem, sucesso, total, criadas, atualizadas, ignoradas, erros, erro_mensagem, http_status"
+        "id, iniciado_em, finalizado_em, duracao_ms, origem, sucesso, total, criadas, atualizadas, ignoradas, erros, erro_mensagem, http_status, detalhes"
       )
       .order("iniciado_em", { ascending: false })
       .limit(10);
