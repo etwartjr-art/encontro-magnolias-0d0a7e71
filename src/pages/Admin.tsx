@@ -146,6 +146,40 @@ const Admin = () => {
   const [logs, setLogs] = useState<WebhookLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [savingStatus, setSavingStatus] = useState<string | null>(null);
+  const [syncRuns, setSyncRuns] = useState<SyncRun[]>([]);
+  const [loadingSync, setLoadingSync] = useState(true);
+  const [triggeringSync, setTriggeringSync] = useState(false);
+
+  const loadSyncRuns = async () => {
+    const { data, error } = await supabase
+      .from("sync_runs" as never)
+      .select(
+        "id, iniciado_em, finalizado_em, duracao_ms, origem, sucesso, total, criadas, atualizadas, ignoradas, erros, erro_mensagem, http_status"
+      )
+      .order("iniciado_em", { ascending: false })
+      .limit(10);
+    if (!error) setSyncRuns((data ?? []) as unknown as SyncRun[]);
+    setLoadingSync(false);
+  };
+
+  const triggerSync = async () => {
+    setTriggeringSync(true);
+    const { error } = await supabase.functions.invoke("sync-greenn-sales", {
+      method: "POST",
+    });
+    if (error) {
+      toast({
+        title: "Erro ao sincronizar",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: "Sincronização executada" });
+      await loadData();
+    }
+    await loadSyncRuns();
+    setTriggeringSync(false);
+  };
 
   const loadData = async () => {
     const { data, error } = await supabase
@@ -165,6 +199,7 @@ const Admin = () => {
       setItems((data ?? []) as Inscricao[]);
     }
   };
+
 
   useEffect(() => {
     let active = true;
