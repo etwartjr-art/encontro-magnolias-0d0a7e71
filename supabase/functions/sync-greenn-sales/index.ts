@@ -63,7 +63,31 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const discover = url.searchParams.get("discover") === "1";
+  const probe = url.searchParams.get("probe") === "1";
   if (discover) origem = "discover";
+
+  // Auth OBRIGATÓRIA para TODOS os modos (inclusive discover/probe) — esses modos de debug
+  // consomem a API real da Greenn com credenciais do servidor e não podem ser acionados
+  // anonimamente. Aceita admin JWT ou header X-Cron-Secret.
+  {
+    const cronSecret = Deno.env.get("SYNC_CRON_SECRET");
+    const internalToken = Deno.env.get("SYNC_INTERNAL_TOKEN");
+    const providedCron = req.headers.get("x-cron-secret") ?? "";
+    const isCron =
+      (Boolean(cronSecret) && providedCron === cronSecret) ||
+      (Boolean(internalToken) && providedCron === internalToken);
+    if (!discover) origem = isCron ? "cron" : "manual";
+
+    if (!isCron) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+      if (!token) return json({ error: "no_auth" }, 401);
+      const { data: userRes, error: userErr } = await admin.auth.getUser(token);
+      if (userErr || !userRes?.user) return json({ error: "invalid_auth" }, 401);
+      const { data: r } = await admin.from("user_roles").select("id").eq("user_id", userRes.user.id).eq("role", "admin").maybeSingle();
+      if (!r) return json({ error: "forbidden" }, 403);
+    }
+  }
 
   // Modo webhook-only: pula a chamada à API da Greenn e confia apenas no webhook saleUpdated
   // para atualizar pagamentos. Útil quando a API pública está inacessível (DNS/timeout).
@@ -74,10 +98,10 @@ Deno.serve(async (req) => {
   const webhookOnlyQuery =
     url.searchParams.get("webhook_only") === "1" ||
     url.searchParams.get("mode") === "webhook";
-  const webhookOnly = !discover && (webhookOnlyFlag || webhookOnlyQuery);
+  const webhookOnly = !discover && !probe && (webhookOnlyFlag || webhookOnlyQuery);
 
   // Modo probe: testa vários hosts/paths e tokens para descobrir a combinação correta da API.
-  if (url.searchParams.get("probe") === "1") {
+  if (probe) {
     const bases = [
       "https://api.greenn.com.br/v1",
       "https://api.greenn.com.br",
@@ -109,30 +133,6 @@ Deno.serve(async (req) => {
       }
     }
     return json({ ok: true, results });
-  }
-
-
-
-  // Auth: obrigatória exceto no modo discover (que só ecoa a resposta da Greenn, sem tocar no DB)
-  // Também aceita chamada do cron via header X-Cron-Secret
-  if (!discover) {
-    const cronSecret = Deno.env.get("SYNC_CRON_SECRET");
-    const internalToken = Deno.env.get("SYNC_INTERNAL_TOKEN");
-    const providedCron = req.headers.get("x-cron-secret") ?? "";
-    const isCron =
-      (Boolean(cronSecret) && providedCron === cronSecret) ||
-      (Boolean(internalToken) && providedCron === internalToken);
-    origem = isCron ? "cron" : "manual";
-
-    if (!isCron) {
-      const authHeader = req.headers.get("Authorization") ?? "";
-      const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-      if (!token) return json({ error: "no_auth" }, 401);
-      const { data: userRes, error: userErr } = await admin.auth.getUser(token);
-      if (userErr || !userRes?.user) return json({ error: "invalid_auth" }, 401);
-      const { data: r } = await admin.from("user_roles").select("id").eq("user_id", userRes.user.id).eq("role", "admin").maybeSingle();
-      if (!r) return json({ error: "forbidden" }, 403);
-    }
   }
 
   // Após autenticação: se webhook-only estiver ativo, registra o run como sucesso (sem tocar na API)
