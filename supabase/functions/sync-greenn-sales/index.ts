@@ -47,11 +47,15 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST" && req.method !== "GET") return json({ error: "method_not_allowed" }, 405);
 
+  const startedAt = Date.now();
+  let origem: "cron" | "manual" | "discover" = "cron";
+
   const apiKey = Deno.env.get("GREENN_API_KEY");
   if (!apiKey) return json({ error: "missing_GREENN_API_KEY" }, 503);
 
   const url = new URL(req.url);
   const discover = url.searchParams.get("discover") === "1";
+  if (discover) origem = "discover";
 
   // Auth: obrigatória exceto no modo discover (que só ecoa a resposta da Greenn, sem tocar no DB)
   // Também aceita chamada do cron via header X-Cron-Secret
@@ -59,6 +63,7 @@ Deno.serve(async (req) => {
     const cronSecret = Deno.env.get("SYNC_CRON_SECRET");
     const providedCron = req.headers.get("x-cron-secret") ?? "";
     const isCron = Boolean(cronSecret) && providedCron === cronSecret;
+    origem = isCron ? "cron" : "manual";
 
     if (!isCron) {
       const authHeader = req.headers.get("Authorization") ?? "";
@@ -72,6 +77,7 @@ Deno.serve(async (req) => {
   }
 
 
+
   // Tenta endpoint principal /sales. Se a API real usar outro path, o discover ajuda a descobrir.
   const resp = await fetch(`${GREENN_API}/sales?limit=100`, {
     headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
@@ -83,7 +89,14 @@ Deno.serve(async (req) => {
   if (discover) {
     return json({ status: resp.status, contentType: resp.headers.get("content-type"), sample: body ?? bodyText.slice(0, 4000) });
   }
-  if (!resp.ok) return json({ error: "greenn_error", status: resp.status, body: bodyText.slice(0, 2000) }, 502);
+  if (!resp.ok) {
+    await recordRun({
+      origem, sucesso: false, http_status: resp.status,
+      erro_mensagem: `greenn_error ${resp.status}: ${bodyText.slice(0, 500)}`,
+      startedAt,
+    });
+    return json({ error: "greenn_error", status: resp.status, body: bodyText.slice(0, 2000) }, 502);
+  }
 
   // Tenta encontrar o array de vendas em várias formas comuns
   const list: unknown[] =
@@ -153,9 +166,45 @@ Deno.serve(async (req) => {
     else { stats.criadas++; detalhes.push({ saleId, acao: "criada", id: inserted?.id }); }
   }
 
+  await recordRun({
+    origem, sucesso: stats.erros === 0, http_status: resp.status,
+    stats, detalhes: detalhes.slice(0, 50), startedAt,
+  });
+
   return json({ ok: true, stats, detalhes });
 });
+
+async function recordRun(opts: {
+  origem: string;
+  sucesso: boolean;
+  http_status?: number;
+  erro_mensagem?: string;
+  stats?: { total: number; criadas: number; atualizadas: number; ignoradas: number; erros: number };
+  detalhes?: unknown;
+  startedAt: number;
+}) {
+  try {
+    const now = Date.now();
+    await admin.from("sync_runs").insert({
+      origem: opts.origem,
+      sucesso: opts.sucesso,
+      http_status: opts.http_status ?? null,
+      erro_mensagem: opts.erro_mensagem ?? null,
+      total: opts.stats?.total ?? 0,
+      criadas: opts.stats?.criadas ?? 0,
+      atualizadas: opts.stats?.atualizadas ?? 0,
+      ignoradas: opts.stats?.ignoradas ?? 0,
+      erros: opts.stats?.erros ?? 0,
+      detalhes: (opts.detalhes ?? null) as any,
+      finalizado_em: new Date(now).toISOString(),
+      duracao_ms: now - opts.startedAt,
+    });
+  } catch (e) {
+    console.error("failed to record sync_run", e);
+  }
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
+
