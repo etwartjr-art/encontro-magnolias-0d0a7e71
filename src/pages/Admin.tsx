@@ -230,8 +230,9 @@ const Admin = () => {
         return;
       }
 
-      await loadData();
+      await Promise.all([loadData(), loadSyncRuns()]);
       if (active) setLoading(false);
+
     };
 
     init();
