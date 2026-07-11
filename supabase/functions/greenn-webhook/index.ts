@@ -231,3 +231,27 @@ function json(body: unknown, status = 200) {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+
+// Registra incidentes (401/config/JSON inválido) no mesmo greenn_webhook_logs.
+// Dedupe por bucket de 10 min para não inundar a tabela em caso de webhook mal configurado.
+async function logIncident(
+  marker: "__auth_error__" | "__config_error__" | "__invalid_json__" | "__method_error__",
+  mensagem: string,
+  extras: Record<string, unknown> = {},
+) {
+  try {
+    const bucket = Math.floor(Date.now() / (10 * 60 * 1000));
+    const event_hash = await sha256(`${marker}|${bucket}`);
+    await supabase.from("greenn_webhook_logs").insert({
+      status_recebido: marker,
+      status_mapeado: null,
+      event_hash,
+      processado: false,
+      erro: mensagem,
+      payload: { incident: marker, mensagem, ...extras, at: new Date().toISOString() },
+    });
+  } catch (e) {
+    console.error("greenn-webhook: falha ao registrar incidente", e);
+  }
+}
+
