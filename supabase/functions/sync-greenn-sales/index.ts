@@ -65,6 +65,17 @@ Deno.serve(async (req) => {
   const discover = url.searchParams.get("discover") === "1";
   if (discover) origem = "discover";
 
+  // Modo webhook-only: pula a chamada à API da Greenn e confia apenas no webhook saleUpdated
+  // para atualizar pagamentos. Útil quando a API pública está inacessível (DNS/timeout).
+  // Ativa por env (GREENN_WEBHOOK_ONLY=1/true) ou por query (?webhook_only=1 / ?mode=webhook).
+  const webhookOnlyEnv = String(Deno.env.get("GREENN_WEBHOOK_ONLY") ?? "").toLowerCase();
+  const webhookOnlyFlag =
+    webhookOnlyEnv === "1" || webhookOnlyEnv === "true" || webhookOnlyEnv === "yes";
+  const webhookOnlyQuery =
+    url.searchParams.get("webhook_only") === "1" ||
+    url.searchParams.get("mode") === "webhook";
+  const webhookOnly = !discover && (webhookOnlyFlag || webhookOnlyQuery);
+
   // Modo probe: testa vários hosts/paths e tokens para descobrir a combinação correta da API.
   if (url.searchParams.get("probe") === "1") {
     const bases = [
@@ -122,6 +133,29 @@ Deno.serve(async (req) => {
       const { data: r } = await admin.from("user_roles").select("id").eq("user_id", userRes.user.id).eq("role", "admin").maybeSingle();
       if (!r) return json({ error: "forbidden" }, 403);
     }
+  }
+
+  // Após autenticação: se webhook-only estiver ativo, registra o run como sucesso (sem tocar na API)
+  // e devolve um payload indicando que a atualização de pagamentos depende apenas do webhook.
+  if (webhookOnly) {
+    await recordRun({
+      origem,
+      sucesso: true,
+      startedAt,
+      detalhes: {
+        modo: "webhook_only",
+        motivo:
+          "Sincronização ativa via webhook saleUpdated apenas — a chamada à API da Greenn foi ignorada.",
+        origem_flag: webhookOnlyQuery ? "query" : "env",
+      },
+    });
+    return json({
+      ok: true,
+      mode: "webhook_only",
+      message:
+        "Modo webhook-only ativo: pagamentos continuam sendo atualizados pelo webhook saleUpdated da Greenn. A consulta à API foi ignorada.",
+      stats: { total: 0, criadas: 0, atualizadas: 0, ignoradas: 0, erros: 0 },
+    });
   }
 
 
