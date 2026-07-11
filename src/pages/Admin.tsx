@@ -305,8 +305,10 @@ const Admin = () => {
         return;
       }
 
-      await Promise.all([loadData(), loadSyncRuns()]);
+      await Promise.all([loadData(), loadSyncRuns(), loadWebhookAlerts()]);
       if (active) setLoading(false);
+
+
 
     };
 
