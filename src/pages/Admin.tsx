@@ -1185,6 +1185,24 @@ const DetalheCard = ({
       {d.erro && (
         <p className="text-[11px] text-destructive mt-1">Erro: {d.erro}</p>
       )}
+      {canReprocess && d.id && (
+        <div className="mt-3 flex justify-end">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onReprocess(d.id!)}
+            disabled={isReprocessing}
+            className="rounded-none uppercase tracking-[0.2em] text-[10px] border-destructive/60 text-destructive hover:bg-destructive/10"
+          >
+            {isReprocessing ? (
+              <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+            ) : (
+              <RotateCw className="w-3 h-3 mr-1.5" />
+            )}
+            Reprocessar inscrição
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
