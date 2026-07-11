@@ -999,7 +999,157 @@ const SyncPanel = ({
   );
 };
 
+const actionBadgeVariant = (acao?: string) => {
+  if (!acao) return "outline" as const;
+  if (acao.startsWith("erro")) return "destructive" as const;
+  if (acao === "criada") return "default" as const;
+  if (acao === "atualizada") return "default" as const;
+  if (acao.startsWith("ignorada")) return "secondary" as const;
+  return "outline" as const;
+};
+
+const fmtSnapVal = (k: string, v: unknown) => {
+  if (v == null || v === "") return "—";
+  if (k === "pago_em" && typeof v === "string") {
+    const d = new Date(v);
+    if (!isNaN(d.getTime())) return d.toLocaleString("pt-BR");
+  }
+  return String(v);
+};
+
+const SNAP_FIELDS: { key: keyof SyncSnapshot; label: string }[] = [
+  { key: "status", label: "Status" },
+  { key: "greenn_sale_id", label: "Sale ID" },
+  { key: "pago_em", label: "Pago em" },
+  { key: "metodo_pagamento", label: "Método" },
+];
+
+const DetalheCard = ({
+  d,
+  ruleLabel,
+  ruleBadge,
+}: {
+  d: SyncDetalhe;
+  ruleLabel: Record<SyncMatchRule, string>;
+  ruleBadge: (r: SyncMatchRule) => "default" | "secondary" | "outline" | "destructive";
+}) => {
+  const rule = (d.match_rule ?? "none") as SyncMatchRule;
+  const insc = d.inscricao;
+  const buyer = d.buyer;
+  const antes = d.antes;
+  const depois = d.depois ?? d.tentativa_depois;
+  const changedKeys = new Set<string>();
+  if (antes && depois) {
+    for (const f of SNAP_FIELDS) {
+      if ((antes[f.key] ?? null) !== (depois[f.key] ?? null)) changedKeys.add(f.key as string);
+    }
+  }
+
+  return (
+    <div className="border border-rose-dusty/40 bg-background/40 p-3">
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <Badge variant={actionBadgeVariant(d.acao)} className="text-[10px] uppercase tracking-wider">
+          {d.acao ?? "—"}
+        </Badge>
+        <Badge variant={ruleBadge(rule)} className="text-[10px] uppercase">
+          match: {ruleLabel[rule]}
+        </Badge>
+        {d.saleId && (
+          <span className="text-[11px] text-foreground/60">
+            sale <span className="font-mono">{d.saleId}</span>
+          </span>
+        )}
+        {d.id && (
+          <span className="text-[11px] text-foreground/50">
+            inscrição <span className="font-mono">{d.id.slice(0, 8)}</span>
+          </span>
+        )}
+      </div>
+
+      {(insc || buyer) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] mb-2">
+          {insc && (
+            <div>
+              <p className="uppercase tracking-[0.18em] text-[9px] text-foreground/50 mb-0.5">
+                Inscrição no site
+              </p>
+              <p className="font-light">{insc.nome ?? "—"}</p>
+              <p className="text-foreground/60">
+                {insc.email ?? "—"} · {insc.celular ?? "—"}
+              </p>
+            </div>
+          )}
+          {buyer && (
+            <div>
+              <p className="uppercase tracking-[0.18em] text-[9px] text-foreground/50 mb-0.5">
+                Comprador na Greenn
+              </p>
+              <p className="font-light">{buyer.nome || "—"}</p>
+              <p className="text-foreground/60">
+                {buyer.email || "—"} · {buyer.celular || "—"}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {antes && depois && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-[11px] border-collapse">
+            <thead>
+              <tr className="text-left text-foreground/50 uppercase tracking-[0.18em] text-[9px]">
+                <th className="py-1 pr-2 font-normal">Campo</th>
+                <th className="py-1 pr-2 font-normal">Antes</th>
+                <th className="py-1 font-normal">Depois</th>
+              </tr>
+            </thead>
+            <tbody>
+              {SNAP_FIELDS.map((f) => {
+                const changed = changedKeys.has(f.key as string);
+                return (
+                  <tr key={f.key as string} className="border-t border-rose-dusty/20">
+                    <td className="py-1 pr-2 text-foreground/60">{f.label}</td>
+                    <td className={`py-1 pr-2 font-mono ${changed ? "text-foreground/60 line-through" : "text-foreground/70"}`}>
+                      {fmtSnapVal(f.key as string, antes[f.key])}
+                    </td>
+                    <td className={`py-1 font-mono ${changed ? "text-rose-deep" : "text-foreground/70"}`}>
+                      {fmtSnapVal(f.key as string, depois[f.key])}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {!antes && depois && (
+        <div className="text-[11px] text-foreground/70">
+          <span className="uppercase tracking-[0.18em] text-[9px] text-foreground/50 mr-1">
+            Criada como:
+          </span>
+          status <span className="font-mono">{depois.status ?? "—"}</span>
+          {" · "}sale <span className="font-mono">{depois.greenn_sale_id ?? "—"}</span>
+        </div>
+      )}
+
+      {d.status_greenn && (
+        <p className="text-[11px] text-foreground/60 mt-2">
+          status recebido da Greenn: <span className="font-mono">{d.status_greenn}</span>
+        </p>
+      )}
+      {d.motivo && (
+        <p className="text-[11px] text-foreground/60 mt-1">Motivo: {d.motivo}</p>
+      )}
+      {d.erro && (
+        <p className="text-[11px] text-destructive mt-1">Erro: {d.erro}</p>
+      )}
+    </div>
+  );
+};
+
 const StatCard = ({
+
 
   icon: Icon,
   label,
