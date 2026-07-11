@@ -1395,7 +1395,7 @@ const DetalheCard = ({
           <Button
             size="sm"
             variant="outline"
-            onClick={() => onReprocess(d.id!)}
+            onClick={() => setConfirmOpen(true)}
             disabled={isReprocessing}
             className="rounded-none uppercase tracking-[0.2em] text-[10px] border-destructive/60 text-destructive hover:bg-destructive/10"
           >
@@ -1406,6 +1406,29 @@ const DetalheCard = ({
             )}
             Reprocessar inscrição
           </Button>
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reprocessar inscrição?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação vai buscar novamente os dados na Greenn e atualizar a inscrição
+                  {insc?.nome ? ` de ${insc.nome}` : ""}. O resultado será registrado no histórico
+                  de sincronização. Deseja continuar?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setConfirmOpen(false);
+                    onReprocess(d.id!);
+                  }}
+                >
+                  Reprocessar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
     </div>
