@@ -54,16 +54,21 @@ Deno.serve(async (req) => {
   const discover = url.searchParams.get("discover") === "1";
 
   // Auth: obrigatória exceto no modo discover (que só ecoa a resposta da Greenn, sem tocar no DB)
+  // Também aceita chamada do cron via header X-Cron-Secret
   if (!discover) {
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-    if (!token) return json({ error: "no_auth" }, 401);
-    const { data: userRes, error: userErr } = await admin.auth.getUser(token);
-    if (userErr || !userRes?.user) return json({ error: "invalid_auth" }, 401);
-    let admOk = false;
-    const { data: r } = await admin.from("user_roles").select("id").eq("user_id", userRes.user.id).eq("role", "admin").maybeSingle();
-    admOk = Boolean(r);
-    if (!admOk) return json({ error: "forbidden" }, 403);
+    const cronSecret = Deno.env.get("SYNC_CRON_SECRET");
+    const providedCron = req.headers.get("x-cron-secret") ?? "";
+    const isCron = Boolean(cronSecret) && providedCron === cronSecret;
+
+    if (!isCron) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+      if (!token) return json({ error: "no_auth" }, 401);
+      const { data: userRes, error: userErr } = await admin.auth.getUser(token);
+      if (userErr || !userRes?.user) return json({ error: "invalid_auth" }, 401);
+      const { data: r } = await admin.from("user_roles").select("id").eq("user_id", userRes.user.id).eq("role", "admin").maybeSingle();
+      if (!r) return json({ error: "forbidden" }, 403);
+    }
   }
 
 
