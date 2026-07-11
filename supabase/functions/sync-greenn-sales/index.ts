@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
     for (const base of bases) {
       for (const tok of tokens) {
         const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 3500);
+        const t = setTimeout(() => ctrl.abort(), 20000);
         try {
           const r = await fetch(`${base}/sales?limit=1`, {
             headers: { Authorization: `Bearer ${tok.value}`, Accept: "application/json" },
