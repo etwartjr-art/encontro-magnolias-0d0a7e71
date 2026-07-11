@@ -10,7 +10,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const GREENN_API = Deno.env.get("GREENN_API_BASE") ?? "https://api.greenn.com.br/v1";
+const GREENN_API = Deno.env.get("GREENN_API_BASE") ?? "https://api.gdigital.com.br";
 const GREENN_FETCH_TIMEOUT_MS = Number(Deno.env.get("GREENN_FETCH_TIMEOUT_MS") ?? "7000");
 const GREENN_FETCH_RETRIES = Number(Deno.env.get("GREENN_FETCH_RETRIES") ?? "1");
 
@@ -64,6 +64,38 @@ Deno.serve(async (req) => {
   const url = new URL(req.url);
   const discover = url.searchParams.get("discover") === "1";
   if (discover) origem = "discover";
+
+  // Modo probe: testa vários hosts/paths para descobrir a URL correta da API.
+  if (url.searchParams.get("probe") === "1") {
+    const bases = [
+      "https://api.greenn.com.br/v1",
+      "https://api.greenn.com.br",
+      "https://api.gdigital.com.br/v1",
+      "https://api.gdigital.com.br",
+      "https://sales.greenn.com.br/api/v1",
+      "https://sales.greenn.com.br/api",
+      "https://app.greenn.com.br/api/v1",
+    ];
+    const results: unknown[] = [];
+    for (const base of bases) {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 6000);
+      try {
+        const r = await fetch(`${base}/sales?limit=1`, {
+          headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
+          signal: ctrl.signal,
+        });
+        const txt = await r.text();
+        results.push({ base, status: r.status, sample: txt.slice(0, 300) });
+      } catch (e) {
+        results.push({ base, error: e instanceof Error ? `${e.name}: ${e.message}` : String(e) });
+      } finally {
+        clearTimeout(t);
+      }
+    }
+    return json({ ok: true, keyPrefix: apiKey.slice(0, 12), results });
+  }
+
 
   // Auth: obrigatória exceto no modo discover (que só ecoa a resposta da Greenn, sem tocar no DB)
   // Também aceita chamada do cron via header X-Cron-Secret
