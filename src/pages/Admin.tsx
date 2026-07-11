@@ -38,8 +38,11 @@ import {
   Clock,
   CheckCircle2,
   ArrowLeft,
+  AlertTriangle,
+  RotateCw,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+
 
 type StatusInscricao =
   | "pendente"
