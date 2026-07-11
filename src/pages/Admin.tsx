@@ -699,7 +699,205 @@ const Admin = () => {
   );
 };
 
+const formatRelative = (iso: string) => {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const s = Math.round(diffMs / 1000);
+  if (s < 60) return `há ${s}s`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `há ${m} min`;
+  const h = Math.round(m / 60);
+  if (h < 48) return `há ${h}h`;
+  const d = Math.round(h / 24);
+  return `há ${d}d`;
+};
+
+const SyncPanel = ({
+  runs,
+  loading,
+  triggering,
+  onTrigger,
+  onRefresh,
+}: {
+  runs: SyncRun[];
+  loading: boolean;
+  triggering: boolean;
+  onTrigger: () => void;
+  onRefresh: () => void;
+}) => {
+  const last = runs[0];
+  const successRuns = runs.filter((r) => r.sucesso).length;
+
+  return (
+    <section className="mb-8 bg-ivory border border-rose-dusty/40 shadow-soft">
+      <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-rose-dusty/30">
+        <div className="flex items-center gap-2 text-rose-deep">
+          <RotateCw className="w-4 h-4" strokeWidth={1.4} />
+          <h2 className="uppercase tracking-[0.25em] text-[11px]">
+            Sincronização Greenn
+          </h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRefresh}
+            disabled={loading}
+            className="rounded-none uppercase tracking-[0.2em] text-[10px]"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`}
+            />
+            Atualizar
+          </Button>
+          <Button
+            size="sm"
+            onClick={onTrigger}
+            disabled={triggering}
+            className="rounded-none uppercase tracking-[0.2em] text-[10px] bg-rose-deep hover:bg-rose-deep/90"
+          >
+            {triggering ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <RotateCw className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            Sincronizar agora
+          </Button>
+        </div>
+      </header>
+
+      <div className="p-5">
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="w-5 h-5 animate-spin text-rose-deep" />
+          </div>
+        ) : !last ? (
+          <div className="flex items-center gap-2 text-sm text-foreground/60">
+            <AlertTriangle className="w-4 h-4" />
+            Nenhuma execução registrada ainda. O cron roda a cada 5 min.
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+              <div>
+                <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-1">
+                  Última execução
+                </p>
+                <p className="text-sm font-light">
+                  {formatRelative(last.iniciado_em)}
+                </p>
+                <p className="text-[11px] text-foreground/50">
+                  {new Date(last.iniciado_em).toLocaleString("pt-BR")}
+                </p>
+              </div>
+              <div>
+                <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-1">
+                  Status
+                </p>
+                <Badge
+                  variant={last.sucesso ? "default" : "destructive"}
+                  className="uppercase tracking-wider text-[10px]"
+                >
+                  {last.sucesso ? "sucesso" : "erro"}
+                </Badge>
+                {last.http_status != null && (
+                  <p className="text-[11px] text-foreground/50 mt-1">
+                    HTTP {last.http_status}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-1">
+                  Vendas processadas
+                </p>
+                <p className="font-display text-2xl">{last.total}</p>
+                <p className="text-[11px] text-foreground/50">
+                  {last.criadas} criadas · {last.atualizadas} atualizadas
+                </p>
+              </div>
+              <div>
+                <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-1">
+                  Duração
+                </p>
+                <p className="text-sm font-light">
+                  {last.duracao_ms != null ? `${last.duracao_ms} ms` : "—"}
+                </p>
+                <p className="text-[11px] text-foreground/50">
+                  origem: {last.origem}
+                </p>
+              </div>
+              <div>
+                <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-1">
+                  Últimas 10
+                </p>
+                <p className="text-sm font-light">
+                  {successRuns}/{runs.length} com sucesso
+                </p>
+              </div>
+            </div>
+
+            {last.erro_mensagem && (
+              <div className="mb-4 border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+                {last.erro_mensagem}
+              </div>
+            )}
+
+            <details className="text-xs">
+              <summary className="cursor-pointer uppercase tracking-[0.2em] text-[10px] text-rose-deep mb-2">
+                Histórico ({runs.length})
+              </summary>
+              <div className="mt-3 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Quando</TableHead>
+                      <TableHead>Origem</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Criadas</TableHead>
+                      <TableHead>Atualizadas</TableHead>
+                      <TableHead>Ignoradas</TableHead>
+                      <TableHead>Erros</TableHead>
+                      <TableHead>Duração</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {runs.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="whitespace-nowrap text-[11px]">
+                          {new Date(r.iniciado_em).toLocaleString("pt-BR")}
+                        </TableCell>
+                        <TableCell className="text-[11px]">{r.origem}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={r.sucesso ? "default" : "destructive"}
+                            className="text-[10px] uppercase"
+                          >
+                            {r.sucesso ? "ok" : "erro"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{r.total}</TableCell>
+                        <TableCell>{r.criadas}</TableCell>
+                        <TableCell>{r.atualizadas}</TableCell>
+                        <TableCell>{r.ignoradas}</TableCell>
+                        <TableCell>{r.erros}</TableCell>
+                        <TableCell className="text-[11px]">
+                          {r.duracao_ms != null ? `${r.duracao_ms}ms` : "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </details>
+          </>
+        )}
+      </div>
+    </section>
+  );
+};
+
 const StatCard = ({
+
   icon: Icon,
   label,
   value,
