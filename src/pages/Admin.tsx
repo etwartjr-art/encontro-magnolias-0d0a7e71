@@ -461,6 +461,16 @@ const Admin = () => {
           />
         </div>
 
+        <SyncPanel
+          runs={syncRuns}
+          loading={loadingSync}
+          triggering={triggeringSync}
+          onTrigger={triggerSync}
+          onRefresh={loadSyncRuns}
+        />
+
+
+
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="w-56">
             <Select
