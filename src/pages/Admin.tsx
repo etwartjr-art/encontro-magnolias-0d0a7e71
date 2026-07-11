@@ -923,62 +923,24 @@ const SyncPanel = ({
             </div>
 
             {detalhes.length > 0 && (
-              <details className="text-xs mb-4">
+              <details className="text-xs mb-4" open>
                 <summary className="cursor-pointer uppercase tracking-[0.2em] text-[10px] text-rose-deep mb-2">
-                  Auditoria por venda ({detalhes.length})
+                  Auditoria por inscrição ({detalhes.length})
                 </summary>
-                <div className="mt-3 overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Sale ID</TableHead>
-                        <TableHead>Ação</TableHead>
-                        <TableHead>Regra de match</TableHead>
-                        <TableHead>Inscrição</TableHead>
-                        <TableHead>Observação</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {detalhes.map((d, idx) => {
-                        const rule = (d.match_rule ?? "none") as SyncMatchRule;
-                        return (
-                          <TableRow key={idx}>
-                            <TableCell className="font-mono text-[11px]">
-                              {d.saleId ?? "—"}
-                            </TableCell>
-                            <TableCell className="text-[11px]">
-                              {d.acao ?? "—"}
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={ruleBadge(rule)}
-                                className="text-[10px] uppercase"
-                              >
-                                {ruleLabel[rule]}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="font-mono text-[10px] text-foreground/60">
-                              {d.id ? d.id.slice(0, 8) : "—"}
-                            </TableCell>
-                            <TableCell className="text-[11px] text-foreground/70">
-                              {d.erro
-                                ? `erro: ${d.erro}`
-                                : d.motivo
-                                ? d.motivo
-                                : d.status_anterior
-                                ? `de ${d.status_anterior} → pago`
-                                : d.status_greenn
-                                ? `greenn: ${d.status_greenn}`
-                                : "—"}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                <div className="mt-3 space-y-3">
+                  {detalhes.map((d, idx) => (
+                    <DetalheCard
+                      key={idx}
+                      d={d}
+                      ruleLabel={ruleLabel}
+                      ruleBadge={ruleBadge}
+                    />
+                  ))}
                 </div>
               </details>
             )}
+
+
 
 
 
