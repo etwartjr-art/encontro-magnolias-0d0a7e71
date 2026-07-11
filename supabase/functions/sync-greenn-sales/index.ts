@@ -44,6 +44,7 @@ const pick = (obj: unknown, keys: string[]): unknown => {
 };
 
 Deno.serve(async (req) => {
+  try {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST" && req.method !== "GET") return json({ error: "method_not_allowed" }, 405);
 
