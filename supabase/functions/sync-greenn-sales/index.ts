@@ -89,7 +89,14 @@ Deno.serve(async (req) => {
   if (discover) {
     return json({ status: resp.status, contentType: resp.headers.get("content-type"), sample: body ?? bodyText.slice(0, 4000) });
   }
-  if (!resp.ok) return json({ error: "greenn_error", status: resp.status, body: bodyText.slice(0, 2000) }, 502);
+  if (!resp.ok) {
+    await recordRun({
+      origem, sucesso: false, http_status: resp.status,
+      erro_mensagem: `greenn_error ${resp.status}: ${bodyText.slice(0, 500)}`,
+      startedAt,
+    });
+    return json({ error: "greenn_error", status: resp.status, body: bodyText.slice(0, 2000) }, 502);
+  }
 
   // Tenta encontrar o array de vendas em várias formas comuns
   const list: unknown[] =
@@ -159,9 +166,45 @@ Deno.serve(async (req) => {
     else { stats.criadas++; detalhes.push({ saleId, acao: "criada", id: inserted?.id }); }
   }
 
+  await recordRun({
+    origem, sucesso: stats.erros === 0, http_status: resp.status,
+    stats, detalhes: detalhes.slice(0, 50), startedAt,
+  });
+
   return json({ ok: true, stats, detalhes });
 });
+
+async function recordRun(opts: {
+  origem: string;
+  sucesso: boolean;
+  http_status?: number;
+  erro_mensagem?: string;
+  stats?: { total: number; criadas: number; atualizadas: number; ignoradas: number; erros: number };
+  detalhes?: unknown;
+  startedAt: number;
+}) {
+  try {
+    const now = Date.now();
+    await admin.from("sync_runs").insert({
+      origem: opts.origem,
+      sucesso: opts.sucesso,
+      http_status: opts.http_status ?? null,
+      erro_mensagem: opts.erro_mensagem ?? null,
+      total: opts.stats?.total ?? 0,
+      criadas: opts.stats?.criadas ?? 0,
+      atualizadas: opts.stats?.atualizadas ?? 0,
+      ignoradas: opts.stats?.ignoradas ?? 0,
+      erros: opts.stats?.erros ?? 0,
+      detalhes: (opts.detalhes ?? null) as any,
+      finalizado_em: new Date(now).toISOString(),
+      duracao_ms: now - opts.startedAt,
+    });
+  } catch (e) {
+    console.error("failed to record sync_run", e);
+  }
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
+
