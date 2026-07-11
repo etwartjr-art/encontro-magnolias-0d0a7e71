@@ -47,11 +47,15 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST" && req.method !== "GET") return json({ error: "method_not_allowed" }, 405);
 
+  const startedAt = Date.now();
+  let origem: "cron" | "manual" | "discover" = "cron";
+
   const apiKey = Deno.env.get("GREENN_API_KEY");
   if (!apiKey) return json({ error: "missing_GREENN_API_KEY" }, 503);
 
   const url = new URL(req.url);
   const discover = url.searchParams.get("discover") === "1";
+  if (discover) origem = "discover";
 
   // Auth: obrigatória exceto no modo discover (que só ecoa a resposta da Greenn, sem tocar no DB)
   // Também aceita chamada do cron via header X-Cron-Secret
@@ -59,6 +63,7 @@ Deno.serve(async (req) => {
     const cronSecret = Deno.env.get("SYNC_CRON_SECRET");
     const providedCron = req.headers.get("x-cron-secret") ?? "";
     const isCron = Boolean(cronSecret) && providedCron === cronSecret;
+    origem = isCron ? "cron" : "manual";
 
     if (!isCron) {
       const authHeader = req.headers.get("Authorization") ?? "";
@@ -70,6 +75,7 @@ Deno.serve(async (req) => {
       if (!r) return json({ error: "forbidden" }, 403);
     }
   }
+
 
 
   // Tenta endpoint principal /sales. Se a API real usar outro path, o discover ajuda a descobrir.
