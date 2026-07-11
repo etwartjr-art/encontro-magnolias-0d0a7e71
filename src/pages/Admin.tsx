@@ -779,12 +779,16 @@ const SyncPanel = ({
   triggering,
   onTrigger,
   onRefresh,
+  onReprocess,
+  reprocessingId,
 }: {
   runs: SyncRun[];
   loading: boolean;
   triggering: boolean;
   onTrigger: () => void;
   onRefresh: () => void;
+  onReprocess: (inscricaoId: string) => void;
+  reprocessingId: string | null;
 }) => {
   const last = runs[0];
   const successRuns = runs.filter((r) => r.sucesso).length;
