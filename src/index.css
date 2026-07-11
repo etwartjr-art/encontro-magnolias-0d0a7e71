@@ -101,7 +101,11 @@
   .bg-cream { background-color: hsl(var(--cream)); }
   .bg-ivory { background-color: hsl(var(--ivory)); }
   .bg-rose-soft { background-color: hsl(var(--rose-soft)); }
+  .bg-rose-dusty { background-color: hsl(var(--rose-dusty)); }
+  .bg-rose-deep { background-color: hsl(var(--rose-deep)); }
+  .hover\:bg-rose-deep\/90:hover { background-color: hsl(var(--rose-deep) / 0.9); }
   .border-rose-dusty { border-color: hsl(var(--rose-dusty)); }
+  .border-rose-deep { border-color: hsl(var(--rose-deep)); }
 
   @keyframes float-slow {
     0%, 100% { transform: translateY(0) rotate(0deg); }
