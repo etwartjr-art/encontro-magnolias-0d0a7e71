@@ -144,10 +144,10 @@ Deno.serve(async (req) => {
     return json({ error: "method_not_allowed" }, 405);
   }
 
-  // Valida token secreto na URL (?token=...) — a Greenn não assina o payload.
-  // Fail-closed: se o segredo não estiver configurado, rejeita tudo.
-  const expectedToken = Deno.env.get("GREENN_WEBHOOK_TOKEN");
-  if (!expectedToken) {
+  // Segredo compartilhado usado como chave HMAC-SHA256 do corpo da requisição.
+  // Fail-closed: sem segredo configurado, nada é processado.
+  const secret = Deno.env.get("GREENN_WEBHOOK_TOKEN");
+  if (!secret) {
     console.error("greenn-webhook: GREENN_WEBHOOK_TOKEN não configurado — rejeitando requisição");
     await logIncident(
       "__config_error__",
@@ -156,30 +156,39 @@ Deno.serve(async (req) => {
     );
     return json({ error: "server_misconfigured" }, 503);
   }
-  const url = new URL(req.url);
-  const providedToken =
-    url.searchParams.get("token") ||
-    req.headers.get("x-webhook-token") ||
-    "";
-  if (providedToken !== expectedToken) {
-    console.warn("greenn-webhook: token inválido ou ausente");
-    await logIncident(
-      "__auth_error__",
-      providedToken
-        ? "Token recebido não confere com GREENN_WEBHOOK_TOKEN — verifique a URL configurada na Greenn"
-        : "Nenhum token enviado — verifique se a URL na Greenn inclui ?token=SEU_TOKEN",
-      {
-        user_agent: req.headers.get("user-agent"),
-        token_preview: providedToken ? `${providedToken.slice(0, 3)}…${providedToken.slice(-2)}` : null,
-        via: url.searchParams.get("token") ? "query" : req.headers.get("x-webhook-token") ? "header" : "none",
-      },
-    );
-    return json({ error: "unauthorized" }, 401);
+
+  // Lê o corpo bruto ANTES de parsear — a assinatura é calculada sobre os bytes originais.
+  const rawBody = await req.text();
+
+  // Localiza a assinatura em qualquer um dos headers conhecidos.
+  let providedSig = "";
+  let sigHeader = "";
+  for (const h of SIGNATURE_HEADERS) {
+    const v = req.headers.get(h);
+    if (v) { providedSig = v; sigHeader = h; break; }
+  }
+
+  if (!providedSig) {
+    await logIncident("__auth_error__", "Assinatura ausente — configure o header HMAC-SHA256 no webhook da Greenn", {
+      user_agent: req.headers.get("user-agent"),
+      expected_headers: SIGNATURE_HEADERS,
+    });
+    return json({ error: "missing_signature" }, 401);
+  }
+
+  const valid = await verifySignature(rawBody, providedSig, secret);
+  if (!valid) {
+    await logIncident("__auth_error__", "Assinatura HMAC-SHA256 inválida — segredo divergente ou body adulterado", {
+      user_agent: req.headers.get("user-agent"),
+      sig_header: sigHeader,
+      sig_preview: `${providedSig.slice(0, 6)}…${providedSig.slice(-4)}`,
+    });
+    return json({ error: "invalid_signature" }, 401);
   }
 
   let payload: Record<string, unknown> = {};
   try {
-    payload = await req.json();
+    payload = JSON.parse(rawBody);
   } catch {
     await logIncident("__invalid_json__", "Corpo da requisição não é JSON válido", {
       content_type: req.headers.get("content-type"),
