@@ -295,6 +295,18 @@ Deno.serve(async (req) => {
   });
 
   return json({ ok: true, stats, detalhes });
+  } catch (e) {
+    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    console.error("sync-greenn-sales unhandled error", msg);
+    try {
+      await recordRun({
+        origem: "manual", sucesso: false,
+        erro_mensagem: `unhandled: ${msg}`.slice(0, 500),
+        startedAt: Date.now(),
+      });
+    } catch { /* ignore */ }
+    return json({ error: "unhandled_exception", message: msg }, 500);
+  }
 });
 
 async function recordRun(opts: {
