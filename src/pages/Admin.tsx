@@ -538,6 +538,11 @@ const Admin = () => {
           />
         </div>
 
+        <WebhookAlertBanner
+          alerts={webhookAlerts}
+          onRefresh={loadWebhookAlerts}
+        />
+
         <SyncPanel
           runs={syncRuns}
           loading={loadingSync}
