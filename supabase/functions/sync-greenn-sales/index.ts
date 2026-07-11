@@ -61,8 +61,11 @@ Deno.serve(async (req) => {
   // Também aceita chamada do cron via header X-Cron-Secret
   if (!discover) {
     const cronSecret = Deno.env.get("SYNC_CRON_SECRET");
+    const internalToken = Deno.env.get("SYNC_INTERNAL_TOKEN");
     const providedCron = req.headers.get("x-cron-secret") ?? "";
-    const isCron = Boolean(cronSecret) && providedCron === cronSecret;
+    const isCron =
+      (Boolean(cronSecret) && providedCron === cronSecret) ||
+      (Boolean(internalToken) && providedCron === internalToken);
     origem = isCron ? "cron" : "manual";
 
     if (!isCron) {
@@ -75,6 +78,7 @@ Deno.serve(async (req) => {
       if (!r) return json({ error: "forbidden" }, 403);
     }
   }
+
 
 
 
