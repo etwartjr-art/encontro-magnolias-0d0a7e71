@@ -135,13 +135,14 @@ Deno.serve(async (req) => {
       nome: string;
       email: string;
       celular: string;
+      valor: number | null;
       greenn_sale_id: string | null;
       pago_em: string | null;
       metodo_pagamento: string | null;
     };
     let existing: ExistingRow | null = null;
     let matchRule: "sale_id" | "email" | "phone" | "none" = "none";
-    const selectCols = "id, status, nome, email, celular, greenn_sale_id, pago_em, metodo_pagamento";
+    const selectCols = "id, status, nome, email, celular, valor, greenn_sale_id, pago_em, metodo_pagamento";
     {
       const { data } = await admin
         .from("inscricoes")
