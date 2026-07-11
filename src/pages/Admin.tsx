@@ -79,16 +79,34 @@ type WebhookLog = {
 
 type SyncMatchRule = "sale_id" | "email" | "phone" | "none";
 
+type SyncSnapshot = {
+  status?: string | null;
+  greenn_sale_id?: string | null;
+  pago_em?: string | null;
+  metodo_pagamento?: string | null;
+};
+
+type SyncBuyer = {
+  nome?: string;
+  email?: string;
+  celular?: string;
+};
+
 type SyncDetalhe = {
   saleId?: string;
   acao?: string;
   match_rule?: SyncMatchRule;
   id?: string;
-  status_anterior?: string;
+  inscricao?: SyncBuyer;
+  buyer?: SyncBuyer;
+  antes?: SyncSnapshot;
+  depois?: SyncSnapshot;
+  tentativa_depois?: SyncSnapshot;
   status_greenn?: string;
   motivo?: string;
   erro?: string;
 };
+
 
 type SyncRun = {
   id: string;
