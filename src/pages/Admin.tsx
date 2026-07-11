@@ -1266,6 +1266,7 @@ const DetalheCard = ({
   onReprocess: (inscricaoId: string) => void;
   reprocessingId: string | null;
 }) => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const canReprocess = Boolean(d.id) && (d.acao?.startsWith("erro") ?? false);
   const isReprocessing = reprocessingId === d.id;
   const rule = (d.match_rule ?? "none") as SyncMatchRule;
