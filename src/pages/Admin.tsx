@@ -214,6 +214,32 @@ const Admin = () => {
     setTriggeringSync(false);
   };
 
+  const [reprocessing, setReprocessing] = useState<string | null>(null);
+  const reprocessInscricao = async (inscricaoId: string) => {
+    setReprocessing(inscricaoId);
+    const { data, error } = await supabase.functions.invoke("reprocess-inscricao", {
+      method: "POST",
+      body: { inscricaoId },
+    });
+    if (error) {
+      toast({
+        title: "Erro ao reprocessar",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      const acao = (data as { acao?: string; motivo?: string } | null)?.acao;
+      const motivo = (data as { motivo?: string } | null)?.motivo;
+      toast({
+        title: "Reprocessamento concluído",
+        description: acao ? `Ação: ${acao}` : motivo ?? "Registrado no histórico.",
+      });
+      await loadData();
+    }
+    await loadSyncRuns();
+    setReprocessing(null);
+  };
+
   const loadData = async () => {
     const { data, error } = await supabase
       .from("inscricoes")
