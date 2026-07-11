@@ -796,6 +796,172 @@ const formatRelative = (iso: string) => {
   return `há ${d}d`;
 };
 
+const INCIDENT_INFO: Record<
+  string,
+  { titulo: string; acao: string }
+> = {
+  __auth_error__: {
+    titulo: "Token inválido no webhook da Greenn",
+    acao:
+      'A Greenn está enviando eventos com token errado (ou sem token). No painel da Greenn, edite o webhook e garanta que a URL termine com "?token=SEU_TOKEN" — o valor deve bater com o segredo GREENN_WEBHOOK_TOKEN.',
+  },
+  __config_error__: {
+    titulo: "Backend sem token configurado",
+    acao:
+      "O segredo GREENN_WEBHOOK_TOKEN não está definido neste ambiente. Configure-o em Cloud → Secrets e reenvie um evento de teste da Greenn.",
+  },
+  __invalid_json__: {
+    titulo: "Payload inválido recebido",
+    acao:
+      'A Greenn enviou um corpo que não é JSON. Confirme no painel que o método é POST e o Content-Type é "application/json".',
+  },
+  __method_error__: {
+    titulo: "Método HTTP incorreto",
+    acao:
+      "A Greenn está chamando o webhook com um método diferente de POST. Ajuste no painel para POST.",
+  },
+};
+
+const WebhookAlertBanner = ({
+  alerts,
+  onRefresh,
+}: {
+  alerts: WebhookLog[];
+  onRefresh: () => void;
+}) => {
+  if (!alerts.length) return null;
+
+  const incidentAlerts = alerts.filter((a) => (a.status_recebido ?? "").startsWith("__"));
+  const naoEncontrada = alerts.filter(
+    (a) => a.erro === "inscricao_nao_encontrada" && !a.processado,
+  );
+  const outrosErros = alerts.filter(
+    (a) =>
+      !(a.status_recebido ?? "").startsWith("__") &&
+      a.erro &&
+      a.erro !== "inscricao_nao_encontrada" &&
+      !a.processado,
+  );
+
+  const grupos = new Map<string, { count: number; ultimo: WebhookLog }>();
+  for (const a of incidentAlerts) {
+    const key = a.status_recebido ?? "__unknown__";
+    const g = grupos.get(key);
+    if (!g) grupos.set(key, { count: 1, ultimo: a });
+    else {
+      g.count += 1;
+      if (new Date(a.criado_em) > new Date(g.ultimo.criado_em)) g.ultimo = a;
+    }
+  }
+
+  const hasCritical = grupos.size > 0;
+
+  return (
+    <section
+      className={`mb-6 border shadow-soft ${
+        hasCritical
+          ? "border-destructive/60 bg-destructive/5"
+          : "border-amber-500/50 bg-amber-500/5"
+      }`}
+    >
+      <header className="flex items-center justify-between gap-3 px-5 py-3 border-b border-inherit">
+        <div className="flex items-center gap-2">
+          <AlertTriangle
+            className={`w-4 h-4 ${hasCritical ? "text-destructive" : "text-amber-600"}`}
+            strokeWidth={1.6}
+          />
+          <h2
+            className={`uppercase tracking-[0.25em] text-[11px] ${
+              hasCritical ? "text-destructive" : "text-amber-700"
+            }`}
+          >
+            Alertas do webhook Greenn (24h)
+          </h2>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRefresh}
+          className="rounded-none uppercase tracking-[0.2em] text-[10px]"
+        >
+          <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+          Atualizar
+        </Button>
+      </header>
+
+      <div className="p-5 space-y-3 text-sm">
+        {[...grupos.entries()].map(([key, g]) => {
+          const info = INCIDENT_INFO[key] ?? {
+            titulo: key,
+            acao: g.ultimo.erro ?? "Verifique os logs.",
+          };
+          return (
+            <div key={key} className="border border-destructive/30 bg-background/40 p-3">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <Badge variant="destructive" className="text-[10px] uppercase tracking-wider">
+                  {g.count}× nas últimas 24h
+                </Badge>
+                <span className="font-light">{info.titulo}</span>
+                <span className="text-[11px] text-foreground/50 ml-auto">
+                  último: {new Date(g.ultimo.criado_em).toLocaleString("pt-BR")}
+                </span>
+              </div>
+              <p className="text-[12px] text-foreground/70">{info.acao}</p>
+              {g.ultimo.erro && (
+                <p className="text-[11px] text-destructive/80 mt-1 font-mono">
+                  {g.ultimo.erro}
+                </p>
+              )}
+            </div>
+          );
+        })}
+
+        {naoEncontrada.length > 0 && (
+          <div className="border border-amber-500/40 bg-background/40 p-3">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">
+                {naoEncontrada.length}× sem match
+              </Badge>
+              <span className="font-light">
+                Eventos recebidos sem inscrição correspondente
+              </span>
+            </div>
+            <p className="text-[12px] text-foreground/70">
+              O evento chegou mas o e-mail/telefone/sale_id não bate com nenhuma inscrição no
+              site. Verifique se o formulário está gravando os mesmos dados que a Greenn envia
+              ou rode "Sincronizar agora" para casar por sale_id.
+            </p>
+          </div>
+        )}
+
+        {outrosErros.length > 0 && (
+          <div className="border border-destructive/30 bg-background/40 p-3">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <Badge variant="destructive" className="text-[10px] uppercase tracking-wider">
+                {outrosErros.length}× erro DB
+              </Badge>
+              <span className="font-light">Falha ao gravar atualização no banco</span>
+            </div>
+            <p className="text-[12px] text-foreground/70">
+              O webhook recebeu o evento mas falhou ao atualizar a inscrição. Confira os
+              detalhes abaixo e ajuste se necessário.
+            </p>
+            <ul className="mt-2 space-y-1 text-[11px] text-destructive/80 font-mono">
+              {outrosErros.slice(0, 3).map((e) => (
+                <li key={e.id}>
+                  {new Date(e.criado_em).toLocaleString("pt-BR")} — {e.erro}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
+
+
 const SyncPanel = ({
   runs,
   loading,
