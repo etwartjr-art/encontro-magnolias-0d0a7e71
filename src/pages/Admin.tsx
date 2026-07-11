@@ -81,6 +81,7 @@ type SyncMatchRule = "sale_id" | "email" | "phone" | "none";
 
 type SyncSnapshot = {
   status?: string | null;
+  valor?: number | null;
   greenn_sale_id?: string | null;
   pago_em?: string | null;
   metodo_pagamento?: string | null;
