@@ -77,6 +77,19 @@ type WebhookLog = {
   payload: unknown;
 };
 
+type SyncMatchRule = "sale_id" | "email" | "phone" | "none";
+
+type SyncDetalhe = {
+  saleId?: string;
+  acao?: string;
+  match_rule?: SyncMatchRule;
+  id?: string;
+  status_anterior?: string;
+  status_greenn?: string;
+  motivo?: string;
+  erro?: string;
+};
+
 type SyncRun = {
   id: string;
   iniciado_em: string;
@@ -91,7 +104,9 @@ type SyncRun = {
   erros: number;
   erro_mensagem: string | null;
   http_status: number | null;
+  detalhes: SyncDetalhe[] | null;
 };
+
 
 
 const STATUS_OPTIONS: { value: StatusInscricao | "todos"; label: string }[] = [
@@ -154,7 +169,7 @@ const Admin = () => {
     const { data, error } = await supabase
       .from("sync_runs" as never)
       .select(
-        "id, iniciado_em, finalizado_em, duracao_ms, origem, sucesso, total, criadas, atualizadas, ignoradas, erros, erro_mensagem, http_status"
+        "id, iniciado_em, finalizado_em, duracao_ms, origem, sucesso, total, criadas, atualizadas, ignoradas, erros, erro_mensagem, http_status, detalhes"
       )
       .order("iniciado_em", { ascending: false })
       .limit(10);
@@ -727,6 +742,35 @@ const SyncPanel = ({
   const last = runs[0];
   const successRuns = runs.filter((r) => r.sucesso).length;
 
+  const detalhes: SyncDetalhe[] = Array.isArray(last?.detalhes) ? last!.detalhes! : [];
+  const ruleCounts = detalhes.reduce(
+    (acc, d) => {
+      const r = (d.match_rule ?? "none") as SyncMatchRule;
+      acc[r] = (acc[r] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<SyncMatchRule, number>
+  );
+  const ruleLabel: Record<SyncMatchRule, string> = {
+    sale_id: "Sale ID",
+    email: "E-mail",
+    phone: "Telefone",
+    none: "Sem match",
+  };
+  const ruleBadge = (r: SyncMatchRule) => {
+    switch (r) {
+      case "sale_id":
+        return "default" as const;
+      case "email":
+        return "secondary" as const;
+      case "phone":
+        return "outline" as const;
+      default:
+        return "outline" as const;
+    }
+  };
+
+
   return (
     <section className="mb-8 bg-ivory border border-rose-dusty/40 shadow-soft">
       <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-rose-dusty/30">
@@ -840,6 +884,85 @@ const SyncPanel = ({
                 {last.erro_mensagem}
               </div>
             )}
+
+            <div className="mb-5">
+              <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-2">
+                Como as vendas casaram (última execução)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(["sale_id", "email", "phone", "none"] as SyncMatchRule[]).map(
+                  (r) => (
+                    <Badge
+                      key={r}
+                      variant={ruleBadge(r)}
+                      className="text-[10px] uppercase tracking-wider"
+                    >
+                      {ruleLabel[r]}: {ruleCounts[r] ?? 0}
+                    </Badge>
+                  )
+                )}
+              </div>
+            </div>
+
+            {detalhes.length > 0 && (
+              <details className="text-xs mb-4">
+                <summary className="cursor-pointer uppercase tracking-[0.2em] text-[10px] text-rose-deep mb-2">
+                  Auditoria por venda ({detalhes.length})
+                </summary>
+                <div className="mt-3 overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Sale ID</TableHead>
+                        <TableHead>Ação</TableHead>
+                        <TableHead>Regra de match</TableHead>
+                        <TableHead>Inscrição</TableHead>
+                        <TableHead>Observação</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {detalhes.map((d, idx) => {
+                        const rule = (d.match_rule ?? "none") as SyncMatchRule;
+                        return (
+                          <TableRow key={idx}>
+                            <TableCell className="font-mono text-[11px]">
+                              {d.saleId ?? "—"}
+                            </TableCell>
+                            <TableCell className="text-[11px]">
+                              {d.acao ?? "—"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={ruleBadge(rule)}
+                                className="text-[10px] uppercase"
+                              >
+                                {ruleLabel[rule]}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono text-[10px] text-foreground/60">
+                              {d.id ? d.id.slice(0, 8) : "—"}
+                            </TableCell>
+                            <TableCell className="text-[11px] text-foreground/70">
+                              {d.erro
+                                ? `erro: ${d.erro}`
+                                : d.motivo
+                                ? d.motivo
+                                : d.status_anterior
+                                ? `de ${d.status_anterior} → pago`
+                                : d.status_greenn
+                                ? `greenn: ${d.status_greenn}`
+                                : "—"}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </details>
+            )}
+
+
 
             <details className="text-xs">
               <summary className="cursor-pointer uppercase tracking-[0.2em] text-[10px] text-rose-deep mb-2">
