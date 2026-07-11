@@ -128,29 +128,39 @@ Deno.serve(async (req) => {
 
     const isPaid = PAID.has(rawStatus);
 
-    // Já existe? Primeiro por sale_id; se não, cai para email/telefone (inscrição feita no site e paga fora do fluxo).
+    // Match: primeiro por sale_id; fallback por email; fallback por telefone.
+    // match_rule descreve qual regra casou (auditoria).
     let existing: { id: string; status: string } | null = null;
+    let matchRule: "sale_id" | "email" | "phone" | "none" = "none";
     {
       const { data } = await admin
         .from("inscricoes")
         .select("id, status")
         .eq("greenn_sale_id", saleId)
         .maybeSingle();
-      existing = (data as any) ?? null;
+      if (data) { existing = data as any; matchRule = "sale_id"; }
     }
-    if (!existing && (email || celular)) {
-      const orParts: string[] = [];
-      if (email) orParts.push(`email.eq.${email}`);
-      if (celular) orParts.push(`celular.eq.${celular}`);
+    if (!existing && email) {
       const { data } = await admin
         .from("inscricoes")
         .select("id, status")
         .is("greenn_sale_id", null)
-        .or(orParts.join(","))
+        .eq("email", email)
         .order("criado_em", { ascending: false })
         .limit(1)
         .maybeSingle();
-      existing = (data as any) ?? null;
+      if (data) { existing = data as any; matchRule = "email"; }
+    }
+    if (!existing && celular) {
+      const { data } = await admin
+        .from("inscricoes")
+        .select("id, status")
+        .is("greenn_sale_id", null)
+        .eq("celular", celular)
+        .order("criado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) { existing = data as any; matchRule = "phone"; }
     }
 
     if (existing) {
@@ -165,17 +175,27 @@ Deno.serve(async (req) => {
           patch.pago_em = paidAt ? new Date(String(paidAt)).toISOString() : new Date().toISOString();
         }
         const { error } = await admin.from("inscricoes").update(patch).eq("id", existing.id);
-        if (error) { stats.erros++; detalhes.push({ saleId, erro: error.message }); }
-        else { stats.atualizadas++; detalhes.push({ saleId, acao: "atualizada", id: existing.id }); }
+        if (error) {
+          stats.erros++;
+          detalhes.push({ saleId, acao: "erro_update", match_rule: matchRule, id: existing.id, erro: error.message });
+        } else {
+          stats.atualizadas++;
+          detalhes.push({ saleId, acao: "atualizada", match_rule: matchRule, id: existing.id, status_anterior: existing.status });
+        }
       } else {
         stats.ignoradas++;
+        detalhes.push({ saleId, acao: "ignorada_nao_paga", match_rule: matchRule, id: existing.id, status_greenn: rawStatus });
       }
       continue;
     }
 
 
     if (!isPaid) { stats.ignoradas++; continue; }
-    if (!nome || (!email && !celular)) { stats.ignoradas++; detalhes.push({ saleId, motivo: "dados_insuficientes" }); continue; }
+    if (!nome || (!email && !celular)) {
+      stats.ignoradas++;
+      detalhes.push({ saleId, acao: "ignorada", match_rule: "none", motivo: "dados_insuficientes" });
+      continue;
+    }
 
     const { data: inserted, error } = await admin.from("inscricoes").insert({
       nome,
@@ -189,9 +209,15 @@ Deno.serve(async (req) => {
       greenn_payload: sale as any,
     }).select("id").maybeSingle();
 
-    if (error) { stats.erros++; detalhes.push({ saleId, erro: error.message }); }
-    else { stats.criadas++; detalhes.push({ saleId, acao: "criada", id: inserted?.id }); }
+    if (error) {
+      stats.erros++;
+      detalhes.push({ saleId, acao: "erro_insert", match_rule: "none", erro: error.message });
+    } else {
+      stats.criadas++;
+      detalhes.push({ saleId, acao: "criada", match_rule: "none", id: inserted?.id });
+    }
   }
+
 
   await recordRun({
     origem, sucesso: stats.erros === 0, http_status: resp.status,
