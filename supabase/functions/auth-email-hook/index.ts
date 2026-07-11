@@ -294,6 +294,7 @@ async function handleWebhook(req: Request): Promise<Response> {
 
 Deno.serve(async (req) => {
   const url = new URL(req.url)
+  const previewRequested = url.pathname.endsWith('/preview') || url.searchParams.get('preview') === '1'
 
   // Handle CORS preflight for main endpoint
   if (req.method === 'OPTIONS') {
@@ -301,7 +302,7 @@ Deno.serve(async (req) => {
   }
 
   // Route to preview handler for /preview path
-  if (url.pathname.endsWith('/preview')) {
+  if (previewRequested) {
     return handlePreview(req)
   }
 

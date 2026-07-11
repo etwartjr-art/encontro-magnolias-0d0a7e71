@@ -136,6 +136,33 @@ type SyncRun = {
   detalhes: SyncDetalhe[] | null;
 };
 
+const syncFailureAdvice = (run: SyncRun) => {
+  const details = run.detalhes as unknown;
+  const action =
+    details && !Array.isArray(details) && typeof details === "object"
+      ? String((details as { ajuste_greenn?: unknown }).ajuste_greenn ?? "")
+      : "";
+
+  if (run.erro_mensagem?.includes("greenn_unreachable")) {
+    return {
+      title: "A API da Greenn não respondeu dentro do tempo limite.",
+      description:
+        action ||
+        "Confirme na Greenn se a API de vendas está habilitada para a chave usada, se o endpoint continua correto e se o webhook saleUpdated está ativo para atualizar os pagamentos automaticamente.",
+    };
+  }
+
+  if (run.http_status === 401) {
+    return {
+      title: "A Greenn recusou a chave de API.",
+      description:
+        "Gere ou revise a chave de API na Greenn e atualize a credencial salva no backend do projeto.",
+    };
+  }
+
+  return null;
+};
+
 
 
 const STATUS_OPTIONS: { value: StatusInscricao | "todos"; label: string }[] = [
@@ -1145,8 +1172,14 @@ const SyncPanel = ({
             </div>
 
             {last.erro_mensagem && (
-              <div className="mb-4 border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
-                {last.erro_mensagem}
+              <div className="mb-4 border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive space-y-2">
+                {syncFailureAdvice(last) ? (
+                  <>
+                    <p className="font-medium">{syncFailureAdvice(last)?.title}</p>
+                    <p className="text-destructive/80">{syncFailureAdvice(last)?.description}</p>
+                  </>
+                ) : null}
+                <p className="font-mono break-words">{last.erro_mensagem}</p>
               </div>
             )}
 
