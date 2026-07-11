@@ -27,6 +27,16 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Loader2,
   LogOut,
   Users,
@@ -1266,6 +1276,7 @@ const DetalheCard = ({
   onReprocess: (inscricaoId: string) => void;
   reprocessingId: string | null;
 }) => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const canReprocess = Boolean(d.id) && (d.acao?.startsWith("erro") ?? false);
   const isReprocessing = reprocessingId === d.id;
   const rule = (d.match_rule ?? "none") as SyncMatchRule;
@@ -1384,7 +1395,7 @@ const DetalheCard = ({
           <Button
             size="sm"
             variant="outline"
-            onClick={() => onReprocess(d.id!)}
+            onClick={() => setConfirmOpen(true)}
             disabled={isReprocessing}
             className="rounded-none uppercase tracking-[0.2em] text-[10px] border-destructive/60 text-destructive hover:bg-destructive/10"
           >
@@ -1395,6 +1406,29 @@ const DetalheCard = ({
             )}
             Reprocessar inscrição
           </Button>
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reprocessar inscrição?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação vai buscar novamente os dados na Greenn e atualizar a inscrição
+                  {insc?.nome ? ` de ${insc.nome}` : ""}. O resultado será registrado no histórico
+                  de sincronização. Deseja continuar?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setConfirmOpen(false);
+                    onReprocess(d.id!);
+                  }}
+                >
+                  Reprocessar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
     </div>
