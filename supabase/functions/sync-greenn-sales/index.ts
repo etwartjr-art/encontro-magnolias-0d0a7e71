@@ -129,71 +129,123 @@ Deno.serve(async (req) => {
     const isPaid = PAID.has(rawStatus);
 
     // Match: primeiro por sale_id; fallback por email; fallback por telefone.
-    // match_rule descreve qual regra casou (auditoria).
-    let existing: { id: string; status: string } | null = null;
+    type ExistingRow = {
+      id: string;
+      status: string;
+      nome: string;
+      email: string;
+      celular: string;
+      greenn_sale_id: string | null;
+      pago_em: string | null;
+      metodo_pagamento: string | null;
+    };
+    let existing: ExistingRow | null = null;
     let matchRule: "sale_id" | "email" | "phone" | "none" = "none";
+    const selectCols = "id, status, nome, email, celular, greenn_sale_id, pago_em, metodo_pagamento";
     {
       const { data } = await admin
         .from("inscricoes")
-        .select("id, status")
+        .select(selectCols)
         .eq("greenn_sale_id", saleId)
         .maybeSingle();
-      if (data) { existing = data as any; matchRule = "sale_id"; }
+      if (data) { existing = data as ExistingRow; matchRule = "sale_id"; }
     }
     if (!existing && email) {
       const { data } = await admin
         .from("inscricoes")
-        .select("id, status")
+        .select(selectCols)
         .is("greenn_sale_id", null)
         .eq("email", email)
         .order("criado_em", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (data) { existing = data as any; matchRule = "email"; }
+      if (data) { existing = data as ExistingRow; matchRule = "email"; }
     }
     if (!existing && celular) {
       const { data } = await admin
         .from("inscricoes")
-        .select("id, status")
+        .select(selectCols)
         .is("greenn_sale_id", null)
         .eq("celular", celular)
         .order("criado_em", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (data) { existing = data as any; matchRule = "phone"; }
+      if (data) { existing = data as ExistingRow; matchRule = "phone"; }
     }
 
+    const pagoEmNovo = paidAt ? new Date(String(paidAt)).toISOString() : new Date().toISOString();
+
     if (existing) {
+      const buyer = { nome, email, celular };
       if (isPaid) {
         const patch: Record<string, unknown> = {
           greenn_sale_id: saleId,
           metodo_pagamento: metodo,
           greenn_payload: sale as any,
         };
+        const antes: Record<string, unknown> = {
+          status: existing.status,
+          greenn_sale_id: existing.greenn_sale_id,
+          pago_em: existing.pago_em,
+          metodo_pagamento: existing.metodo_pagamento,
+        };
+        const depois: Record<string, unknown> = {
+          status: existing.status,
+          greenn_sale_id: saleId,
+          pago_em: existing.pago_em,
+          metodo_pagamento: metodo,
+        };
         if (existing.status !== "pago") {
           patch.status = "pago";
-          patch.pago_em = paidAt ? new Date(String(paidAt)).toISOString() : new Date().toISOString();
+          patch.pago_em = pagoEmNovo;
+          depois.status = "pago";
+          depois.pago_em = pagoEmNovo;
         }
         const { error } = await admin.from("inscricoes").update(patch).eq("id", existing.id);
         if (error) {
           stats.erros++;
-          detalhes.push({ saleId, acao: "erro_update", match_rule: matchRule, id: existing.id, erro: error.message });
+          detalhes.push({
+            saleId, acao: "erro_update", match_rule: matchRule, id: existing.id,
+            inscricao: { nome: existing.nome, email: existing.email, celular: existing.celular },
+            buyer, antes, tentativa_depois: depois, erro: error.message,
+          });
         } else {
           stats.atualizadas++;
-          detalhes.push({ saleId, acao: "atualizada", match_rule: matchRule, id: existing.id, status_anterior: existing.status });
+          detalhes.push({
+            saleId, acao: "atualizada", match_rule: matchRule, id: existing.id,
+            inscricao: { nome: existing.nome, email: existing.email, celular: existing.celular },
+            buyer, antes, depois,
+          });
         }
       } else {
         stats.ignoradas++;
-        detalhes.push({ saleId, acao: "ignorada_nao_paga", match_rule: matchRule, id: existing.id, status_greenn: rawStatus });
+        detalhes.push({
+          saleId, acao: "ignorada_nao_paga", match_rule: matchRule, id: existing.id,
+          inscricao: { nome: existing.nome, email: existing.email, celular: existing.celular },
+          buyer, status_greenn: rawStatus,
+          motivo: `venda com status "${rawStatus}" não é considerada paga`,
+        });
       }
       continue;
     }
 
 
-    if (!isPaid) { stats.ignoradas++; continue; }
+    if (!isPaid) {
+      stats.ignoradas++;
+      detalhes.push({
+        saleId, acao: "ignorada_nao_paga", match_rule: "none",
+        buyer: { nome, email, celular }, status_greenn: rawStatus,
+        motivo: `sem inscrição correspondente e status "${rawStatus}" não é pago`,
+      });
+      continue;
+    }
     if (!nome || (!email && !celular)) {
       stats.ignoradas++;
-      detalhes.push({ saleId, acao: "ignorada", match_rule: "none", motivo: "dados_insuficientes" });
+      detalhes.push({
+        saleId, acao: "ignorada", match_rule: "none",
+        buyer: { nome, email, celular },
+        motivo: "dados insuficientes (nome e email/telefone obrigatórios)",
+      });
       continue;
     }
 
@@ -205,18 +257,26 @@ Deno.serve(async (req) => {
       status: "pago",
       metodo_pagamento: metodo,
       greenn_sale_id: saleId,
-      pago_em: paidAt ? new Date(String(paidAt)).toISOString() : new Date().toISOString(),
+      pago_em: pagoEmNovo,
       greenn_payload: sale as any,
     }).select("id").maybeSingle();
 
     if (error) {
       stats.erros++;
-      detalhes.push({ saleId, acao: "erro_insert", match_rule: "none", erro: error.message });
+      detalhes.push({
+        saleId, acao: "erro_insert", match_rule: "none",
+        buyer: { nome, email, celular }, erro: error.message,
+      });
     } else {
       stats.criadas++;
-      detalhes.push({ saleId, acao: "criada", match_rule: "none", id: inserted?.id });
+      detalhes.push({
+        saleId, acao: "criada", match_rule: "none", id: inserted?.id,
+        buyer: { nome, email, celular },
+        depois: { status: "pago", greenn_sale_id: saleId, pago_em: pagoEmNovo, metodo_pagamento: metodo },
+      });
     }
   }
+
 
 
   await recordRun({
