@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
 
   const { data: insc, error: inscErr } = await admin
     .from("inscricoes")
-    .select("id, status, nome, email, celular, greenn_sale_id, pago_em, metodo_pagamento")
+    .select("id, status, nome, email, celular, valor, greenn_sale_id, pago_em, metodo_pagamento")
     .eq("id", inscricaoId)
     .maybeSingle();
   if (inscErr || !insc) {
