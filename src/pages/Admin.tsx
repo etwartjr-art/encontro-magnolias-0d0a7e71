@@ -742,6 +742,35 @@ const SyncPanel = ({
   const last = runs[0];
   const successRuns = runs.filter((r) => r.sucesso).length;
 
+  const detalhes: SyncDetalhe[] = Array.isArray(last?.detalhes) ? last!.detalhes! : [];
+  const ruleCounts = detalhes.reduce(
+    (acc, d) => {
+      const r = (d.match_rule ?? "none") as SyncMatchRule;
+      acc[r] = (acc[r] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<SyncMatchRule, number>
+  );
+  const ruleLabel: Record<SyncMatchRule, string> = {
+    sale_id: "Sale ID",
+    email: "E-mail",
+    phone: "Telefone",
+    none: "Sem match",
+  };
+  const ruleBadge = (r: SyncMatchRule) => {
+    switch (r) {
+      case "sale_id":
+        return "default" as const;
+      case "email":
+        return "secondary" as const;
+      case "phone":
+        return "outline" as const;
+      default:
+        return "outline" as const;
+    }
+  };
+
+
   return (
     <section className="mb-8 bg-ivory border border-rose-dusty/40 shadow-soft">
       <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-rose-dusty/30">
