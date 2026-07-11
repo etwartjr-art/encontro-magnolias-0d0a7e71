@@ -77,6 +77,19 @@ type WebhookLog = {
   payload: unknown;
 };
 
+type SyncMatchRule = "sale_id" | "email" | "phone" | "none";
+
+type SyncDetalhe = {
+  saleId?: string;
+  acao?: string;
+  match_rule?: SyncMatchRule;
+  id?: string;
+  status_anterior?: string;
+  status_greenn?: string;
+  motivo?: string;
+  erro?: string;
+};
+
 type SyncRun = {
   id: string;
   iniciado_em: string;
@@ -91,7 +104,9 @@ type SyncRun = {
   erros: number;
   erro_mensagem: string | null;
   http_status: number | null;
+  detalhes: SyncDetalhe[] | null;
 };
+
 
 
 const STATUS_OPTIONS: { value: StatusInscricao | "todos"; label: string }[] = [
