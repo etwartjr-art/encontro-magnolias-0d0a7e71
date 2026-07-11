@@ -10,7 +10,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const GREENN_API = "https://api.greenn.com.br/v1";
+const GREENN_API = Deno.env.get("GREENN_API_BASE") ?? "https://api.greenn.com.br/v1";
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL")!,
