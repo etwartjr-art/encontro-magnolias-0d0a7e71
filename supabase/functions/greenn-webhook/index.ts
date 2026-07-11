@@ -7,9 +7,79 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-greenn-signature",
+    "authorization, x-client-info, apikey, content-type, x-greenn-signature, x-signature, x-hub-signature-256, x-webhook-signature, x-webhook-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+// Headers onde a Greenn (ou proxies) podem enviar a assinatura HMAC-SHA256 do body.
+const SIGNATURE_HEADERS = [
+  "x-greenn-signature",
+  "x-signature",
+  "x-hub-signature-256",
+  "x-webhook-signature",
+];
+
+function hexToBytes(hex: string): Uint8Array | null {
+  const clean = hex.trim().toLowerCase();
+  if (!/^[0-9a-f]+$/.test(clean) || clean.length % 2 !== 0) return null;
+  const out = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(clean.substr(i * 2, 2), 16);
+  return out;
+}
+
+function base64ToBytes(b64: string): Uint8Array | null {
+  try {
+    const norm = b64.trim().replace(/-/g, "+").replace(/_/g, "/");
+    const padded = norm + "=".repeat((4 - (norm.length % 4)) % 4);
+    const bin = atob(padded);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+function timingSafeEqualBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a[i] ^ b[i];
+  return r === 0;
+}
+
+async function hmacSha256(secret: string, message: string): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  return new Uint8Array(sig);
+}
+
+// Verifica a assinatura HMAC-SHA256 do corpo cru contra o segredo compartilhado.
+// Aceita valores hex, base64 e prefixos comuns ("sha256=..."). Timing-safe.
+async function verifySignature(
+  rawBody: string,
+  provided: string,
+  secret: string,
+): Promise<boolean> {
+  let value = provided.trim();
+  if (value.toLowerCase().startsWith("sha256=")) value = value.slice(7).trim();
+  if (!value) return false;
+
+  const expected = await hmacSha256(secret, rawBody);
+
+  const asHex = hexToBytes(value);
+  if (asHex && timingSafeEqualBytes(asHex, expected)) return true;
+
+  const asB64 = base64ToBytes(value);
+  if (asB64 && timingSafeEqualBytes(asB64, expected)) return true;
+
+  return false;
+}
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -74,10 +144,10 @@ Deno.serve(async (req) => {
     return json({ error: "method_not_allowed" }, 405);
   }
 
-  // Valida token secreto na URL (?token=...) — a Greenn não assina o payload.
-  // Fail-closed: se o segredo não estiver configurado, rejeita tudo.
-  const expectedToken = Deno.env.get("GREENN_WEBHOOK_TOKEN");
-  if (!expectedToken) {
+  // Segredo compartilhado usado como chave HMAC-SHA256 do corpo da requisição.
+  // Fail-closed: sem segredo configurado, nada é processado.
+  const secret = Deno.env.get("GREENN_WEBHOOK_TOKEN");
+  if (!secret) {
     console.error("greenn-webhook: GREENN_WEBHOOK_TOKEN não configurado — rejeitando requisição");
     await logIncident(
       "__config_error__",
@@ -86,30 +156,39 @@ Deno.serve(async (req) => {
     );
     return json({ error: "server_misconfigured" }, 503);
   }
-  const url = new URL(req.url);
-  const providedToken =
-    url.searchParams.get("token") ||
-    req.headers.get("x-webhook-token") ||
-    "";
-  if (providedToken !== expectedToken) {
-    console.warn("greenn-webhook: token inválido ou ausente");
-    await logIncident(
-      "__auth_error__",
-      providedToken
-        ? "Token recebido não confere com GREENN_WEBHOOK_TOKEN — verifique a URL configurada na Greenn"
-        : "Nenhum token enviado — verifique se a URL na Greenn inclui ?token=SEU_TOKEN",
-      {
-        user_agent: req.headers.get("user-agent"),
-        token_preview: providedToken ? `${providedToken.slice(0, 3)}…${providedToken.slice(-2)}` : null,
-        via: url.searchParams.get("token") ? "query" : req.headers.get("x-webhook-token") ? "header" : "none",
-      },
-    );
-    return json({ error: "unauthorized" }, 401);
+
+  // Lê o corpo bruto ANTES de parsear — a assinatura é calculada sobre os bytes originais.
+  const rawBody = await req.text();
+
+  // Localiza a assinatura em qualquer um dos headers conhecidos.
+  let providedSig = "";
+  let sigHeader = "";
+  for (const h of SIGNATURE_HEADERS) {
+    const v = req.headers.get(h);
+    if (v) { providedSig = v; sigHeader = h; break; }
+  }
+
+  if (!providedSig) {
+    await logIncident("__auth_error__", "Assinatura ausente — configure o header HMAC-SHA256 no webhook da Greenn", {
+      user_agent: req.headers.get("user-agent"),
+      expected_headers: SIGNATURE_HEADERS,
+    });
+    return json({ error: "missing_signature" }, 401);
+  }
+
+  const valid = await verifySignature(rawBody, providedSig, secret);
+  if (!valid) {
+    await logIncident("__auth_error__", "Assinatura HMAC-SHA256 inválida — segredo divergente ou body adulterado", {
+      user_agent: req.headers.get("user-agent"),
+      sig_header: sigHeader,
+      sig_preview: `${providedSig.slice(0, 6)}…${providedSig.slice(-4)}`,
+    });
+    return json({ error: "invalid_signature" }, 401);
   }
 
   let payload: Record<string, unknown> = {};
   try {
-    payload = await req.json();
+    payload = JSON.parse(rawBody);
   } catch {
     await logIncident("__invalid_json__", "Corpo da requisição não é JSON válido", {
       content_type: req.headers.get("content-type"),
