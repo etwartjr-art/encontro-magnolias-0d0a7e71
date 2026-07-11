@@ -885,6 +885,85 @@ const SyncPanel = ({
               </div>
             )}
 
+            <div className="mb-5">
+              <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-2">
+                Como as vendas casaram (última execução)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(["sale_id", "email", "phone", "none"] as SyncMatchRule[]).map(
+                  (r) => (
+                    <Badge
+                      key={r}
+                      variant={ruleBadge(r)}
+                      className="text-[10px] uppercase tracking-wider"
+                    >
+                      {ruleLabel[r]}: {ruleCounts[r] ?? 0}
+                    </Badge>
+                  )
+                )}
+              </div>
+            </div>
+
+            {detalhes.length > 0 && (
+              <details className="text-xs mb-4">
+                <summary className="cursor-pointer uppercase tracking-[0.2em] text-[10px] text-rose-deep mb-2">
+                  Auditoria por venda ({detalhes.length})
+                </summary>
+                <div className="mt-3 overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Sale ID</TableHead>
+                        <TableHead>Ação</TableHead>
+                        <TableHead>Regra de match</TableHead>
+                        <TableHead>Inscrição</TableHead>
+                        <TableHead>Observação</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {detalhes.map((d, idx) => {
+                        const rule = (d.match_rule ?? "none") as SyncMatchRule;
+                        return (
+                          <TableRow key={idx}>
+                            <TableCell className="font-mono text-[11px]">
+                              {d.saleId ?? "—"}
+                            </TableCell>
+                            <TableCell className="text-[11px]">
+                              {d.acao ?? "—"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={ruleBadge(rule)}
+                                className="text-[10px] uppercase"
+                              >
+                                {ruleLabel[rule]}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono text-[10px] text-foreground/60">
+                              {d.id ? d.id.slice(0, 8) : "—"}
+                            </TableCell>
+                            <TableCell className="text-[11px] text-foreground/70">
+                              {d.erro
+                                ? `erro: ${d.erro}`
+                                : d.motivo
+                                ? d.motivo
+                                : d.status_anterior
+                                ? `de ${d.status_anterior} → pago`
+                                : d.status_greenn
+                                ? `greenn: ${d.status_greenn}`
+                                : "—"}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </details>
+            )}
+
+
+
             <details className="text-xs">
               <summary className="cursor-pointer uppercase tracking-[0.2em] text-[10px] text-rose-deep mb-2">
                 Histórico ({runs.length})
