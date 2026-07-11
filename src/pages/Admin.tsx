@@ -81,6 +81,7 @@ type SyncMatchRule = "sale_id" | "email" | "phone" | "none";
 
 type SyncSnapshot = {
   status?: string | null;
+  valor?: number | null;
   greenn_sale_id?: string | null;
   pago_em?: string | null;
   metodo_pagamento?: string | null;
@@ -1238,11 +1239,15 @@ const fmtSnapVal = (k: string, v: unknown) => {
     const d = new Date(v);
     if (!isNaN(d.getTime())) return d.toLocaleString("pt-BR");
   }
+  if (k === "valor" && typeof v === "number") {
+    return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  }
   return String(v);
 };
 
 const SNAP_FIELDS: { key: keyof SyncSnapshot; label: string }[] = [
   { key: "status", label: "Status" },
+  { key: "valor", label: "Valor" },
   { key: "greenn_sale_id", label: "Sale ID" },
   { key: "pago_em", label: "Pago em" },
   { key: "metodo_pagamento", label: "Método" },

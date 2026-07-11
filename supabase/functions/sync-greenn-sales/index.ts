@@ -135,13 +135,14 @@ Deno.serve(async (req) => {
       nome: string;
       email: string;
       celular: string;
+      valor: number | null;
       greenn_sale_id: string | null;
       pago_em: string | null;
       metodo_pagamento: string | null;
     };
     let existing: ExistingRow | null = null;
     let matchRule: "sale_id" | "email" | "phone" | "none" = "none";
-    const selectCols = "id, status, nome, email, celular, greenn_sale_id, pago_em, metodo_pagamento";
+    const selectCols = "id, status, nome, email, celular, valor, greenn_sale_id, pago_em, metodo_pagamento";
     {
       const { data } = await admin
         .from("inscricoes")
@@ -178,6 +179,7 @@ Deno.serve(async (req) => {
     if (existing) {
       const buyer = { nome, email, celular };
       if (isPaid) {
+        const valorGreenn = isFinite(valor) && valor > 0 ? valor : null;
         const patch: Record<string, unknown> = {
           greenn_sale_id: saleId,
           metodo_pagamento: metodo,
@@ -185,16 +187,23 @@ Deno.serve(async (req) => {
         };
         const antes: Record<string, unknown> = {
           status: existing.status,
+          valor: existing.valor,
           greenn_sale_id: existing.greenn_sale_id,
           pago_em: existing.pago_em,
           metodo_pagamento: existing.metodo_pagamento,
         };
         const depois: Record<string, unknown> = {
           status: existing.status,
+          valor: existing.valor,
           greenn_sale_id: saleId,
           pago_em: existing.pago_em,
           metodo_pagamento: metodo,
         };
+        // Sempre reflete o valor real cobrado na Greenn quando disponível
+        if (valorGreenn != null && Math.abs(Number(existing.valor ?? 0) - valorGreenn) > 0.005) {
+          patch.valor = valorGreenn;
+          depois.valor = valorGreenn;
+        }
         if (existing.status !== "pago") {
           patch.status = "pago";
           patch.pago_em = pagoEmNovo;
