@@ -70,6 +70,7 @@ async function sha256(text: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") {
+    await logIncident("__method_error__", `método ${req.method} não é POST`, { method: req.method });
     return json({ error: "method_not_allowed" }, 405);
   }
 
@@ -78,6 +79,11 @@ Deno.serve(async (req) => {
   const expectedToken = Deno.env.get("GREENN_WEBHOOK_TOKEN");
   if (!expectedToken) {
     console.error("greenn-webhook: GREENN_WEBHOOK_TOKEN não configurado — rejeitando requisição");
+    await logIncident(
+      "__config_error__",
+      "GREENN_WEBHOOK_TOKEN não configurado no backend — nenhum evento pode ser processado",
+      { user_agent: req.headers.get("user-agent") },
+    );
     return json({ error: "server_misconfigured" }, 503);
   }
   const url = new URL(req.url);
@@ -87,6 +93,17 @@ Deno.serve(async (req) => {
     "";
   if (providedToken !== expectedToken) {
     console.warn("greenn-webhook: token inválido ou ausente");
+    await logIncident(
+      "__auth_error__",
+      providedToken
+        ? "Token recebido não confere com GREENN_WEBHOOK_TOKEN — verifique a URL configurada na Greenn"
+        : "Nenhum token enviado — verifique se a URL na Greenn inclui ?token=SEU_TOKEN",
+      {
+        user_agent: req.headers.get("user-agent"),
+        token_preview: providedToken ? `${providedToken.slice(0, 3)}…${providedToken.slice(-2)}` : null,
+        via: url.searchParams.get("token") ? "query" : req.headers.get("x-webhook-token") ? "header" : "none",
+      },
+    );
     return json({ error: "unauthorized" }, 401);
   }
 
@@ -94,6 +111,9 @@ Deno.serve(async (req) => {
   try {
     payload = await req.json();
   } catch {
+    await logIncident("__invalid_json__", "Corpo da requisição não é JSON válido", {
+      content_type: req.headers.get("content-type"),
+    });
     return json({ error: "invalid_json" }, 400);
   }
 
@@ -211,3 +231,27 @@ function json(body: unknown, status = 200) {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+
+// Registra incidentes (401/config/JSON inválido) no mesmo greenn_webhook_logs.
+// Dedupe por bucket de 10 min para não inundar a tabela em caso de webhook mal configurado.
+async function logIncident(
+  marker: "__auth_error__" | "__config_error__" | "__invalid_json__" | "__method_error__",
+  mensagem: string,
+  extras: Record<string, unknown> = {},
+) {
+  try {
+    const bucket = Math.floor(Date.now() / (10 * 60 * 1000));
+    const event_hash = await sha256(`${marker}|${bucket}`);
+    await supabase.from("greenn_webhook_logs").insert({
+      status_recebido: marker,
+      status_mapeado: null,
+      event_hash,
+      processado: false,
+      erro: mensagem,
+      payload: { incident: marker, mensagem, ...extras, at: new Date().toISOString() },
+    });
+  } catch (e) {
+    console.error("greenn-webhook: falha ao registrar incidente", e);
+  }
+}
+
