@@ -526,7 +526,10 @@ const Admin = () => {
           triggering={triggeringSync}
           onTrigger={triggerSync}
           onRefresh={loadSyncRuns}
+          onReprocess={reprocessInscricao}
+          reprocessingId={reprocessing}
         />
+
 
 
 
