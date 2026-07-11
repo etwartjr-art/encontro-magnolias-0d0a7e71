@@ -245,6 +245,17 @@ Deno.serve(async (req) => {
     atualizadas: 1,
   });
   return json({ ok: true, acao: "atualizada", match_rule: matchRule, saleId });
+  } catch (e) {
+    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    console.error("reprocess-inscricao unhandled error", msg);
+    try {
+      await recordRun({
+        sucesso: false, erro: `unhandled: ${msg}`.slice(0, 500), startedAt: Date.now(),
+        detalhes: [{ acao: "erro_reprocesso", erro: msg }],
+      });
+    } catch { /* ignore */ }
+    return json({ error: "unhandled_exception", message: msg }, 500);
+  }
 });
 
 async function recordRun(opts: {
