@@ -224,13 +224,20 @@ const Admin = () => {
 
   const triggerSync = async () => {
     setTriggeringSync(true);
-    const { error } = await supabase.functions.invoke("sync-greenn-sales", {
+    const { data, error } = await supabase.functions.invoke("sync-greenn-sales", {
       method: "POST",
     });
     if (error) {
       toast({
         title: "Erro ao sincronizar",
         description: error.message,
+        variant: "destructive",
+      });
+    } else if ((data as { ok?: boolean } | null)?.ok === false) {
+      const failure = data as { message?: string; details?: string; error?: string } | null;
+      toast({
+        title: "Sincronização não concluída",
+        description: failure?.message ?? failure?.details ?? failure?.error ?? "A API da Greenn não respondeu.",
         variant: "destructive",
       });
     } else {
@@ -252,6 +259,13 @@ const Admin = () => {
       toast({
         title: "Erro ao reprocessar",
         description: error.message,
+        variant: "destructive",
+      });
+    } else if ((data as { ok?: boolean } | null)?.ok === false) {
+      const failure = data as { message?: string; details?: string; error?: string } | null;
+      toast({
+        title: "Reprocessamento não concluído",
+        description: failure?.message ?? failure?.details ?? failure?.error ?? "A API da Greenn não respondeu.",
         variant: "destructive",
       });
     } else {

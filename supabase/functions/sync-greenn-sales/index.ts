@@ -11,6 +11,7 @@ const corsHeaders = {
 };
 
 const GREENN_API = Deno.env.get("GREENN_API_BASE") ?? "https://api.gdigital.com.br";
+const GREENN_FETCH_TIMEOUT_MS = Number(Deno.env.get("GREENN_FETCH_TIMEOUT_MS") ?? "12000");
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -28,6 +29,9 @@ const normalizePhone = (raw: unknown): string => {
 };
 
 const PAID = new Set(["approved", "paid", "completed", "confirmed"]);
+
+const greennUnavailableMessage =
+  "Não foi possível conectar à API da Greenn agora. A sincronização foi registrada como falha e pode ser tentada novamente.";
 
 const pick = (obj: unknown, keys: string[]): unknown => {
   if (!obj || typeof obj !== "object") return undefined;
@@ -84,9 +88,27 @@ Deno.serve(async (req) => {
 
 
   // Tenta endpoint principal /sales. Se a API real usar outro path, o discover ajuda a descobrir.
-  const resp = await fetch(`${GREENN_API}/sales?limit=100`, {
-    headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
-  });
+  const respResult = await fetchGreenn(`/sales?limit=100`, apiKey);
+  if (!respResult.ok) {
+    await recordRun({
+      origem,
+      sucesso: false,
+      erro_mensagem: `greenn_unreachable: ${respResult.message}`.slice(0, 500),
+      startedAt,
+      detalhes: {
+        endpoint: `${GREENN_API}/sales?limit=100`,
+        timeout_ms: GREENN_FETCH_TIMEOUT_MS,
+        motivo: greennUnavailableMessage,
+      },
+    });
+    return json({
+      ok: false,
+      error: "greenn_unreachable",
+      message: greennUnavailableMessage,
+      details: respResult.message,
+    });
+  }
+  const resp = respResult.response;
   const bodyText = await resp.text();
   let body: unknown = null;
   try { body = JSON.parse(bodyText); } catch { /* ignore */ }
@@ -305,9 +327,29 @@ Deno.serve(async (req) => {
         startedAt: Date.now(),
       });
     } catch { /* ignore */ }
-    return json({ error: "unhandled_exception", message: msg }, 500);
+    return json({ ok: false, error: "sync_failed", message: msg });
   }
 });
+
+async function fetchGreenn(path: string, apiKey: string): Promise<
+  | { ok: true; response: Response }
+  | { ok: false; message: string }
+> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GREENN_FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${GREENN_API}${path}`, {
+      headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
+      signal: controller.signal,
+    });
+    return { ok: true, response };
+  } catch (e) {
+    const message = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    return { ok: false, message };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 async function recordRun(opts: {
   origem: string;

@@ -10,6 +10,7 @@ const corsHeaders = {
 };
 
 const GREENN_API = Deno.env.get("GREENN_API_BASE") ?? "https://api.gdigital.com.br";
+const GREENN_FETCH_TIMEOUT_MS = Number(Deno.env.get("GREENN_FETCH_TIMEOUT_MS") ?? "12000");
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -27,6 +28,9 @@ const normalizePhone = (raw: unknown): string => {
 };
 
 const PAID = new Set(["approved", "paid", "completed", "confirmed"]);
+
+const greennUnavailableMessage =
+  "Não foi possível conectar à API da Greenn agora. O reprocessamento foi registrado como falha e pode ser tentado novamente.";
 
 const pick = (obj: unknown, keys: string[]): unknown => {
   if (!obj || typeof obj !== "object") return undefined;
@@ -99,9 +103,18 @@ Deno.serve(async (req) => {
   const httpStatuses: number[] = [];
 
   if (insc.greenn_sale_id) {
-    const r = await fetch(`${GREENN_API}/sales/${encodeURIComponent(insc.greenn_sale_id)}`, {
-      headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
-    });
+    const saleResult = await fetchGreenn(`/sales/${encodeURIComponent(insc.greenn_sale_id)}`, apiKey);
+    if (!saleResult.ok) {
+      await recordRun({
+        sucesso: false,
+        erro: `greenn_unreachable: ${saleResult.message}`.slice(0, 500),
+        startedAt,
+        detalhes: [{ acao: "erro_reprocesso", id: insc.id, erro: greennUnavailableMessage }],
+        erros: 1,
+      });
+      return json({ ok: false, error: "greenn_unreachable", message: greennUnavailableMessage, details: saleResult.message });
+    }
+    const r = saleResult.response;
     httpStatuses.push(r.status);
     if (r.ok) {
       const b = await r.json().catch(() => null);
@@ -111,9 +124,18 @@ Deno.serve(async (req) => {
   }
 
   if (!sale) {
-    const r = await fetch(`${GREENN_API}/sales?limit=200`, {
-      headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
-    });
+    const listResult = await fetchGreenn(`/sales?limit=200`, apiKey);
+    if (!listResult.ok) {
+      await recordRun({
+        sucesso: false,
+        erro: `greenn_unreachable: ${listResult.message}`.slice(0, 500),
+        startedAt,
+        detalhes: [{ acao: "erro_reprocesso", id: insc.id, erro: greennUnavailableMessage }],
+        erros: 1,
+      });
+      return json({ ok: false, error: "greenn_unreachable", message: greennUnavailableMessage, details: listResult.message });
+    }
+    const r = listResult.response;
     httpStatuses.push(r.status);
     if (!r.ok) {
       const body = await r.text();
@@ -254,9 +276,29 @@ Deno.serve(async (req) => {
         detalhes: [{ acao: "erro_reprocesso", erro: msg }],
       });
     } catch { /* ignore */ }
-    return json({ error: "unhandled_exception", message: msg }, 500);
+    return json({ ok: false, error: "reprocess_failed", message: msg });
   }
 });
+
+async function fetchGreenn(path: string, apiKey: string): Promise<
+  | { ok: true; response: Response }
+  | { ok: false; message: string }
+> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GREENN_FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${GREENN_API}${path}`, {
+      headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
+      signal: controller.signal,
+    });
+    return { ok: true, response };
+  } catch (e) {
+    const message = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    return { ok: false, message };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 async function recordRun(opts: {
   sucesso: boolean;
