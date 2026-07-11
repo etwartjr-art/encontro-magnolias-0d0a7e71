@@ -149,6 +149,7 @@ Deno.serve(async (req) => {
 
   const antes = {
     status: insc.status,
+    valor: insc.valor,
     greenn_sale_id: insc.greenn_sale_id,
     pago_em: insc.pago_em,
     metodo_pagamento: insc.metodo_pagamento,
@@ -171,6 +172,8 @@ Deno.serve(async (req) => {
   const rawStatus = String(pick(sale, ["currentStatus", "current_status", "status", "sale_status"]) ?? "").toLowerCase();
   const metodo = String(pick(sale, ["payment_method", "method"]) ?? "").trim() || null;
   const paidAt = pick(sale, ["paid_at", "payment_date", "approved_at", "updated_at", "date"]);
+  const valorRaw = Number(pick(sale, ["net_amount", "amount", "total", "value"]) ?? 0);
+  const valorGreenn = valorRaw > 1000 ? valorRaw / 100 : valorRaw;
   const isPaid = PAID.has(rawStatus);
   const buyer = {
     nome: String(pick(sale, ["name", "buyer_name", "customer_name", "client_name"]) ?? "").trim(),
@@ -200,10 +203,15 @@ Deno.serve(async (req) => {
   };
   const depois: Record<string, unknown> = {
     status: insc.status,
+    valor: insc.valor,
     greenn_sale_id: saleId,
     pago_em: insc.pago_em,
     metodo_pagamento: metodo,
   };
+  if (isFinite(valorGreenn) && valorGreenn > 0 && Math.abs(Number(insc.valor ?? 0) - valorGreenn) > 0.005) {
+    patch.valor = valorGreenn;
+    depois.valor = valorGreenn;
+  }
   if (insc.status !== "pago") {
     patch.status = "pago";
     patch.pago_em = pagoEmNovo;
