@@ -139,6 +139,8 @@ Deno.serve(async (req) => {
   const email = String(pick(payload, ["email", "e_mail"]) ?? "").toLowerCase().trim();
   const metodo =
     (pick(payload, ["payment_method", "method", "metodo_pagamento", "paymentmethod"]) as string | undefined) || null;
+  const valorRaw = Number(pick(payload, ["net_amount", "amount", "total", "value"]) ?? 0);
+  const valorGreenn = valorRaw > 1000 ? valorRaw / 100 : valorRaw;
 
   // Dedupe: hash de sale_id + status + timestamp opcional
   const event_hash = await sha256(`${saleId ?? "no-id"}|${rawStatus}|${pick(payload, ["updated_at", "date", "created_at"]) ?? ""}`);
