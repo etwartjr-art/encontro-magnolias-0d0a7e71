@@ -10,8 +10,8 @@ const corsHeaders = {
 };
 
 const GREENN_API = Deno.env.get("GREENN_API_BASE") ?? "https://api.gdigital.com.br";
-const GREENN_FETCH_TIMEOUT_MS = Number(Deno.env.get("GREENN_FETCH_TIMEOUT_MS") ?? "12000");
-const GREENN_FETCH_RETRIES = Number(Deno.env.get("GREENN_FETCH_RETRIES") ?? "2");
+const GREENN_FETCH_TIMEOUT_MS = Number(Deno.env.get("GREENN_FETCH_TIMEOUT_MS") ?? "7000");
+const GREENN_FETCH_RETRIES = Number(Deno.env.get("GREENN_FETCH_RETRIES") ?? "1");
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL")!,
