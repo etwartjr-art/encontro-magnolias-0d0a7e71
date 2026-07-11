@@ -65,6 +65,17 @@ Deno.serve(async (req) => {
   const discover = url.searchParams.get("discover") === "1";
   if (discover) origem = "discover";
 
+  // Modo webhook-only: pula a chamada à API da Greenn e confia apenas no webhook saleUpdated
+  // para atualizar pagamentos. Útil quando a API pública está inacessível (DNS/timeout).
+  // Ativa por env (GREENN_WEBHOOK_ONLY=1/true) ou por query (?webhook_only=1 / ?mode=webhook).
+  const webhookOnlyEnv = String(Deno.env.get("GREENN_WEBHOOK_ONLY") ?? "").toLowerCase();
+  const webhookOnlyFlag =
+    webhookOnlyEnv === "1" || webhookOnlyEnv === "true" || webhookOnlyEnv === "yes";
+  const webhookOnlyQuery =
+    url.searchParams.get("webhook_only") === "1" ||
+    url.searchParams.get("mode") === "webhook";
+  const webhookOnly = !discover && (webhookOnlyFlag || webhookOnlyQuery);
+
   // Modo probe: testa vários hosts/paths e tokens para descobrir a combinação correta da API.
   if (url.searchParams.get("probe") === "1") {
     const bases = [
