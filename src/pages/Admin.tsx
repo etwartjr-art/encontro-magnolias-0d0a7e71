@@ -967,6 +967,8 @@ const SyncPanel = ({
                       d={d}
                       ruleLabel={ruleLabel}
                       ruleBadge={ruleBadge}
+                      onReprocess={onReprocess}
+                      reprocessingId={reprocessingId}
                     />
                   ))}
                 </div>
