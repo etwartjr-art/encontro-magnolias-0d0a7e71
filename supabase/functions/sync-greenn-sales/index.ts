@@ -124,21 +124,43 @@ Deno.serve(async (req) => {
 
     const isPaid = PAID.has(rawStatus);
 
-    // Já existe?
-    const { data: existing } = await admin
-      .from("inscricoes")
-      .select("id, status")
-      .eq("greenn_sale_id", saleId)
-      .maybeSingle();
+    // Já existe? Primeiro por sale_id; se não, cai para email/telefone (inscrição feita no site e paga fora do fluxo).
+    let existing: { id: string; status: string } | null = null;
+    {
+      const { data } = await admin
+        .from("inscricoes")
+        .select("id, status")
+        .eq("greenn_sale_id", saleId)
+        .maybeSingle();
+      existing = (data as any) ?? null;
+    }
+    if (!existing && (email || celular)) {
+      const orParts: string[] = [];
+      if (email) orParts.push(`email.eq.${email}`);
+      if (celular) orParts.push(`celular.eq.${celular}`);
+      const { data } = await admin
+        .from("inscricoes")
+        .select("id, status")
+        .is("greenn_sale_id", null)
+        .or(orParts.join(","))
+        .order("criado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      existing = (data as any) ?? null;
+    }
 
     if (existing) {
-      if (isPaid && existing.status !== "pago") {
-        const { error } = await admin.from("inscricoes").update({
-          status: "pago",
+      if (isPaid) {
+        const patch: Record<string, unknown> = {
+          greenn_sale_id: saleId,
           metodo_pagamento: metodo,
-          pago_em: paidAt ? new Date(String(paidAt)).toISOString() : new Date().toISOString(),
           greenn_payload: sale as any,
-        }).eq("id", existing.id);
+        };
+        if (existing.status !== "pago") {
+          patch.status = "pago";
+          patch.pago_em = paidAt ? new Date(String(paidAt)).toISOString() : new Date().toISOString();
+        }
+        const { error } = await admin.from("inscricoes").update(patch).eq("id", existing.id);
         if (error) { stats.erros++; detalhes.push({ saleId, erro: error.message }); }
         else { stats.atualizadas++; detalhes.push({ saleId, acao: "atualizada", id: existing.id }); }
       } else {
@@ -146,6 +168,7 @@ Deno.serve(async (req) => {
       }
       continue;
     }
+
 
     if (!isPaid) { stats.ignoradas++; continue; }
     if (!nome || (!email && !celular)) { stats.ignoradas++; detalhes.push({ saleId, motivo: "dados_insuficientes" }); continue; }
