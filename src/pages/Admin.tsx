@@ -77,6 +77,23 @@ type WebhookLog = {
   payload: unknown;
 };
 
+type SyncRun = {
+  id: string;
+  iniciado_em: string;
+  finalizado_em: string | null;
+  duracao_ms: number | null;
+  origem: string;
+  sucesso: boolean;
+  total: number;
+  criadas: number;
+  atualizadas: number;
+  ignoradas: number;
+  erros: number;
+  erro_mensagem: string | null;
+  http_status: number | null;
+};
+
+
 const STATUS_OPTIONS: { value: StatusInscricao | "todos"; label: string }[] = [
   { value: "todos", label: "Todos" },
   { value: "pendente", label: "Pendente" },
