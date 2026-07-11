@@ -206,6 +206,7 @@ Deno.serve(async (req) => {
   };
   if (saleId) patch.greenn_sale_id = saleId;
   if (metodo) patch.metodo_pagamento = metodo;
+  if (isFinite(valorGreenn) && valorGreenn > 0) patch.valor = valorGreenn;
   if (statusMapeado === "pago") patch.pago_em = new Date().toISOString();
 
   const { error: upErr } = await supabase.from("inscricoes").update(patch).eq("id", inscricao.id);
