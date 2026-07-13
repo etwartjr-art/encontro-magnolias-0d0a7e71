@@ -10,7 +10,14 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const GREENN_API = Deno.env.get("GREENN_API_BASE") ?? "https://api.greenn.com.br/v1";
+const configuredGreennApi = Deno.env.get("GREENN_API_BASE")?.replace(/\/$/, "");
+const GREENN_API_CANDIDATES = configuredGreennApi
+  ? [configuredGreennApi]
+  : [
+      "https://api.greenn.com.br/v1",
+      "https://api.gdigital.com.br/v1",
+      "https://api.gdigital.com.br",
+    ];
 const GREENN_FETCH_TIMEOUT_MS = Number(Deno.env.get("GREENN_FETCH_TIMEOUT_MS") ?? "7000");
 const GREENN_FETCH_RETRIES = Number(Deno.env.get("GREENN_FETCH_RETRIES") ?? "1");
 
@@ -170,7 +177,7 @@ Deno.serve(async (req) => {
       erro_mensagem: formatGreennUnavailableError(respResult.message),
       startedAt,
       detalhes: {
-        endpoint: `${GREENN_API}/sales?limit=100`,
+        endpoints_testados: GREENN_API_CANDIDATES.map((base) => `${base}/sales?limit=100`),
         timeout_ms: GREENN_FETCH_TIMEOUT_MS,
         tentativas: GREENN_FETCH_RETRIES + 1,
         tipo_erro: classifyGreennFetchError(respResult.message),
@@ -411,28 +418,31 @@ Deno.serve(async (req) => {
 });
 
 async function fetchGreenn(path: string, apiKey: string): Promise<
-  | { ok: true; response: Response }
+  | { ok: true; response: Response; endpoint: string }
   | { ok: false; message: string }
 > {
   const errors: string[] = [];
 
-  for (let attempt = 0; attempt <= GREENN_FETCH_RETRIES; attempt++) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), GREENN_FETCH_TIMEOUT_MS);
-    try {
-      const response = await fetch(`${GREENN_API}${path}`, {
-        headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
-        signal: controller.signal,
-      });
-      return { ok: true, response };
-    } catch (e) {
-      const message = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
-      errors.push(`tentativa ${attempt + 1}: ${message}`);
-      if (attempt < GREENN_FETCH_RETRIES) {
-        await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+  for (const base of GREENN_API_CANDIDATES) {
+    const endpoint = `${base}${path}`;
+    for (let attempt = 0; attempt <= GREENN_FETCH_RETRIES; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), GREENN_FETCH_TIMEOUT_MS);
+      try {
+        const response = await fetch(endpoint, {
+          headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
+          signal: controller.signal,
+        });
+        return { ok: true, response, endpoint };
+      } catch (e) {
+        const message = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+        errors.push(`${endpoint} tentativa ${attempt + 1}: ${message}`);
+        if (attempt < GREENN_FETCH_RETRIES) {
+          await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+        }
+      } finally {
+        clearTimeout(timeout);
       }
-    } finally {
-      clearTimeout(timeout);
     }
   }
 

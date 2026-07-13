@@ -107,6 +107,17 @@ const STATUS_MAP: Record<string, Status> = {
 
 const onlyDigits = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 
+type SaleFields = {
+  saleId: string | null;
+  rawStatus: string;
+  celular: string;
+  email: string;
+  nome: string;
+  metodo: string | null;
+  valorGreenn: number;
+  paidAt: string | null;
+};
+
 // Normaliza celular para 13 dígitos (DDI 55 + DDD + número).
 const normalizePhone = (raw: unknown): string => {
   const d = onlyDigits(raw);
@@ -129,6 +140,83 @@ const pick = (obj: unknown, keys: string[]): unknown => {
     }
   }
   return undefined;
+};
+
+const pickFirst = (...values: unknown[]) =>
+  values.find((v) => v != null && String(v).trim() !== "");
+
+const getObject = (obj: unknown, key: string): Record<string, unknown> | null => {
+  if (!obj || typeof obj !== "object") return null;
+  const direct = (obj as Record<string, unknown>)[key];
+  return direct && typeof direct === "object" ? (direct as Record<string, unknown>) : null;
+};
+
+const normalizeDate = (value: unknown): string | null => {
+  if (!value) return null;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
+const extractSaleFields = (payload: Record<string, unknown>): SaleFields => {
+  const sale = getObject(payload, "sale") ?? getObject(payload, "currentSale");
+  const client = getObject(payload, "client");
+
+  const rawStatus = String(
+    pickFirst(
+      payload.currentStatus,
+      payload.status,
+      sale?.status,
+      pick(payload, ["current_status", "sale_status", "payment_status"]),
+    ) ?? "",
+  )
+    .toLowerCase()
+    .trim();
+
+  const saleId = String(
+    pickFirst(
+      payload.sale_id,
+      payload.saleId,
+      sale?.id,
+      payload.order_id,
+      payload.transaction_id,
+      pick(payload, ["sale_id", "saleid", "order_id", "transaction_id"]),
+    ) ?? "",
+  ).trim() || null;
+
+  const celular = normalizePhone(
+    pickFirst(
+      client?.cellphone,
+      client?.phone,
+      client?.telephone,
+      client?.celular,
+      payload.cellphone,
+      payload.phone,
+      payload.telephone,
+      payload.celular,
+      payload.whatsapp,
+    ),
+  );
+
+  const email = String(
+    pickFirst(client?.email, payload.email, payload.e_mail) ?? "",
+  )
+    .toLowerCase()
+    .trim();
+
+  const nome = String(pickFirst(client?.name, payload.name, payload.nome) ?? "").trim();
+  const metodo = String(pickFirst(sale?.method, payload.payment_method, payload.method, payload.metodo_pagamento) ?? "").trim() || null;
+  const valorRaw = Number(pickFirst(sale?.amount, payload.net_amount, payload.amount, payload.total, payload.value) ?? 0);
+
+  return {
+    saleId,
+    rawStatus,
+    celular,
+    email,
+    nome,
+    metodo,
+    valorGreenn: valorRaw > 1000 ? valorRaw / 100 : valorRaw,
+    paidAt: normalizeDate(pickFirst(sale?.updated_at, sale?.paid_at, payload.updated_at, payload.paid_at, payload.date)),
+  };
 };
 
 async function sha256(text: string) {
@@ -205,21 +293,8 @@ Deno.serve(async (req) => {
     return json({ ok: true, ignored: true, reason: "evento_nao_sale_updated", eventType, eventName });
   }
 
-  const rawStatus = String(
-    pick(payload, ["currentStatus", "current_status", "status", "sale_status", "payment_status"]) ?? "",
-  )
-    .toLowerCase()
-    .trim();
+  const { saleId, rawStatus, celular, email, nome, metodo, valorGreenn, paidAt } = extractSaleFields(payload);
   const statusMapeado = STATUS_MAP[rawStatus] ?? null;
-  const saleId =
-    (pick(payload, ["sale_id", "saleid", "id", "order_id", "transaction_id"]) as string | number | undefined)
-      ?.toString() || null;
-  const celular = normalizePhone(pick(payload, ["phone", "telephone", "cellphone", "celular", "telefone", "whatsapp"]));
-  const email = String(pick(payload, ["email", "e_mail"]) ?? "").toLowerCase().trim();
-  const metodo =
-    (pick(payload, ["payment_method", "method", "metodo_pagamento", "paymentmethod"]) as string | undefined) || null;
-  const valorRaw = Number(pick(payload, ["net_amount", "amount", "total", "value"]) ?? 0);
-  const valorGreenn = valorRaw > 1000 ? valorRaw / 100 : valorRaw;
 
   // Dedupe: hash de sale_id + status + timestamp opcional
   const event_hash = await sha256(`${saleId ?? "no-id"}|${rawStatus}|${pick(payload, ["updated_at", "date", "created_at"]) ?? ""}`);
@@ -252,29 +327,53 @@ Deno.serve(async (req) => {
   }
 
   // Localiza a inscrição: sale_id -> celular -> email
-  let inscricao: { id: string } | null = null;
+  let inscricao: { id: string; greenn_sale_id: string | null; status: Status; valor: number | null } | null = null;
 
   if (saleId) {
     const { data } = await supabase
-      .from("inscricoes").select("id").eq("greenn_sale_id", saleId).maybeSingle();
+      .from("inscricoes").select("id, greenn_sale_id, status, valor").eq("greenn_sale_id", saleId).maybeSingle();
     if (data) inscricao = data;
   }
   if (!inscricao && celular) {
     const { data } = await supabase
-      .from("inscricoes").select("id").eq("celular", celular)
+      .from("inscricoes").select("id, greenn_sale_id, status, valor").eq("celular", celular)
       .order("criado_em", { ascending: false }).limit(1).maybeSingle();
     if (data) inscricao = data;
   }
   if (!inscricao && email) {
     const { data } = await supabase
-      .from("inscricoes").select("id").eq("email", email)
+      .from("inscricoes").select("id, greenn_sale_id, status, valor").eq("email", email)
       .order("criado_em", { ascending: false }).limit(1).maybeSingle();
     if (data) inscricao = data;
   }
 
+  if (!inscricao && statusMapeado === "pago" && nome && (email || celular)) {
+    const { data: inserted, error: insertErr } = await supabase.from("inscricoes").insert({
+      nome,
+      email: email || `sem-email-${saleId ?? crypto.randomUUID()}@magnolias.local`,
+      celular: celular || "5500000000000",
+      valor: isFinite(valorGreenn) && valorGreenn > 0 ? valorGreenn : 39.9,
+      status: "pago",
+      metodo_pagamento: metodo ?? "greenn",
+      greenn_sale_id: saleId,
+      pago_em: paidAt ?? new Date().toISOString(),
+      greenn_payload: payload,
+    }).select("id, greenn_sale_id, status, valor").maybeSingle();
+
+    if (insertErr) {
+      console.error("greenn-webhook insert error:", insertErr);
+      await supabase.from("greenn_webhook_logs").update({
+        erro: `db_insert: ${insertErr.message}`,
+      }).eq("id", logRow.id);
+      return json({ error: "db_insert" }, 500);
+    }
+
+    if (inserted) inscricao = inserted as typeof inscricao;
+  }
+
   if (!inscricao) {
     await supabase.from("greenn_webhook_logs").update({
-      erro: "inscricao_nao_encontrada",
+      erro: `inscricao_nao_encontrada: sale_id=${saleId ?? "vazio"}; email=${email || "vazio"}; celular=${celular || "vazio"}; status=${rawStatus || "vazio"}`,
     }).eq("id", logRow.id);
     return json({ ok: true, matched: false });
   }
@@ -286,7 +385,7 @@ Deno.serve(async (req) => {
   if (saleId) patch.greenn_sale_id = saleId;
   if (metodo) patch.metodo_pagamento = metodo;
   if (isFinite(valorGreenn) && valorGreenn > 0) patch.valor = valorGreenn;
-  if (statusMapeado === "pago") patch.pago_em = new Date().toISOString();
+  if (statusMapeado === "pago") patch.pago_em = paidAt ?? new Date().toISOString();
 
   const { error: upErr } = await supabase.from("inscricoes").update(patch).eq("id", inscricao.id);
 
