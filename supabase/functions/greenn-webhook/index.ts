@@ -245,34 +245,55 @@ Deno.serve(async (req) => {
     return json({ error: "server_misconfigured" }, 503);
   }
 
-  // Lê o corpo bruto ANTES de parsear — a assinatura é calculada sobre os bytes originais.
+  // Lê o corpo bruto ANTES de parsear — a assinatura HMAC é calculada sobre os bytes originais.
   const rawBody = await req.text();
 
-  // Localiza a assinatura em qualquer um dos headers conhecidos.
-  let providedSig = "";
+  // Autenticação dupla: aceita (a) assinatura HMAC-SHA256 do body em qualquer um dos
+  // SIGNATURE_HEADERS OU (b) token compartilhado (?token=, x-webhook-token, Bearer)
+  // igual ao GREENN_WEBHOOK_TOKEN. A Greenn hoje envia apenas o token — o HMAC fica
+  // disponível para quando/se a plataforma passar a assinar o payload.
+  let authed = false;
+  let authMode: "hmac" | "token" | "" = "";
   let sigHeader = "";
+  let providedSig = "";
+
   for (const h of SIGNATURE_HEADERS) {
     const v = req.headers.get(h);
     if (v) { providedSig = v; sigHeader = h; break; }
   }
-
-  if (!providedSig) {
-    await logIncident("__auth_error__", "Assinatura ausente — configure o header HMAC-SHA256 no webhook da Greenn", {
-      user_agent: req.headers.get("user-agent"),
-      expected_headers: SIGNATURE_HEADERS,
-    });
-    return json({ error: "missing_signature" }, 401);
+  if (providedSig && await verifySignature(rawBody, providedSig, secret)) {
+    authed = true;
+    authMode = "hmac";
   }
 
-  const valid = await verifySignature(rawBody, providedSig, secret);
-  if (!valid) {
-    await logIncident("__auth_error__", "Assinatura HMAC-SHA256 inválida — segredo divergente ou body adulterado", {
-      user_agent: req.headers.get("user-agent"),
-      sig_header: sigHeader,
-      sig_preview: `${providedSig.slice(0, 6)}…${providedSig.slice(-4)}`,
-    });
-    return json({ error: "invalid_signature" }, 401);
+  if (!authed) {
+    const url = new URL(req.url);
+    const qToken = url.searchParams.get("token") ?? "";
+    const hToken = req.headers.get("x-webhook-token") ?? "";
+    const auth = req.headers.get("authorization") ?? "";
+    const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+    const candidate = (qToken || hToken || bearer).trim();
+    if (candidate) {
+      const enc = new TextEncoder();
+      const a = enc.encode(candidate);
+      const b = enc.encode(secret);
+      if (timingSafeEqualBytes(a, b)) {
+        authed = true;
+        authMode = "token";
+      }
+    }
   }
+
+  if (!authed) {
+    await logIncident("__auth_error__", "Credencial ausente/ inválida — envie HMAC-SHA256 do body OU ?token=<GREENN_WEBHOOK_TOKEN>", {
+      user_agent: req.headers.get("user-agent"),
+      had_signature_header: Boolean(providedSig),
+      sig_header: sigHeader || null,
+      sig_preview: providedSig ? `${providedSig.slice(0, 6)}…${providedSig.slice(-4)}` : null,
+    });
+    return json({ error: providedSig ? "invalid_signature" : "missing_credentials" }, 401);
+  }
+  console.log("greenn-webhook: autenticado via", authMode);
 
   let payload: Record<string, unknown> = {};
   try {
