@@ -241,7 +241,7 @@ Deno.serve(async (req) => {
       }, {}),
     };
 
-    return json({ ok: true, gerado_em: new Date().toISOString(), resumo, divergencias, greenn, site: inscricoes ?? [] });
+    return json({ ok: true, gerado_em: new Date().toISOString(), fonte, aviso, resumo, divergencias, greenn, site: inscricoes ?? [] });
   } catch (e) {
     const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     console.error("conciliar-greenn error", msg);
