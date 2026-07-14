@@ -48,6 +48,8 @@ type Divergencia =
 type Resultado = {
   ok: boolean;
   gerado_em?: string;
+  fonte?: "api" | "webhook_logs";
+  aviso?: string | null;
   resumo?: {
     greenn_total: number;
     greenn_pagas: number;
@@ -192,8 +194,14 @@ const Conciliacao = () => {
           </div>
         ) : (
           <>
+            {data?.aviso && (
+              <div className="border border-amber-500/40 bg-amber-50 p-4 mb-6 flex gap-2 items-start">
+                <AlertTriangle className="w-4 h-4 text-amber-700 mt-0.5 shrink-0" />
+                <p className="text-sm text-amber-900">{data.aviso}</p>
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-              <StatCard label="Vendas Greenn (pagas)" value={String(resumo?.greenn_pagas ?? 0)} sub={`${resumo?.greenn_total ?? 0} no total`} />
+              <StatCard label={data?.fonte === "webhook_logs" ? "Vendas (webhooks)" : "Vendas Greenn (pagas)"} value={String(resumo?.greenn_pagas ?? 0)} sub={`${resumo?.greenn_total ?? 0} no total`} />
               <StatCard label="Inscrições pagas" value={String(resumo?.site_pagas ?? 0)} sub={`${resumo?.site_total ?? 0} inscrições`} />
               <StatCard label="Conciliadas" value={String(resumo?.conciliadas ?? 0)} icon={<CheckCircle2 className="w-4 h-4 text-emerald-600" />} />
               <StatCard label="Divergências" value={String(resumo?.divergencias ?? 0)} icon={<AlertTriangle className={`w-4 h-4 ${(resumo?.divergencias ?? 0) > 0 ? "text-destructive" : "text-muted-foreground"}`} />} />

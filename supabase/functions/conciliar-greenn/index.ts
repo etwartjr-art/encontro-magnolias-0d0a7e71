@@ -69,31 +69,6 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("GREENN_API_KEY");
     if (!apiKey) return json({ ok: false, error: "missing_GREENN_API_KEY" }, 503);
 
-    // Busca vendas da Greenn
-    const fetched = await fetchGreenn(`/sales?limit=200`, apiKey);
-    if (!fetched.ok) {
-      return json({
-        ok: false,
-        error: "greenn_unreachable",
-        message: "A API da Greenn não respondeu.",
-        details: fetched.message,
-      });
-    }
-    const respText = await fetched.response.text();
-    let body: unknown = null;
-    try { body = JSON.parse(respText); } catch { /* ignore */ }
-    if (!fetched.response.ok) {
-      return json({ ok: false, error: "greenn_error", status: fetched.response.status, body: respText.slice(0, 500) });
-    }
-
-    // deno-lint-ignore no-explicit-any
-    const list: any[] =
-      (Array.isArray(body) ? body : null) ??
-      (Array.isArray((body as any)?.data) ? (body as any).data : null) ??
-      (Array.isArray((body as any)?.sales) ? (body as any).sales : null) ??
-      (Array.isArray((body as any)?.data?.sales) ? (body as any).data.sales : null) ??
-      [];
-
     type GreennSale = {
       sale_id: string;
       status: string;
@@ -106,7 +81,7 @@ Deno.serve(async (req) => {
       paid_at: string | null;
     };
 
-    const greenn: GreennSale[] = list.map((sale) => {
+    const mapSale = (sale: unknown): GreennSale => {
       const saleId = String(pick(sale, ["sale_id", "id", "code"]) ?? "").trim();
       const rawStatus = String(pick(sale, ["currentStatus", "current_status", "status", "sale_status"]) ?? "").toLowerCase();
       const nome = String(pick(sale, ["name", "buyer_name", "customer_name", "client_name"]) ?? "").trim();
@@ -118,7 +93,57 @@ Deno.serve(async (req) => {
       const paidAtRaw = pick(sale, ["paid_at", "payment_date", "approved_at", "updated_at", "date"]);
       const paid_at = paidAtRaw ? new Date(String(paidAtRaw)).toISOString() : null;
       return { sale_id: saleId, status: rawStatus, is_paid: PAID.has(rawStatus), nome, email, celular, valor, metodo, paid_at };
-    }).filter((s) => s.sale_id);
+    };
+
+    // Fonte de dados: tenta API Greenn; se falhar, cai pros webhook logs.
+    let greenn: GreennSale[] = [];
+    let fonte: "api" | "webhook_logs" = "api";
+    let aviso: string | null = null;
+
+    const fetched = await fetchGreenn(`/sales?limit=200`, apiKey);
+    let apiOk = false;
+    if (fetched.ok) {
+      const respText = await fetched.response.text();
+      let body: unknown = null;
+      try { body = JSON.parse(respText); } catch { /* ignore */ }
+      if (fetched.response.ok) {
+        // deno-lint-ignore no-explicit-any
+        const list: any[] =
+          (Array.isArray(body) ? body : null) ??
+          (Array.isArray((body as any)?.data) ? (body as any).data : null) ??
+          (Array.isArray((body as any)?.sales) ? (body as any).sales : null) ??
+          (Array.isArray((body as any)?.data?.sales) ? (body as any).data.sales : null) ??
+          [];
+        greenn = list.map(mapSale).filter((s) => s.sale_id);
+        apiOk = true;
+      }
+    }
+
+    if (!apiOk) {
+      // Fallback: usa greenn_webhook_logs (últimos 90 dias) para reconstruir as vendas.
+      fonte = "webhook_logs";
+      aviso = "A API da Greenn não respondeu — conciliação feita com base nos webhooks já recebidos. Pode não incluir vendas cujo webhook não chegou.";
+      const { data: logs, error: logErr } = await admin
+        .from("greenn_webhook_logs")
+        .select("greenn_sale_id, status_recebido, payload, criado_em")
+        .order("criado_em", { ascending: false })
+        .limit(1000);
+      if (logErr) return json({ ok: false, error: "db_error", message: logErr.message });
+      const seen = new Set<string>();
+      for (const log of logs ?? []) {
+        const sale = mapSale(log.payload);
+        // preserva o status/sale_id do log se o payload não tiver
+        if (!sale.sale_id && log.greenn_sale_id) sale.sale_id = String(log.greenn_sale_id);
+        if (!sale.status && log.status_recebido) {
+          sale.status = String(log.status_recebido).toLowerCase();
+          sale.is_paid = PAID.has(sale.status);
+        }
+        if (!sale.sale_id) continue;
+        if (seen.has(sale.sale_id)) continue; // já pegamos o mais recente
+        seen.add(sale.sale_id);
+        greenn.push(sale);
+      }
+    }
 
     // Busca inscrições do site
     const { data: inscricoes, error: dbErr } = await admin
@@ -216,7 +241,7 @@ Deno.serve(async (req) => {
       }, {}),
     };
 
-    return json({ ok: true, gerado_em: new Date().toISOString(), resumo, divergencias, greenn, site: inscricoes ?? [] });
+    return json({ ok: true, gerado_em: new Date().toISOString(), fonte, aviso, resumo, divergencias, greenn, site: inscricoes ?? [] });
   } catch (e) {
     const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     console.error("conciliar-greenn error", msg);
