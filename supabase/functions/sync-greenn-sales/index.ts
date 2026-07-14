@@ -11,13 +11,17 @@ const corsHeaders = {
 };
 
 const configuredGreennApi = Deno.env.get("GREENN_API_BASE")?.replace(/\/$/, "");
+const DEFAULT_GREENN_CANDIDATES = [
+  "https://api.greenn.com.br/v1",
+  "https://api.gdigital.com.br/v1",
+  "https://api.gdigital.com.br",
+];
+// Se GREENN_API_BASE estiver definido, tenta esse primeiro mas mantém os demais
+// como fallback — assim uma configuração antiga (host com DNS quebrado) não
+// impede que o sync alcance o host alternativo que ainda responde.
 const GREENN_API_CANDIDATES = configuredGreennApi
-  ? [configuredGreennApi]
-  : [
-      "https://api.greenn.com.br/v1",
-      "https://api.gdigital.com.br/v1",
-      "https://api.gdigital.com.br",
-    ];
+  ? [configuredGreennApi, ...DEFAULT_GREENN_CANDIDATES.filter((b) => b !== configuredGreennApi)]
+  : DEFAULT_GREENN_CANDIDATES;
 const GREENN_FETCH_TIMEOUT_MS = Number(Deno.env.get("GREENN_FETCH_TIMEOUT_MS") ?? "7000");
 const GREENN_FETCH_RETRIES = Number(Deno.env.get("GREENN_FETCH_RETRIES") ?? "1");
 
