@@ -48,6 +48,8 @@ type Divergencia =
 type Resultado = {
   ok: boolean;
   gerado_em?: string;
+  fonte?: "api" | "webhook_logs";
+  aviso?: string | null;
   resumo?: {
     greenn_total: number;
     greenn_pagas: number;
