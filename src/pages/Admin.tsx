@@ -713,15 +713,32 @@ const Admin = () => {
                         : "—"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openDetails(i)}
-                        className="rounded-none uppercase tracking-[0.2em] text-[10px]"
-                      >
-                        <FileJson className="w-3.5 h-3.5 mr-1.5" />
-                        Payload
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => reprocessInscricao(i.id)}
+                          disabled={reprocessing === i.id}
+                          className="rounded-none uppercase tracking-[0.2em] text-[10px]"
+                          title="Reprocessar sincronização com a Greenn"
+                        >
+                          {reprocessing === i.id ? (
+                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          ) : (
+                            <RotateCw className="w-3.5 h-3.5 mr-1.5" />
+                          )}
+                          Reprocessar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openDetails(i)}
+                          className="rounded-none uppercase tracking-[0.2em] text-[10px]"
+                        >
+                          <FileJson className="w-3.5 h-3.5 mr-1.5" />
+                          Payload
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
