@@ -103,75 +103,85 @@ Deno.serve(async (req) => {
   // Busca venda: primeiro por sale_id salvo; senão varre lista e casa por email/celular.
   let sale: unknown = null;
   let matchRule: "sale_id" | "email" | "phone" | "none" = "none";
+  let fonte: "api" | "webhook_logs" = "api";
   const httpStatuses: number[] = [];
+  const apiErrors: string[] = [];
 
   if (insc.greenn_sale_id) {
     const saleResult = await fetchGreenn(`/sales/${encodeURIComponent(insc.greenn_sale_id)}`, apiKey);
     if (!saleResult.ok) {
-      await recordRun({
-        sucesso: false,
-        erro: formatGreennUnavailableError(saleResult.message),
-        startedAt,
-        detalhes: [{ acao: "erro_reprocesso", id: insc.id, erro: greennUnavailableMessage, tipo_erro: classifyGreennFetchError(saleResult.message), ajuste_greenn: greennUnavailableAction }],
-        erros: 1,
-      });
-      return json({ ok: false, error: "greenn_unreachable", message: greennUnavailableMessage, action: greennUnavailableAction, type: classifyGreennFetchError(saleResult.message), details: saleResult.message });
-    }
-    const r = saleResult.response;
-    httpStatuses.push(r.status);
-    if (r.ok) {
-      const b = await r.json().catch(() => null);
-      sale = (b && (b.data ?? b.sale ?? b)) ?? null;
-      if (sale) matchRule = "sale_id";
+      apiErrors.push(saleResult.message);
+    } else {
+      const r = saleResult.response;
+      httpStatuses.push(r.status);
+      if (r.ok) {
+        const b = await r.json().catch(() => null);
+        sale = (b && (b.data ?? b.sale ?? b)) ?? null;
+        if (sale) matchRule = "sale_id";
+      }
     }
   }
 
   if (!sale) {
     const listResult = await fetchGreenn(`/sales?limit=200`, apiKey);
     if (!listResult.ok) {
-      await recordRun({
-        sucesso: false,
-        erro: formatGreennUnavailableError(listResult.message),
-        startedAt,
-        detalhes: [{ acao: "erro_reprocesso", id: insc.id, erro: greennUnavailableMessage, tipo_erro: classifyGreennFetchError(listResult.message), ajuste_greenn: greennUnavailableAction }],
-        erros: 1,
-      });
-      return json({ ok: false, error: "greenn_unreachable", message: greennUnavailableMessage, action: greennUnavailableAction, type: classifyGreennFetchError(listResult.message), details: listResult.message });
-    }
-    const r = listResult.response;
-    httpStatuses.push(r.status);
-    if (!r.ok) {
-      const body = await r.text();
-      await recordRun({
-        sucesso: false, http_status: r.status, startedAt,
-        erro: `greenn_error ${r.status}: ${body.slice(0, 300)}`,
-        detalhes: [{ acao: "erro_reprocesso", id: insc.id, erro: `Greenn respondeu ${r.status}` }],
-      });
-      return json({ error: "greenn_error", status: r.status }, 502);
-    }
-    const body = await r.json().catch(() => null);
-    const list: unknown[] =
-      (Array.isArray(body) ? body : null) ??
-      (Array.isArray((body as any)?.data) ? (body as any).data : null) ??
-      (Array.isArray((body as any)?.sales) ? (body as any).sales : null) ??
-      (Array.isArray((body as any)?.data?.sales) ? (body as any).data.sales : null) ??
-      [];
+      apiErrors.push(listResult.message);
+    } else {
+      const r = listResult.response;
+      httpStatuses.push(r.status);
+      if (!r.ok) {
+        const body = await r.text();
+        apiErrors.push(`greenn_error ${r.status}: ${body.slice(0, 300)}`);
+      } else {
+        const body = await r.json().catch(() => null);
+        const list: unknown[] =
+          (Array.isArray(body) ? body : null) ??
+          (Array.isArray((body as any)?.data) ? (body as any).data : null) ??
+          (Array.isArray((body as any)?.sales) ? (body as any).sales : null) ??
+          (Array.isArray((body as any)?.data?.sales) ? (body as any).data.sales : null) ??
+          [];
 
-    if (insc.greenn_sale_id) {
-      const found = list.find((s) => String(pick(s, ["sale_id", "id", "code"]) ?? "") === insc.greenn_sale_id);
-      if (found) { sale = found; matchRule = "sale_id"; }
-    }
-    if (!sale && emailInsc) {
-      const found = list.find((s) => String(pick(s, ["email"]) ?? "").toLowerCase().trim() === emailInsc);
-      if (found) { sale = found; matchRule = "email"; }
-    }
-    if (!sale && celularInsc) {
-      const found = list.find(
-        (s) => normalizePhone(pick(s, ["phone", "telephone", "cellphone", "celular", "whatsapp"])) === celularInsc,
-      );
-      if (found) { sale = found; matchRule = "phone"; }
+        if (insc.greenn_sale_id) {
+          const found = list.find((s) => String(pick(s, ["sale_id", "id", "code"]) ?? "") === insc.greenn_sale_id);
+          if (found) { sale = found; matchRule = "sale_id"; }
+        }
+        if (!sale && emailInsc) {
+          const found = list.find((s) => String(pick(s, ["email"]) ?? "").toLowerCase().trim() === emailInsc);
+          if (found) { sale = found; matchRule = "email"; }
+        }
+        if (!sale && celularInsc) {
+          const found = list.find(
+            (s) => normalizePhone(pick(s, ["phone", "telephone", "cellphone", "celular", "whatsapp"])) === celularInsc,
+          );
+          if (found) { sale = found; matchRule = "phone"; }
+        }
+      }
     }
   }
+
+  // Fallback: quando a API da Greenn não respondeu, procura a venda nos webhooks recebidos.
+  if (!sale) {
+    const wh = await findSaleInWebhookLogs({ saleId: insc.greenn_sale_id, email: emailInsc, celular: celularInsc });
+    if (wh) {
+      sale = wh.sale;
+      matchRule = wh.matchRule;
+      fonte = "webhook_logs";
+    }
+  }
+
+  // Se ainda não achou e a API falhou, reporta como indisponível.
+  if (!sale && apiErrors.length > 0) {
+    const message = apiErrors.join(" | ");
+    await recordRun({
+      sucesso: false,
+      erro: formatGreennUnavailableError(message),
+      startedAt,
+      detalhes: [{ acao: "erro_reprocesso", id: insc.id, erro: greennUnavailableMessage, tipo_erro: classifyGreennFetchError(message), ajuste_greenn: greennUnavailableAction }],
+      erros: 1,
+    });
+    return json({ ok: false, error: "greenn_unreachable", message: greennUnavailableMessage, action: greennUnavailableAction, type: classifyGreennFetchError(message), details: message });
+  }
+
 
   const antes = {
     status: insc.status,
