@@ -83,10 +83,12 @@ Deno.serve(async (req) => {
   {
     const cronSecret = Deno.env.get("SYNC_CRON_SECRET");
     const internalToken = Deno.env.get("SYNC_INTERNAL_TOKEN");
+    const pgCronKey = Deno.env.get("SYNC_PG_CRON_KEY");
     const providedCron = req.headers.get("x-cron-secret") ?? "";
     const isCron =
       (Boolean(cronSecret) && providedCron === cronSecret) ||
-      (Boolean(internalToken) && providedCron === internalToken);
+      (Boolean(internalToken) && providedCron === internalToken) ||
+      (Boolean(pgCronKey) && providedCron === pgCronKey);
     if (!discover) origem = isCron ? "cron" : "manual";
 
     if (!isCron) {
