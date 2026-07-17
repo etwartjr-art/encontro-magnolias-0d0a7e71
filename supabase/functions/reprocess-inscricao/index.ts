@@ -103,75 +103,85 @@ Deno.serve(async (req) => {
   // Busca venda: primeiro por sale_id salvo; senão varre lista e casa por email/celular.
   let sale: unknown = null;
   let matchRule: "sale_id" | "email" | "phone" | "none" = "none";
+  let fonte: "api" | "webhook_logs" = "api";
   const httpStatuses: number[] = [];
+  const apiErrors: string[] = [];
 
   if (insc.greenn_sale_id) {
     const saleResult = await fetchGreenn(`/sales/${encodeURIComponent(insc.greenn_sale_id)}`, apiKey);
     if (!saleResult.ok) {
-      await recordRun({
-        sucesso: false,
-        erro: formatGreennUnavailableError(saleResult.message),
-        startedAt,
-        detalhes: [{ acao: "erro_reprocesso", id: insc.id, erro: greennUnavailableMessage, tipo_erro: classifyGreennFetchError(saleResult.message), ajuste_greenn: greennUnavailableAction }],
-        erros: 1,
-      });
-      return json({ ok: false, error: "greenn_unreachable", message: greennUnavailableMessage, action: greennUnavailableAction, type: classifyGreennFetchError(saleResult.message), details: saleResult.message });
-    }
-    const r = saleResult.response;
-    httpStatuses.push(r.status);
-    if (r.ok) {
-      const b = await r.json().catch(() => null);
-      sale = (b && (b.data ?? b.sale ?? b)) ?? null;
-      if (sale) matchRule = "sale_id";
+      apiErrors.push(saleResult.message);
+    } else {
+      const r = saleResult.response;
+      httpStatuses.push(r.status);
+      if (r.ok) {
+        const b = await r.json().catch(() => null);
+        sale = (b && (b.data ?? b.sale ?? b)) ?? null;
+        if (sale) matchRule = "sale_id";
+      }
     }
   }
 
   if (!sale) {
     const listResult = await fetchGreenn(`/sales?limit=200`, apiKey);
     if (!listResult.ok) {
-      await recordRun({
-        sucesso: false,
-        erro: formatGreennUnavailableError(listResult.message),
-        startedAt,
-        detalhes: [{ acao: "erro_reprocesso", id: insc.id, erro: greennUnavailableMessage, tipo_erro: classifyGreennFetchError(listResult.message), ajuste_greenn: greennUnavailableAction }],
-        erros: 1,
-      });
-      return json({ ok: false, error: "greenn_unreachable", message: greennUnavailableMessage, action: greennUnavailableAction, type: classifyGreennFetchError(listResult.message), details: listResult.message });
-    }
-    const r = listResult.response;
-    httpStatuses.push(r.status);
-    if (!r.ok) {
-      const body = await r.text();
-      await recordRun({
-        sucesso: false, http_status: r.status, startedAt,
-        erro: `greenn_error ${r.status}: ${body.slice(0, 300)}`,
-        detalhes: [{ acao: "erro_reprocesso", id: insc.id, erro: `Greenn respondeu ${r.status}` }],
-      });
-      return json({ error: "greenn_error", status: r.status }, 502);
-    }
-    const body = await r.json().catch(() => null);
-    const list: unknown[] =
-      (Array.isArray(body) ? body : null) ??
-      (Array.isArray((body as any)?.data) ? (body as any).data : null) ??
-      (Array.isArray((body as any)?.sales) ? (body as any).sales : null) ??
-      (Array.isArray((body as any)?.data?.sales) ? (body as any).data.sales : null) ??
-      [];
+      apiErrors.push(listResult.message);
+    } else {
+      const r = listResult.response;
+      httpStatuses.push(r.status);
+      if (!r.ok) {
+        const body = await r.text();
+        apiErrors.push(`greenn_error ${r.status}: ${body.slice(0, 300)}`);
+      } else {
+        const body = await r.json().catch(() => null);
+        const list: unknown[] =
+          (Array.isArray(body) ? body : null) ??
+          (Array.isArray((body as any)?.data) ? (body as any).data : null) ??
+          (Array.isArray((body as any)?.sales) ? (body as any).sales : null) ??
+          (Array.isArray((body as any)?.data?.sales) ? (body as any).data.sales : null) ??
+          [];
 
-    if (insc.greenn_sale_id) {
-      const found = list.find((s) => String(pick(s, ["sale_id", "id", "code"]) ?? "") === insc.greenn_sale_id);
-      if (found) { sale = found; matchRule = "sale_id"; }
-    }
-    if (!sale && emailInsc) {
-      const found = list.find((s) => String(pick(s, ["email"]) ?? "").toLowerCase().trim() === emailInsc);
-      if (found) { sale = found; matchRule = "email"; }
-    }
-    if (!sale && celularInsc) {
-      const found = list.find(
-        (s) => normalizePhone(pick(s, ["phone", "telephone", "cellphone", "celular", "whatsapp"])) === celularInsc,
-      );
-      if (found) { sale = found; matchRule = "phone"; }
+        if (insc.greenn_sale_id) {
+          const found = list.find((s) => String(pick(s, ["sale_id", "id", "code"]) ?? "") === insc.greenn_sale_id);
+          if (found) { sale = found; matchRule = "sale_id"; }
+        }
+        if (!sale && emailInsc) {
+          const found = list.find((s) => String(pick(s, ["email"]) ?? "").toLowerCase().trim() === emailInsc);
+          if (found) { sale = found; matchRule = "email"; }
+        }
+        if (!sale && celularInsc) {
+          const found = list.find(
+            (s) => normalizePhone(pick(s, ["phone", "telephone", "cellphone", "celular", "whatsapp"])) === celularInsc,
+          );
+          if (found) { sale = found; matchRule = "phone"; }
+        }
+      }
     }
   }
+
+  // Fallback: quando a API da Greenn não respondeu, procura a venda nos webhooks recebidos.
+  if (!sale) {
+    const wh = await findSaleInWebhookLogs({ saleId: insc.greenn_sale_id, email: emailInsc, celular: celularInsc });
+    if (wh) {
+      sale = wh.sale;
+      matchRule = wh.matchRule;
+      fonte = "webhook_logs";
+    }
+  }
+
+  // Se ainda não achou e a API falhou, reporta como indisponível.
+  if (!sale && apiErrors.length > 0) {
+    const message = apiErrors.join(" | ");
+    await recordRun({
+      sucesso: false,
+      erro: formatGreennUnavailableError(message),
+      startedAt,
+      detalhes: [{ acao: "erro_reprocesso", id: insc.id, erro: greennUnavailableMessage, tipo_erro: classifyGreennFetchError(message), ajuste_greenn: greennUnavailableAction }],
+      erros: 1,
+    });
+    return json({ ok: false, error: "greenn_unreachable", message: greennUnavailableMessage, action: greennUnavailableAction, type: classifyGreennFetchError(message), details: message });
+  }
+
 
   const antes = {
     status: insc.status,
@@ -263,13 +273,13 @@ Deno.serve(async (req) => {
   await recordRun({
     sucesso: true, http_status: httpStatuses.at(-1), startedAt,
     detalhes: [{
-      acao: "atualizada", id: insc.id, match_rule: matchRule, saleId,
+      acao: "atualizada", id: insc.id, match_rule: matchRule, saleId, fonte,
       inscricao: { nome: insc.nome, email: insc.email, celular: insc.celular },
       buyer, antes, depois,
     }],
     atualizadas: 1,
   });
-  return json({ ok: true, acao: "atualizada", match_rule: matchRule, saleId });
+  return json({ ok: true, acao: "atualizada", match_rule: matchRule, saleId, fonte });
   } catch (e) {
     const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     console.error("reprocess-inscricao unhandled error", msg);
@@ -282,6 +292,73 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "reprocess_failed", message: msg });
   }
 });
+
+async function findSaleInWebhookLogs(criteria: {
+  saleId: string | null;
+  email: string;
+  celular: string;
+}): Promise<{ sale: unknown; matchRule: "sale_id" | "email" | "phone" } | null> {
+  try {
+    // Busca por sale_id explícito primeiro.
+    if (criteria.saleId) {
+      const { data } = await admin
+        .from("greenn_webhook_logs")
+        .select("payload")
+        .eq("greenn_sale_id", criteria.saleId)
+        .order("criado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const sale = extractSaleFromPayload(data?.payload);
+      if (sale) return { sale, matchRule: "sale_id" };
+    }
+
+    // Varre logs recentes procurando por email/celular no payload.
+    const { data: logs } = await admin
+      .from("greenn_webhook_logs")
+      .select("payload, greenn_sale_id, criado_em")
+      .order("criado_em", { ascending: false })
+      .limit(500);
+    if (!logs) return null;
+
+    for (const log of logs) {
+      const payload = log.payload as Record<string, unknown> | null;
+      if (!payload) continue;
+      const sale = extractSaleFromPayload(payload);
+      if (!sale) continue;
+
+      if (criteria.email) {
+        const payloadEmail = String(pick(payload, ["email"]) ?? "").toLowerCase().trim();
+        if (payloadEmail && payloadEmail === criteria.email) return { sale, matchRule: "email" };
+      }
+      if (criteria.celular) {
+        const payloadPhone = normalizePhone(
+          pick(payload, ["phone", "telephone", "cellphone", "celular", "whatsapp"]),
+        );
+        if (payloadPhone && payloadPhone === criteria.celular) return { sale, matchRule: "phone" };
+      }
+    }
+  } catch (e) {
+    console.error("findSaleInWebhookLogs error", e);
+  }
+  return null;
+}
+
+function extractSaleFromPayload(payload: unknown): Record<string, unknown> | null {
+  if (!payload || typeof payload !== "object") return null;
+  const p = payload as Record<string, unknown>;
+  const sale = (p.sale ?? p.currentSale ?? p.data ?? p) as Record<string, unknown> | undefined;
+  if (!sale || typeof sale !== "object") return null;
+  const client = (p.client as Record<string, unknown> | undefined) ?? {};
+  // Enriquece o objeto de venda com dados do comprador quando ausentes.
+  return {
+    ...sale,
+    email: sale.email ?? client.email ?? p.email,
+    name: sale.name ?? client.name ?? p.name,
+    phone: sale.phone ?? client.cellphone ?? client.phone ?? p.phone ?? p.cellphone,
+    currentStatus: sale.currentStatus ?? sale.status ?? p.currentStatus ?? p.status,
+    updated_at: sale.updated_at ?? sale.paid_at ?? p.updated_at ?? p.paid_at,
+  };
+}
 
 async function fetchGreenn(path: string, apiKey: string): Promise<
   | { ok: true; response: Response }
