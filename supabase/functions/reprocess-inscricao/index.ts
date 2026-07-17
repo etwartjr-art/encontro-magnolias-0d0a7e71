@@ -273,13 +273,13 @@ Deno.serve(async (req) => {
   await recordRun({
     sucesso: true, http_status: httpStatuses.at(-1), startedAt,
     detalhes: [{
-      acao: "atualizada", id: insc.id, match_rule: matchRule, saleId,
+      acao: "atualizada", id: insc.id, match_rule: matchRule, saleId, fonte,
       inscricao: { nome: insc.nome, email: insc.email, celular: insc.celular },
       buyer, antes, depois,
     }],
     atualizadas: 1,
   });
-  return json({ ok: true, acao: "atualizada", match_rule: matchRule, saleId });
+  return json({ ok: true, acao: "atualizada", match_rule: matchRule, saleId, fonte });
   } catch (e) {
     const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     console.error("reprocess-inscricao unhandled error", msg);
