@@ -293,6 +293,73 @@ Deno.serve(async (req) => {
   }
 });
 
+async function findSaleInWebhookLogs(criteria: {
+  saleId: string | null;
+  email: string;
+  celular: string;
+}): Promise<{ sale: unknown; matchRule: "sale_id" | "email" | "phone" } | null> {
+  try {
+    // Busca por sale_id explícito primeiro.
+    if (criteria.saleId) {
+      const { data } = await admin
+        .from("greenn_webhook_logs")
+        .select("payload")
+        .eq("greenn_sale_id", criteria.saleId)
+        .order("criado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const sale = extractSaleFromPayload(data?.payload);
+      if (sale) return { sale, matchRule: "sale_id" };
+    }
+
+    // Varre logs recentes procurando por email/celular no payload.
+    const { data: logs } = await admin
+      .from("greenn_webhook_logs")
+      .select("payload, greenn_sale_id, criado_em")
+      .order("criado_em", { ascending: false })
+      .limit(500);
+    if (!logs) return null;
+
+    for (const log of logs) {
+      const payload = log.payload as Record<string, unknown> | null;
+      if (!payload) continue;
+      const sale = extractSaleFromPayload(payload);
+      if (!sale) continue;
+
+      if (criteria.email) {
+        const payloadEmail = String(pick(payload, ["email"]) ?? "").toLowerCase().trim();
+        if (payloadEmail && payloadEmail === criteria.email) return { sale, matchRule: "email" };
+      }
+      if (criteria.celular) {
+        const payloadPhone = normalizePhone(
+          pick(payload, ["phone", "telephone", "cellphone", "celular", "whatsapp"]),
+        );
+        if (payloadPhone && payloadPhone === criteria.celular) return { sale, matchRule: "phone" };
+      }
+    }
+  } catch (e) {
+    console.error("findSaleInWebhookLogs error", e);
+  }
+  return null;
+}
+
+function extractSaleFromPayload(payload: unknown): Record<string, unknown> | null {
+  if (!payload || typeof payload !== "object") return null;
+  const p = payload as Record<string, unknown>;
+  const sale = (p.sale ?? p.currentSale ?? p.data ?? p) as Record<string, unknown> | undefined;
+  if (!sale || typeof sale !== "object") return null;
+  const client = (p.client as Record<string, unknown> | undefined) ?? {};
+  // Enriquece o objeto de venda com dados do comprador quando ausentes.
+  return {
+    ...sale,
+    email: sale.email ?? client.email ?? p.email,
+    name: sale.name ?? client.name ?? p.name,
+    phone: sale.phone ?? client.cellphone ?? client.phone ?? p.phone ?? p.cellphone,
+    currentStatus: sale.currentStatus ?? sale.status ?? p.currentStatus ?? p.status,
+    updated_at: sale.updated_at ?? sale.paid_at ?? p.updated_at ?? p.paid_at,
+  };
+}
+
 async function fetchGreenn(path: string, apiKey: string): Promise<
   | { ok: true; response: Response }
   | { ok: false; message: string }
