@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       webhook_url: webhookUrl,
-      webhook_url_com_token: token ? `${webhookUrl}?token=${token}` : null,
+      webhook_url_com_token: token ? `${webhookUrl}?token=${encodeURIComponent(token)}` : null,
       token_configurado: Boolean(token),
       token_preview: token ? `${token.slice(0, 4)}…${token.slice(-4)}` : null,
       total_logs: total ?? 0,
@@ -84,7 +84,13 @@ Deno.serve(async (req) => {
   if (action === "test") {
     if (!token) return json({ error: "GREENN_WEBHOOK_TOKEN não configurado" }, 400);
 
-    const fakeSaleId = `TEST-${Date.now()}`;
+    const fakeSaleId = `TEST-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+    // E-mail e celular únicos por execução para evitar colisão com clientes reais
+    // (o webhook faz fallback por email/celular quando não acha o sale_id).
+    const uniqueSuffix = fakeSaleId.toLowerCase();
+    const testEmail = `teste-webhook+${uniqueSuffix}@magnolias.local`;
+    // Celular sintético: prefixo 55119 + 8 dígitos aleatórios (jamais um número real).
+    const testCellphone = `55119${Math.floor(10000000 + Math.random() * 89999999)}`;
     const payload = {
       type: "sale",
       event: "saleUpdated",
@@ -99,8 +105,8 @@ Deno.serve(async (req) => {
       },
       client: {
         name: "Teste Webhook",
-        email: "teste-webhook@magnolias.local",
-        cellphone: "5511900000000",
+        email: testEmail,
+        cellphone: testCellphone,
       },
     };
 
@@ -121,8 +127,14 @@ Deno.serve(async (req) => {
       networkError = e instanceof Error ? e.message : String(e);
     }
 
-    // Limpa a inscrição de teste criada (se veio a ser criada)
-    await admin.from("inscricoes").delete().eq("greenn_sale_id", fakeSaleId);
+    // Limpa a inscrição de teste criada (se veio a ser criada). Escopo triplo para nunca
+    // remover um registro real: sale_id exclusivo do teste + método "test" + email de teste.
+    await admin
+      .from("inscricoes")
+      .delete()
+      .eq("greenn_sale_id", fakeSaleId)
+      .eq("metodo_pagamento", "test")
+      .eq("email", testEmail);
 
     return json({
       ok: !networkError && responseStatus >= 200 && responseStatus < 300,
