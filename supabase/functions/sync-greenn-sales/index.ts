@@ -170,8 +170,26 @@ Deno.serve(async (req) => {
     });
   }
 
-
-
+  // A API é necessária apenas fora do modo webhook-only. Se a chave não estiver configurada,
+  // registra o run como erro (sem 503) para o cron não ficar falhando silenciosamente.
+  if (!apiKey) {
+    await recordRun({
+      origem,
+      sucesso: false,
+      erro_mensagem: "GREENN_API_KEY não configurada",
+      startedAt,
+      detalhes: {
+        motivo:
+          "A chave da API da Greenn não está definida. Configure GREENN_API_KEY ou ative GREENN_WEBHOOK_ONLY=1 para operar apenas por webhook.",
+      },
+    });
+    return json({
+      ok: false,
+      error: "missing_GREENN_API_KEY",
+      message:
+        "GREENN_API_KEY não configurada. Configure a chave ou ative o modo webhook-only (GREENN_WEBHOOK_ONLY=1).",
+    });
+  }
 
   // Tenta endpoint principal /sales. Se a API real usar outro path, o discover ajuda a descobrir.
   const respResult = await fetchGreenn(`/sales?limit=100`, apiKey);
