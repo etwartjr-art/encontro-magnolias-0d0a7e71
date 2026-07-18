@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,13 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -27,20 +20,9 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Loader2,
   LogOut,
   Users,
-  FileJson,
   RefreshCw,
   Download,
   Pencil,
@@ -48,12 +30,8 @@ import {
   Clock,
   CheckCircle2,
   ArrowLeft,
-  AlertTriangle,
-  RotateCw,
   Scale,
 } from "lucide-react";
-import { Link } from "react-router-dom";
-
 
 type StatusInscricao =
   | "pendente"
@@ -71,100 +49,10 @@ type Inscricao = {
   status: StatusInscricao;
   metodo_pagamento: string | null;
   greenn_sale_id: string | null;
-  greenn_payload: unknown;
   pago_em: string | null;
   criado_em: string;
   atualizado_em: string;
 };
-
-type WebhookLog = {
-  id: string;
-  criado_em: string;
-  processado: boolean;
-  status_recebido: string | null;
-  status_mapeado: StatusInscricao | null;
-  greenn_sale_id: string | null;
-  erro: string | null;
-  payload: unknown;
-};
-
-type SyncMatchRule = "sale_id" | "email" | "phone" | "none";
-
-type SyncSnapshot = {
-  status?: string | null;
-  valor?: number | null;
-  greenn_sale_id?: string | null;
-  pago_em?: string | null;
-  metodo_pagamento?: string | null;
-};
-
-type SyncBuyer = {
-  nome?: string;
-  email?: string;
-  celular?: string;
-};
-
-type SyncDetalhe = {
-  saleId?: string;
-  acao?: string;
-  match_rule?: SyncMatchRule;
-  id?: string;
-  inscricao?: SyncBuyer;
-  buyer?: SyncBuyer;
-  antes?: SyncSnapshot;
-  depois?: SyncSnapshot;
-  tentativa_depois?: SyncSnapshot;
-  status_greenn?: string;
-  motivo?: string;
-  erro?: string;
-};
-
-
-type SyncRun = {
-  id: string;
-  iniciado_em: string;
-  finalizado_em: string | null;
-  duracao_ms: number | null;
-  origem: string;
-  sucesso: boolean;
-  total: number;
-  criadas: number;
-  atualizadas: number;
-  ignoradas: number;
-  erros: number;
-  erro_mensagem: string | null;
-  http_status: number | null;
-  detalhes: SyncDetalhe[] | null;
-};
-
-const syncFailureAdvice = (run: SyncRun) => {
-  const details = run.detalhes as unknown;
-  const action =
-    details && !Array.isArray(details) && typeof details === "object"
-      ? String((details as { ajuste_greenn?: unknown }).ajuste_greenn ?? "")
-      : "";
-
-  if (run.erro_mensagem?.includes("greenn_unreachable")) {
-    return {
-      title: "A API da Greenn não respondeu dentro do tempo limite.",
-      description:
-        action ||
-        "Confirme na Greenn se a API de vendas está habilitada para a chave usada, se o endpoint continua correto e se o webhook saleUpdated está ativo para atualizar os pagamentos automaticamente.",
-    };
-  }
-
-  if (run.http_status === 401) {
-    return {
-      title: "A Greenn recusou a chave de API.",
-      description:
-        "Gere ou revise a chave de API na Greenn e atualize a credencial salva no backend do projeto.",
-    };
-  }
-
-  return null;
-};
-
-
 
 const STATUS_OPTIONS: { value: StatusInscricao | "todos"; label: string }[] = [
   { value: "todos", label: "Todos" },
@@ -214,106 +102,13 @@ const Admin = () => {
   const [statusFilter, setStatusFilter] = useState<StatusInscricao | "todos">(
     "todos"
   );
-  const [selected, setSelected] = useState<Inscricao | null>(null);
-  const [logs, setLogs] = useState<WebhookLog[]>([]);
-  const [loadingLogs, setLoadingLogs] = useState(false);
   const [savingStatus, setSavingStatus] = useState<string | null>(null);
-  const [syncRuns, setSyncRuns] = useState<SyncRun[]>([]);
-  const [loadingSync, setLoadingSync] = useState(true);
-  const [triggeringSync, setTriggeringSync] = useState(false);
-  const [webhookAlerts, setWebhookAlerts] = useState<WebhookLog[]>([]);
-
-  const loadSyncRuns = async () => {
-    const { data, error } = await supabase
-      .from("sync_runs" as never)
-      .select(
-        "id, iniciado_em, finalizado_em, duracao_ms, origem, sucesso, total, criadas, atualizadas, ignoradas, erros, erro_mensagem, http_status, detalhes"
-      )
-      .order("iniciado_em", { ascending: false })
-      .limit(10);
-    if (!error) setSyncRuns((data ?? []) as unknown as SyncRun[]);
-    setLoadingSync(false);
-  };
-
-  const loadWebhookAlerts = async () => {
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { data } = await supabase
-      .from("greenn_webhook_logs")
-      .select("id, criado_em, processado, status_recebido, status_mapeado, greenn_sale_id, erro, payload")
-      .gte("criado_em", since)
-      .order("criado_em", { ascending: false })
-      .limit(100);
-    const rows = (data ?? []) as WebhookLog[];
-    const problems = rows.filter(
-      (r) => (r.status_recebido ?? "").startsWith("__") || (r.erro && !r.processado),
-    );
-    setWebhookAlerts(problems);
-  };
-
-  const triggerSync = async () => {
-    setTriggeringSync(true);
-    const { data, error } = await supabase.functions.invoke("sync-greenn-sales", {
-      method: "POST",
-    });
-    if (error) {
-      toast({
-        title: "Erro ao sincronizar",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else if ((data as { ok?: boolean } | null)?.ok === false) {
-      const failure = data as { message?: string; details?: string; error?: string } | null;
-      toast({
-        title: "Sincronização não concluída",
-        description: failure?.message ?? failure?.details ?? failure?.error ?? "A API da Greenn não respondeu.",
-        variant: "destructive",
-      });
-    } else {
-      toast({ title: "Sincronização executada" });
-      await loadData();
-    }
-    await loadSyncRuns();
-    setTriggeringSync(false);
-  };
-
-  const [reprocessing, setReprocessing] = useState<string | null>(null);
-  const reprocessInscricao = async (inscricaoId: string) => {
-    setReprocessing(inscricaoId);
-    const { data, error } = await supabase.functions.invoke("reprocess-inscricao", {
-      method: "POST",
-      body: { inscricaoId },
-    });
-    if (error) {
-      toast({
-        title: "Erro ao reprocessar",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else if ((data as { ok?: boolean } | null)?.ok === false) {
-      const failure = data as { message?: string; details?: string; error?: string } | null;
-      toast({
-        title: "Reprocessamento não concluído",
-        description: failure?.message ?? failure?.details ?? failure?.error ?? "A API da Greenn não respondeu.",
-        variant: "destructive",
-      });
-    } else {
-      const acao = (data as { acao?: string; motivo?: string } | null)?.acao;
-      const motivo = (data as { motivo?: string } | null)?.motivo;
-      toast({
-        title: "Reprocessamento concluído",
-        description: acao ? `Ação: ${acao}` : motivo ?? "Registrado no histórico.",
-      });
-      await loadData();
-    }
-    await loadSyncRuns();
-    setReprocessing(null);
-  };
 
   const loadData = async () => {
     const { data, error } = await supabase
       .from("inscricoes")
       .select(
-        "id, nome, email, celular, valor, status, metodo_pagamento, greenn_sale_id, greenn_payload, pago_em, criado_em, atualizado_em"
+        "id, nome, email, celular, valor, status, metodo_pagamento, greenn_sale_id, pago_em, criado_em, atualizado_em"
       )
       .order("criado_em", { ascending: false });
 
@@ -327,7 +122,6 @@ const Admin = () => {
       setItems((data ?? []) as Inscricao[]);
     }
   };
-
 
   useEffect(() => {
     let active = true;
@@ -358,11 +152,8 @@ const Admin = () => {
         return;
       }
 
-      await Promise.all([loadData(), loadSyncRuns(), loadWebhookAlerts()]);
+      await loadData();
       if (active) setLoading(false);
-
-
-
     };
 
     init();
@@ -396,30 +187,6 @@ const Admin = () => {
       receita,
     };
   }, [items]);
-
-  const openDetails = async (inscricao: Inscricao) => {
-    setSelected(inscricao);
-    setLogs([]);
-    setLoadingLogs(true);
-    const { data, error } = await supabase
-      .from("greenn_webhook_logs")
-      .select(
-        "id, criado_em, processado, status_recebido, status_mapeado, greenn_sale_id, erro, payload"
-      )
-      .eq("inscricao_id", inscricao.id)
-      .order("criado_em", { ascending: false });
-
-    if (error) {
-      toast({
-        title: "Erro ao carregar logs",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      setLogs((data ?? []) as WebhookLog[]);
-    }
-    setLoadingLogs(false);
-  };
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -577,47 +344,12 @@ const Admin = () => {
           </div>
         </header>
 
-        {/* STATS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-          <StatCard
-            icon={Users}
-            label="Inscrições"
-            value={String(stats.total)}
-          />
-          <StatCard
-            icon={CheckCircle2}
-            label="Pagas"
-            value={String(stats.pagas)}
-          />
-          <StatCard
-            icon={Clock}
-            label="Pendentes"
-            value={String(stats.pendentes)}
-          />
-          <StatCard
-            icon={DollarSign}
-            label="Receita (pagas)"
-            value={formatBRL(stats.receita)}
-          />
+          <StatCard icon={Users} label="Inscrições" value={String(stats.total)} />
+          <StatCard icon={CheckCircle2} label="Pagas" value={String(stats.pagas)} />
+          <StatCard icon={Clock} label="Pendentes" value={String(stats.pendentes)} />
+          <StatCard icon={DollarSign} label="Receita (pagas)" value={formatBRL(stats.receita)} />
         </div>
-
-        <WebhookAlertBanner
-          alerts={webhookAlerts}
-          onRefresh={loadWebhookAlerts}
-        />
-
-        <SyncPanel
-          runs={syncRuns}
-          loading={loadingSync}
-          triggering={triggeringSync}
-          onTrigger={triggerSync}
-          onRefresh={loadSyncRuns}
-          onReprocess={reprocessInscricao}
-          reprocessingId={reprocessing}
-        />
-
-
-
 
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="w-56">
@@ -667,7 +399,6 @@ const Admin = () => {
                   <TableHead>Valor</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Pago em</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -677,12 +408,8 @@ const Admin = () => {
                       {new Date(i.criado_em).toLocaleString("pt-BR")}
                     </TableCell>
                     <TableCell className="font-light">{i.nome}</TableCell>
-                    <TableCell className="font-light text-xs">
-                      {i.email}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {i.celular}
-                    </TableCell>
+                    <TableCell className="font-light text-xs">{i.email}</TableCell>
+                    <TableCell className="font-mono text-xs">{i.celular}</TableCell>
                     <TableCell className="whitespace-nowrap">
                       {formatBRL(Number(i.valor))}
                     </TableCell>
@@ -723,34 +450,6 @@ const Admin = () => {
                         ? new Date(i.pago_em).toLocaleString("pt-BR")
                         : "—"}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => reprocessInscricao(i.id)}
-                          disabled={reprocessing === i.id}
-                          className="rounded-none uppercase tracking-[0.2em] text-[10px]"
-                          title="Reprocessar sincronização com a Greenn"
-                        >
-                          {reprocessing === i.id ? (
-                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                          ) : (
-                            <RotateCw className="w-3.5 h-3.5 mr-1.5" />
-                          )}
-                          Reprocessar
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDetails(i)}
-                          className="rounded-none uppercase tracking-[0.2em] text-[10px]"
-                        >
-                          <FileJson className="w-3.5 h-3.5 mr-1.5" />
-                          Payload
-                        </Button>
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -761,758 +460,11 @@ const Admin = () => {
           </div>
         )}
       </div>
-
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display text-2xl">
-              {selected?.nome}
-            </DialogTitle>
-            <DialogDescription>
-              {selected?.email} · {selected?.celular}
-              {selected?.greenn_sale_id && (
-                <>
-                  {" · "}Venda Greenn:{" "}
-                  <span className="font-mono">{selected.greenn_sale_id}</span>
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selected && (
-            <div className="space-y-6">
-              <section>
-                <h3 className="text-xs uppercase tracking-[0.25em] text-rose-deep mb-2">
-                  Payload salvo na inscrição
-                </h3>
-                <pre className="bg-muted p-4 rounded-none text-xs overflow-x-auto max-h-64">
-                  {selected.greenn_payload
-                    ? JSON.stringify(selected.greenn_payload, null, 2)
-                    : "Nenhum payload registrado."}
-                </pre>
-              </section>
-
-              <section>
-                <h3 className="text-xs uppercase tracking-[0.25em] text-rose-deep mb-2">
-                  Histórico de webhooks ({logs.length})
-                </h3>
-                {loadingLogs ? (
-                  <div className="flex justify-center py-6">
-                    <Loader2 className="w-5 h-5 animate-spin text-rose-deep" />
-                  </div>
-                ) : logs.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum webhook recebido para esta inscrição.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {logs.map((l) => (
-                      <div
-                        key={l.id}
-                        className="border border-rose-dusty/40 p-3"
-                      >
-                        <div className="flex flex-wrap items-center gap-2 mb-2 text-xs">
-                          <span className="text-foreground/70">
-                            {new Date(l.criado_em).toLocaleString("pt-BR")}
-                          </span>
-                          {l.status_recebido && (
-                            <Badge variant="outline" className="text-[10px]">
-                              recebido: {l.status_recebido}
-                            </Badge>
-                          )}
-                          {l.status_mapeado && (
-                            <Badge
-                              variant={statusVariant(l.status_mapeado)}
-                              className="text-[10px] uppercase"
-                            >
-                              → {l.status_mapeado}
-                            </Badge>
-                          )}
-                          <Badge
-                            variant={l.processado ? "default" : "secondary"}
-                            className="text-[10px]"
-                          >
-                            {l.processado ? "processado" : "não processado"}
-                          </Badge>
-                          {l.erro && (
-                            <Badge
-                              variant="destructive"
-                              className="text-[10px]"
-                            >
-                              erro
-                            </Badge>
-                          )}
-                        </div>
-                        {l.erro && (
-                          <p className="text-xs text-destructive mb-2">
-                            {l.erro}
-                          </p>
-                        )}
-                        <pre className="bg-muted p-3 text-[11px] overflow-x-auto max-h-64">
-                          {JSON.stringify(l.payload, null, 2)}
-                        </pre>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </main>
   );
 };
 
-const formatRelative = (iso: string) => {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const s = Math.round(diffMs / 1000);
-  if (s < 60) return `há ${s}s`;
-  const m = Math.round(s / 60);
-  if (m < 60) return `há ${m} min`;
-  const h = Math.round(m / 60);
-  if (h < 48) return `há ${h}h`;
-  const d = Math.round(h / 24);
-  return `há ${d}d`;
-};
-
-const INCIDENT_INFO: Record<
-  string,
-  { titulo: string; acao: string }
-> = {
-  __auth_error__: {
-    titulo: "Token inválido no webhook da Greenn",
-    acao:
-      'A Greenn está enviando eventos com token errado (ou sem token). No painel da Greenn, edite o webhook e garanta que a URL termine com "?token=SEU_TOKEN" — o valor deve bater com o segredo GREENN_WEBHOOK_TOKEN.',
-  },
-  __config_error__: {
-    titulo: "Backend sem token configurado",
-    acao:
-      "O segredo GREENN_WEBHOOK_TOKEN não está definido neste ambiente. Configure-o em Cloud → Secrets e reenvie um evento de teste da Greenn.",
-  },
-  __invalid_json__: {
-    titulo: "Payload inválido recebido",
-    acao:
-      'A Greenn enviou um corpo que não é JSON. Confirme no painel que o método é POST e o Content-Type é "application/json".',
-  },
-  __method_error__: {
-    titulo: "Método HTTP incorreto",
-    acao:
-      "A Greenn está chamando o webhook com um método diferente de POST. Ajuste no painel para POST.",
-  },
-};
-
-const WebhookAlertBanner = ({
-  alerts,
-  onRefresh,
-}: {
-  alerts: WebhookLog[];
-  onRefresh: () => void;
-}) => {
-  if (!alerts.length) return null;
-
-  const incidentAlerts = alerts.filter((a) => (a.status_recebido ?? "").startsWith("__"));
-  const naoEncontrada = alerts.filter(
-    (a) => a.erro === "inscricao_nao_encontrada" && !a.processado,
-  );
-  const outrosErros = alerts.filter(
-    (a) =>
-      !(a.status_recebido ?? "").startsWith("__") &&
-      a.erro &&
-      a.erro !== "inscricao_nao_encontrada" &&
-      !a.processado,
-  );
-
-  const grupos = new Map<string, { count: number; ultimo: WebhookLog }>();
-  for (const a of incidentAlerts) {
-    const key = a.status_recebido ?? "__unknown__";
-    const g = grupos.get(key);
-    if (!g) grupos.set(key, { count: 1, ultimo: a });
-    else {
-      g.count += 1;
-      if (new Date(a.criado_em) > new Date(g.ultimo.criado_em)) g.ultimo = a;
-    }
-  }
-
-  const hasCritical = grupos.size > 0;
-
-  return (
-    <section
-      className={`mb-6 border shadow-soft ${
-        hasCritical
-          ? "border-destructive/60 bg-destructive/5"
-          : "border-amber-500/50 bg-amber-500/5"
-      }`}
-    >
-      <header className="flex items-center justify-between gap-3 px-5 py-3 border-b border-inherit">
-        <div className="flex items-center gap-2">
-          <AlertTriangle
-            className={`w-4 h-4 ${hasCritical ? "text-destructive" : "text-amber-600"}`}
-            strokeWidth={1.6}
-          />
-          <h2
-            className={`uppercase tracking-[0.25em] text-[11px] ${
-              hasCritical ? "text-destructive" : "text-amber-700"
-            }`}
-          >
-            Alertas do webhook Greenn (24h)
-          </h2>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRefresh}
-          className="rounded-none uppercase tracking-[0.2em] text-[10px]"
-        >
-          <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-          Atualizar
-        </Button>
-      </header>
-
-      <div className="p-5 space-y-3 text-sm">
-        {[...grupos.entries()].map(([key, g]) => {
-          const info = INCIDENT_INFO[key] ?? {
-            titulo: key,
-            acao: g.ultimo.erro ?? "Verifique os logs.",
-          };
-          return (
-            <div key={key} className="border border-destructive/30 bg-background/40 p-3">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <Badge variant="destructive" className="text-[10px] uppercase tracking-wider">
-                  {g.count}× nas últimas 24h
-                </Badge>
-                <span className="font-light">{info.titulo}</span>
-                <span className="text-[11px] text-foreground/50 ml-auto">
-                  último: {new Date(g.ultimo.criado_em).toLocaleString("pt-BR")}
-                </span>
-              </div>
-              <p className="text-[12px] text-foreground/70">{info.acao}</p>
-              {g.ultimo.erro && (
-                <p className="text-[11px] text-destructive/80 mt-1 font-mono">
-                  {g.ultimo.erro}
-                </p>
-              )}
-            </div>
-          );
-        })}
-
-        {naoEncontrada.length > 0 && (
-          <div className="border border-amber-500/40 bg-background/40 p-3">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">
-                {naoEncontrada.length}× sem match
-              </Badge>
-              <span className="font-light">
-                Eventos recebidos sem inscrição correspondente
-              </span>
-            </div>
-            <p className="text-[12px] text-foreground/70">
-              O evento chegou mas o e-mail/telefone/sale_id não bate com nenhuma inscrição no
-              site. Verifique se o formulário está gravando os mesmos dados que a Greenn envia
-              ou rode "Sincronizar agora" para casar por sale_id.
-            </p>
-          </div>
-        )}
-
-        {outrosErros.length > 0 && (
-          <div className="border border-destructive/30 bg-background/40 p-3">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <Badge variant="destructive" className="text-[10px] uppercase tracking-wider">
-                {outrosErros.length}× erro DB
-              </Badge>
-              <span className="font-light">Falha ao gravar atualização no banco</span>
-            </div>
-            <p className="text-[12px] text-foreground/70">
-              O webhook recebeu o evento mas falhou ao atualizar a inscrição. Confira os
-              detalhes abaixo e ajuste se necessário.
-            </p>
-            <ul className="mt-2 space-y-1 text-[11px] text-destructive/80 font-mono">
-              {outrosErros.slice(0, 3).map((e) => (
-                <li key={e.id}>
-                  {new Date(e.criado_em).toLocaleString("pt-BR")} — {e.erro}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-};
-
-
-
-const SyncPanel = ({
-  runs,
-  loading,
-  triggering,
-  onTrigger,
-  onRefresh,
-  onReprocess,
-  reprocessingId,
-}: {
-  runs: SyncRun[];
-  loading: boolean;
-  triggering: boolean;
-  onTrigger: () => void;
-  onRefresh: () => void;
-  onReprocess: (inscricaoId: string) => void;
-  reprocessingId: string | null;
-}) => {
-  const last = runs[0];
-  const successRuns = runs.filter((r) => r.sucesso).length;
-
-  const detalhes: SyncDetalhe[] = Array.isArray(last?.detalhes) ? last!.detalhes! : [];
-  const ruleCounts = detalhes.reduce(
-    (acc, d) => {
-      const r = (d.match_rule ?? "none") as SyncMatchRule;
-      acc[r] = (acc[r] ?? 0) + 1;
-      return acc;
-    },
-    {} as Record<SyncMatchRule, number>
-  );
-  const ruleLabel: Record<SyncMatchRule, string> = {
-    sale_id: "Sale ID",
-    email: "E-mail",
-    phone: "Telefone",
-    none: "Sem match",
-  };
-  const ruleBadge = (r: SyncMatchRule) => {
-    switch (r) {
-      case "sale_id":
-        return "default" as const;
-      case "email":
-        return "secondary" as const;
-      case "phone":
-        return "outline" as const;
-      default:
-        return "outline" as const;
-    }
-  };
-
-
-  return (
-    <section className="mb-8 bg-ivory border border-rose-dusty/40 shadow-soft">
-      <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-rose-dusty/30">
-        <div className="flex items-center gap-2 text-rose-deep">
-          <RotateCw className="w-4 h-4" strokeWidth={1.4} />
-          <h2 className="uppercase tracking-[0.25em] text-[11px]">
-            Sincronização Greenn
-          </h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={loading}
-            className="rounded-none uppercase tracking-[0.2em] text-[10px]"
-          >
-            <RefreshCw
-              className={`w-3.5 h-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`}
-            />
-            Atualizar
-          </Button>
-          <Button
-            size="sm"
-            onClick={onTrigger}
-            disabled={triggering}
-            className="rounded-none uppercase tracking-[0.2em] text-[10px] bg-rose-deep hover:bg-rose-deep/90"
-          >
-            {triggering ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <RotateCw className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            Sincronizar agora
-          </Button>
-        </div>
-      </header>
-
-      <div className="p-5">
-        {loading ? (
-          <div className="flex justify-center py-6">
-            <Loader2 className="w-5 h-5 animate-spin text-rose-deep" />
-          </div>
-        ) : !last ? (
-          <div className="flex items-center gap-2 text-sm text-foreground/60">
-            <AlertTriangle className="w-4 h-4" />
-            Nenhuma execução registrada ainda. O cron roda a cada 5 min.
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
-              <div>
-                <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-1">
-                  Última execução
-                </p>
-                <p className="text-sm font-light">
-                  {formatRelative(last.iniciado_em)}
-                </p>
-                <p className="text-[11px] text-foreground/50">
-                  {new Date(last.iniciado_em).toLocaleString("pt-BR")}
-                </p>
-              </div>
-              <div>
-                <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-1">
-                  Status
-                </p>
-                <Badge
-                  variant={last.sucesso ? "default" : "destructive"}
-                  className="uppercase tracking-wider text-[10px]"
-                >
-                  {last.sucesso ? "sucesso" : "erro"}
-                </Badge>
-                {last.http_status != null && (
-                  <p className="text-[11px] text-foreground/50 mt-1">
-                    HTTP {last.http_status}
-                  </p>
-                )}
-              </div>
-              <div>
-                <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-1">
-                  Vendas processadas
-                </p>
-                <p className="font-display text-2xl">{last.total}</p>
-                <p className="text-[11px] text-foreground/50">
-                  {last.criadas} criadas · {last.atualizadas} atualizadas
-                </p>
-              </div>
-              <div>
-                <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-1">
-                  Duração
-                </p>
-                <p className="text-sm font-light">
-                  {last.duracao_ms != null ? `${last.duracao_ms} ms` : "—"}
-                </p>
-                <p className="text-[11px] text-foreground/50">
-                  origem: {last.origem}
-                </p>
-              </div>
-              <div>
-                <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-1">
-                  Últimas 10
-                </p>
-                <p className="text-sm font-light">
-                  {successRuns}/{runs.length} com sucesso
-                </p>
-              </div>
-            </div>
-
-            {last.erro_mensagem && (
-              <div className="mb-4 border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive space-y-2">
-                {syncFailureAdvice(last) ? (
-                  <>
-                    <p className="font-medium">{syncFailureAdvice(last)?.title}</p>
-                    <p className="text-destructive/80">{syncFailureAdvice(last)?.description}</p>
-                  </>
-                ) : null}
-                <p className="font-mono break-words">{last.erro_mensagem}</p>
-              </div>
-            )}
-
-            <div className="mb-5">
-              <p className="uppercase tracking-[0.2em] text-[10px] text-foreground/60 mb-2">
-                Como as vendas casaram (última execução)
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {(["sale_id", "email", "phone", "none"] as SyncMatchRule[]).map(
-                  (r) => (
-                    <Badge
-                      key={r}
-                      variant={ruleBadge(r)}
-                      className="text-[10px] uppercase tracking-wider"
-                    >
-                      {ruleLabel[r]}: {ruleCounts[r] ?? 0}
-                    </Badge>
-                  )
-                )}
-              </div>
-            </div>
-
-            {detalhes.length > 0 && (
-              <details className="text-xs mb-4" open>
-                <summary className="cursor-pointer uppercase tracking-[0.2em] text-[10px] text-rose-deep mb-2">
-                  Auditoria por inscrição ({detalhes.length})
-                </summary>
-                <div className="mt-3 space-y-3">
-                  {detalhes.map((d, idx) => (
-                    <DetalheCard
-                      key={idx}
-                      d={d}
-                      ruleLabel={ruleLabel}
-                      ruleBadge={ruleBadge}
-                      onReprocess={onReprocess}
-                      reprocessingId={reprocessingId}
-                    />
-                  ))}
-                </div>
-              </details>
-            )}
-
-
-
-
-
-            <details className="text-xs">
-              <summary className="cursor-pointer uppercase tracking-[0.2em] text-[10px] text-rose-deep mb-2">
-                Histórico ({runs.length})
-              </summary>
-              <div className="mt-3 overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Quando</TableHead>
-                      <TableHead>Origem</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Criadas</TableHead>
-                      <TableHead>Atualizadas</TableHead>
-                      <TableHead>Ignoradas</TableHead>
-                      <TableHead>Erros</TableHead>
-                      <TableHead>Duração</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {runs.map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="whitespace-nowrap text-[11px]">
-                          {new Date(r.iniciado_em).toLocaleString("pt-BR")}
-                        </TableCell>
-                        <TableCell className="text-[11px]">{r.origem}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={r.sucesso ? "default" : "destructive"}
-                            className="text-[10px] uppercase"
-                          >
-                            {r.sucesso ? "ok" : "erro"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{r.total}</TableCell>
-                        <TableCell>{r.criadas}</TableCell>
-                        <TableCell>{r.atualizadas}</TableCell>
-                        <TableCell>{r.ignoradas}</TableCell>
-                        <TableCell>{r.erros}</TableCell>
-                        <TableCell className="text-[11px]">
-                          {r.duracao_ms != null ? `${r.duracao_ms}ms` : "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </details>
-          </>
-        )}
-      </div>
-    </section>
-  );
-};
-
-const actionBadgeVariant = (acao?: string) => {
-  if (!acao) return "outline" as const;
-  if (acao.startsWith("erro")) return "destructive" as const;
-  if (acao === "criada") return "default" as const;
-  if (acao === "atualizada") return "default" as const;
-  if (acao.startsWith("ignorada")) return "secondary" as const;
-  return "outline" as const;
-};
-
-const fmtSnapVal = (k: string, v: unknown) => {
-  if (v == null || v === "") return "—";
-  if (k === "pago_em" && typeof v === "string") {
-    const d = new Date(v);
-    if (!isNaN(d.getTime())) return d.toLocaleString("pt-BR");
-  }
-  if (k === "valor" && typeof v === "number") {
-    return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  }
-  return String(v);
-};
-
-const SNAP_FIELDS: { key: keyof SyncSnapshot; label: string }[] = [
-  { key: "status", label: "Status" },
-  { key: "valor", label: "Valor" },
-  { key: "greenn_sale_id", label: "Sale ID" },
-  { key: "pago_em", label: "Pago em" },
-  { key: "metodo_pagamento", label: "Método" },
-];
-
-const DetalheCard = ({
-  d,
-  ruleLabel,
-  ruleBadge,
-  onReprocess,
-  reprocessingId,
-}: {
-  d: SyncDetalhe;
-  ruleLabel: Record<SyncMatchRule, string>;
-  ruleBadge: (r: SyncMatchRule) => "default" | "secondary" | "outline" | "destructive";
-  onReprocess: (inscricaoId: string) => void;
-  reprocessingId: string | null;
-}) => {
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const canReprocess = Boolean(d.id) && (d.acao?.startsWith("erro") ?? false);
-  const isReprocessing = reprocessingId === d.id;
-  const rule = (d.match_rule ?? "none") as SyncMatchRule;
-  const insc = d.inscricao;
-  const buyer = d.buyer;
-  const antes = d.antes;
-  const depois = d.depois ?? d.tentativa_depois;
-  const changedKeys = new Set<string>();
-  if (antes && depois) {
-    for (const f of SNAP_FIELDS) {
-      if ((antes[f.key] ?? null) !== (depois[f.key] ?? null)) changedKeys.add(f.key as string);
-    }
-  }
-
-  return (
-    <div className="border border-rose-dusty/40 bg-background/40 p-3">
-      <div className="flex flex-wrap items-center gap-2 mb-2">
-        <Badge variant={actionBadgeVariant(d.acao)} className="text-[10px] uppercase tracking-wider">
-          {d.acao ?? "—"}
-        </Badge>
-        <Badge variant={ruleBadge(rule)} className="text-[10px] uppercase">
-          match: {ruleLabel[rule]}
-        </Badge>
-        {d.saleId && (
-          <span className="text-[11px] text-foreground/60">
-            sale <span className="font-mono">{d.saleId}</span>
-          </span>
-        )}
-        {d.id && (
-          <span className="text-[11px] text-foreground/50">
-            inscrição <span className="font-mono">{d.id.slice(0, 8)}</span>
-          </span>
-        )}
-      </div>
-
-      {(insc || buyer) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] mb-2">
-          {insc && (
-            <div>
-              <p className="uppercase tracking-[0.18em] text-[9px] text-foreground/50 mb-0.5">
-                Inscrição no site
-              </p>
-              <p className="font-light">{insc.nome ?? "—"}</p>
-              <p className="text-foreground/60">
-                {insc.email ?? "—"} · {insc.celular ?? "—"}
-              </p>
-            </div>
-          )}
-          {buyer && (
-            <div>
-              <p className="uppercase tracking-[0.18em] text-[9px] text-foreground/50 mb-0.5">
-                Comprador na Greenn
-              </p>
-              <p className="font-light">{buyer.nome || "—"}</p>
-              <p className="text-foreground/60">
-                {buyer.email || "—"} · {buyer.celular || "—"}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {antes && depois && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-[11px] border-collapse">
-            <thead>
-              <tr className="text-left text-foreground/50 uppercase tracking-[0.18em] text-[9px]">
-                <th className="py-1 pr-2 font-normal">Campo</th>
-                <th className="py-1 pr-2 font-normal">Antes</th>
-                <th className="py-1 font-normal">Depois</th>
-              </tr>
-            </thead>
-            <tbody>
-              {SNAP_FIELDS.map((f) => {
-                const changed = changedKeys.has(f.key as string);
-                return (
-                  <tr key={f.key as string} className="border-t border-rose-dusty/20">
-                    <td className="py-1 pr-2 text-foreground/60">{f.label}</td>
-                    <td className={`py-1 pr-2 font-mono ${changed ? "text-foreground/60 line-through" : "text-foreground/70"}`}>
-                      {fmtSnapVal(f.key as string, antes[f.key])}
-                    </td>
-                    <td className={`py-1 font-mono ${changed ? "text-rose-deep" : "text-foreground/70"}`}>
-                      {fmtSnapVal(f.key as string, depois[f.key])}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {!antes && depois && (
-        <div className="text-[11px] text-foreground/70">
-          <span className="uppercase tracking-[0.18em] text-[9px] text-foreground/50 mr-1">
-            Criada como:
-          </span>
-          status <span className="font-mono">{depois.status ?? "—"}</span>
-          {" · "}sale <span className="font-mono">{depois.greenn_sale_id ?? "—"}</span>
-        </div>
-      )}
-
-      {d.status_greenn && (
-        <p className="text-[11px] text-foreground/60 mt-2">
-          status recebido da Greenn: <span className="font-mono">{d.status_greenn}</span>
-        </p>
-      )}
-      {d.motivo && (
-        <p className="text-[11px] text-foreground/60 mt-1">Motivo: {d.motivo}</p>
-      )}
-      {d.erro && (
-        <p className="text-[11px] text-destructive mt-1">Erro: {d.erro}</p>
-      )}
-      {canReprocess && d.id && (
-        <div className="mt-3 flex justify-end">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setConfirmOpen(true)}
-            disabled={isReprocessing}
-            className="rounded-none uppercase tracking-[0.2em] text-[10px] border-destructive/60 text-destructive hover:bg-destructive/10"
-          >
-            {isReprocessing ? (
-              <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
-            ) : (
-              <RotateCw className="w-3 h-3 mr-1.5" />
-            )}
-            Reprocessar inscrição
-          </Button>
-          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Reprocessar inscrição?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta ação vai buscar novamente os dados na Greenn e atualizar a inscrição
-                  {insc?.nome ? ` de ${insc.nome}` : ""}. O resultado será registrado no histórico
-                  de sincronização. Deseja continuar?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    setConfirmOpen(false);
-                    onReprocess(d.id!);
-                  }}
-                >
-                  Reprocessar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      )}
-    </div>
-  );
-};
-
 const StatCard = ({
-
-
   icon: Icon,
   label,
   value,
