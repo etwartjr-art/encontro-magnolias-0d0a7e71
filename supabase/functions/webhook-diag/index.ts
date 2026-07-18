@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       webhook_url: webhookUrl,
-      webhook_url_com_token: token ? `${webhookUrl}?token=${token}` : null,
+      webhook_url_com_token: token ? `${webhookUrl}?token=${encodeURIComponent(token)}` : null,
       token_configurado: Boolean(token),
       token_preview: token ? `${token.slice(0, 4)}…${token.slice(-4)}` : null,
       total_logs: total ?? 0,
