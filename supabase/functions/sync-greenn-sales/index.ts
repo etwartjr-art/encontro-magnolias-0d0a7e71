@@ -70,7 +70,6 @@ Deno.serve(async (req) => {
   let origem: "cron" | "manual" | "discover" = "cron";
 
   const apiKey = Deno.env.get("GREENN_API_KEY");
-  if (!apiKey) return json({ error: "missing_GREENN_API_KEY" }, 503);
 
   const url = new URL(req.url);
   const discover = url.searchParams.get("discover") === "1";
