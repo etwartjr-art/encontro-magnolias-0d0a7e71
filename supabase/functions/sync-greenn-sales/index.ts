@@ -296,7 +296,9 @@ Deno.serve(async (req) => {
     const rawStatus = String(pick(sale, ["currentStatus", "current_status", "status", "sale_status"]) ?? "").toLowerCase();
     const metodo = String(pick(sale, ["payment_method", "method"]) ?? "").trim() || null;
     const valorRaw = Number(pick(sale, ["net_amount", "amount", "total", "value"]) ?? 0);
-    const valor = valorRaw > 1000 ? valorRaw / 100 : valorRaw; // heurística: centavos
+    let valor = valorRaw > 1000 ? valorRaw / 100 : valorRaw; // heurística: centavos
+    // Sempre armazenar valor líquido: se veio bruto (~39,90), converter para líquido (36,90)
+    if (Math.abs(valor - 39.9) < 0.5) valor = 36.9;
     const paidAt = pick(sale, ["paid_at", "payment_date", "approved_at", "updated_at", "date"]);
 
     const isPaid = PAID.has(rawStatus);
