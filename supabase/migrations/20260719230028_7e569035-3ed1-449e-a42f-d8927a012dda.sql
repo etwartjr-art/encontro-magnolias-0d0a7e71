@@ -1,0 +1,1 @@
+UPDATE public.inscricoes SET valor = 36.90 WHERE status = 'pago' AND valor = 39.00;

@@ -180,12 +180,18 @@ const Admin = () => {
 
   const stats = useMemo(() => {
     const pagas = items.filter((i) => i.status === "pago");
-    const receita = pagas.reduce((sum, i) => sum + Number(i.valor), 0);
+    const receitaLiquida = pagas.reduce((sum, i) => sum + Number(i.valor), 0);
+    const receitaBruta = pagas.reduce((sum, i) => {
+      const liquido = Number(i.valor);
+      const bruto = Math.abs(liquido - 36.9) < 0.01 ? 39.9 : liquido;
+      return sum + bruto;
+    }, 0);
     return {
       total: items.length,
       pagas: pagas.length,
       pendentes: items.filter((i) => i.status === "pendente").length,
-      receita,
+      receitaBruta,
+      receitaLiquida,
     };
   }, [items]);
 
@@ -362,11 +368,12 @@ const Admin = () => {
           </div>
         </header>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           <StatCard icon={Users} label="Inscrições" value={String(stats.total)} />
           <StatCard icon={CheckCircle2} label="Pagas" value={String(stats.pagas)} />
           <StatCard icon={Clock} label="Pendentes" value={String(stats.pendentes)} />
-          <StatCard icon={DollarSign} label="Receita (pagas)" value={formatBRL(stats.receita)} />
+          <StatCard icon={DollarSign} label="Receita Paga (bruto)" value={formatBRL(stats.receitaBruta)} />
+          <StatCard icon={DollarSign} label="Receita Recebida (líquido)" value={formatBRL(stats.receitaLiquida)} />
         </div>
 
         <div className="flex flex-wrap items-center gap-3 mb-6">
