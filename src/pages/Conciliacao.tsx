@@ -85,26 +85,6 @@ type WebhookStatus = {
   logs_24h: number;
   ultimos: WebhookLog[];
 };
-type ApiAttempt = {
-  base_url: string;
-  test_url: string;
-  response_status?: number;
-  response?: unknown;
-  network_error?: string | null;
-  error_type?: string | null;
-  elapsed_ms?: number;
-};
-type ApiTest = {
-  ok: boolean;
-  success?: ApiAttempt | null;
-  attempts?: ApiAttempt[];
-  all_dns_failed?: boolean;
-  hint?: string;
-  base_url?: string;
-  api_key_preview?: string;
-  error?: string;
-  message?: string;
-};
 
 
 type WebhookTest = {
@@ -375,8 +355,6 @@ const WebhookPanel = () => {
   const [testing, setTesting] = useState(false);
   const [lastTest, setLastTest] = useState<WebhookTest | null>(null);
 
-  const [apiTesting, setApiTesting] = useState(false);
-  const [lastApiTest, setLastApiTest] = useState<ApiTest | null>(null);
 
   const loadStatus = async () => {
     setLoadingStatus(true);
@@ -414,28 +392,6 @@ const WebhookPanel = () => {
     setTesting(false);
   };
 
-  const runApiTest = async () => {
-    setApiTesting(true);
-    setLastApiTest(null);
-    const { data, error } = await supabase.functions.invoke("webhook-diag", {
-      body: { action: "api_test" },
-    });
-    if (error) {
-      toast({ title: "Erro no teste da API", description: error.message, variant: "destructive" });
-    } else {
-      const r = data as ApiTest;
-      setLastApiTest(r);
-      const firstFail = r.attempts?.find((a) => a.network_error || (a.response_status && a.response_status >= 400));
-      toast({
-        title: r.ok ? "API Greenn respondeu" : "Falha ao conectar à API",
-        description: r.ok && r.success
-          ? `HTTP ${r.success.response_status} em ${r.success.elapsed_ms}ms via ${r.success.base_url}`
-          : r.hint ?? r.message ?? firstFail?.network_error ?? r.error ?? "Nenhum host respondeu.",
-        variant: r.ok ? "default" : "destructive",
-      });
-    }
-    setApiTesting(false);
-  };
 
   useEffect(() => {
     loadStatus();
@@ -562,90 +518,18 @@ const WebhookPanel = () => {
         )}
       </section>
 
-      <section className="bg-ivory border border-rose-dusty/40 p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-xl">Testar conexão com a API Greenn</h2>
-          <Button
-            variant="default"
-            size="sm"
-            onClick={runApiTest}
-            disabled={apiTesting}
-            className="rounded-none uppercase tracking-[0.2em] text-xs"
-          >
-            {apiTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
-            Testar API
-          </Button>
+      <section className="bg-amber-50 border border-amber-300/60 p-5">
+        <div className="flex items-center gap-2 font-medium mb-2 text-amber-900">
+          <AlertTriangle className="w-4 h-4" />
+          A Greenn opera apenas via webhook
         </div>
-        <p className="text-xs text-foreground/70 mb-3">
-          Faz uma requisição <span className="font-mono">GET /sales?limit=1</span> usando{" "}
-          <span className="font-mono">GREENN_API_BASE</span> e <span className="font-mono">GREENN_API_KEY</span>. Útil
-          para diagnosticar DNS, timeout ou credenciais inválidas.
+        <p className="text-xs text-amber-900/90 leading-relaxed">
+          A plataforma Greenn/XGrow não expõe uma API REST pública para consulta de vendas — a
+          documentação oficial cobre exclusivamente webhooks. Toda a sincronização acontece em tempo
+          real quando a Greenn envia eventos para o endpoint acima. Não há host de API para testar
+          conexão.
         </p>
-
-        {lastApiTest && (
-          <div
-            className={`border p-4 text-sm ${
-              lastApiTest.ok
-                ? "border-emerald-500/40 bg-emerald-50 text-emerald-900"
-                : "border-destructive/40 bg-destructive/5 text-destructive"
-            }`}
-          >
-            <div className="flex items-center gap-2 font-medium mb-2">
-              {lastApiTest.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-              {lastApiTest.ok ? "API respondeu com sucesso" : "Falha ao conectar à API"}
-            </div>
-            {lastApiTest.api_key_preview && (
-              <div className="text-xs font-mono mb-2">Chave: {lastApiTest.api_key_preview}</div>
-            )}
-            {lastApiTest.hint && (
-              <div className="text-xs mb-3 whitespace-pre-wrap">{lastApiTest.hint}</div>
-            )}
-            {lastApiTest.message && !lastApiTest.hint && (
-              <div className="text-xs mb-3">{lastApiTest.message}</div>
-            )}
-
-            {lastApiTest.attempts && lastApiTest.attempts.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-[11px] uppercase tracking-wide opacity-70">
-                  Tentativas ({lastApiTest.attempts.length})
-                </div>
-                {lastApiTest.attempts.map((a, i) => {
-                  const okAttempt =
-                    !a.network_error && a.response_status && a.response_status >= 200 && a.response_status < 300;
-                  return (
-                    <div
-                      key={i}
-                      className={`border p-2 text-xs font-mono ${
-                        okAttempt
-                          ? "border-emerald-500/40 bg-emerald-50/60 text-emerald-900"
-                          : "border-border/50 bg-background/60"
-                      }`}
-                    >
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                        <span className="font-semibold">{a.base_url}</span>
-                        <span>HTTP {a.response_status ?? "—"}</span>
-                        {typeof a.elapsed_ms === "number" && <span>{a.elapsed_ms}ms</span>}
-                        {a.error_type && <span>· {a.error_type}</span>}
-                      </div>
-                      {a.network_error && (
-                        <div className="mt-1 opacity-80 break-all">{a.network_error}</div>
-                      )}
-                      {a.response !== undefined && a.response !== null && (
-                        <pre className="mt-1 text-[10px] whitespace-pre-wrap break-all max-h-32 overflow-auto opacity-90">
-                          {typeof a.response === "string" ? a.response : JSON.stringify(a.response, null, 2)}
-                        </pre>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
       </section>
-
-
 
       <section>
         <div className="flex items-center justify-between mb-3">
