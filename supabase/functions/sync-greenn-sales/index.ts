@@ -10,18 +10,24 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const configuredGreennApi = Deno.env.get("GREENN_API_BASE")?.replace(/\/$/, "");
+// Extrai apenas URLs https:// válidas do valor configurado (ignora lixo
+// tipo "curl -H ..." que possa ter sido colado no secret por engano).
+const extractUrls = (raw?: string): string[] => {
+  if (!raw) return [];
+  const matches = raw.match(/https:\/\/[^\s"'`]+/g) ?? [];
+  return matches.map((u) => u.replace(/[\/?#].*$/, (m) => m.startsWith("/") ? m.replace(/\/$/, "") : "")).map((u) => u.replace(/\/$/, ""));
+};
+const configuredGreennApis = extractUrls(Deno.env.get("GREENN_API_BASE"));
 const DEFAULT_GREENN_CANDIDATES = [
+  "https://apiadm.greenn.com.br/api/v1",
   "https://api.greenn.com.br/v1",
   "https://api.gdigital.com.br/v1",
   "https://api.gdigital.com.br",
 ];
-// Se GREENN_API_BASE estiver definido, tenta esse primeiro mas mantém os demais
-// como fallback — assim uma configuração antiga (host com DNS quebrado) não
-// impede que o sync alcance o host alternativo que ainda responde.
-const GREENN_API_CANDIDATES = configuredGreennApi
-  ? [configuredGreennApi, ...DEFAULT_GREENN_CANDIDATES.filter((b) => b !== configuredGreennApi)]
-  : DEFAULT_GREENN_CANDIDATES;
+const GREENN_API_CANDIDATES = Array.from(new Set([
+  ...configuredGreennApis,
+  ...DEFAULT_GREENN_CANDIDATES,
+]));
 const GREENN_FETCH_TIMEOUT_MS = Number(Deno.env.get("GREENN_FETCH_TIMEOUT_MS") ?? "7000");
 const GREENN_FETCH_RETRIES = Number(Deno.env.get("GREENN_FETCH_RETRIES") ?? "1");
 
