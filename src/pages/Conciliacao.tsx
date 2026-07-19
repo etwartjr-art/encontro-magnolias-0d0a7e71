@@ -85,6 +85,20 @@ type WebhookStatus = {
   logs_24h: number;
   ultimos: WebhookLog[];
 };
+type ApiTest = {
+  ok: boolean;
+  base_url?: string;
+  test_url?: string;
+  response_status?: number;
+  response?: unknown;
+  network_error?: string | null;
+  error_type?: string | null;
+  elapsed_ms?: number;
+  api_key_preview?: string;
+  error?: string;
+  message?: string;
+};
+
 type WebhookTest = {
   ok: boolean;
   sent_to?: string;
