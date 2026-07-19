@@ -309,6 +309,16 @@ const Admin = () => {
               size="sm"
               className="rounded-none uppercase tracking-[0.2em] text-xs"
             >
+              <Link to="/admin/nao-pagas">
+                <UserX className="w-4 h-4 mr-2" /> Não pagas
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="rounded-none uppercase tracking-[0.2em] text-xs"
+            >
               <Link to="/admin/conciliacao">
                 <Scale className="w-4 h-4 mr-2" /> Conciliação
               </Link>
