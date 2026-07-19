@@ -7,7 +7,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-greenn-signature, x-signature, x-hub-signature-256, x-webhook-signature, x-webhook-token",
+    "authorization, x-client-info, apikey, content-type, x-greenn-signature, x-signature, x-hub-signature-256, x-webhook-signature, x-webhook-token, x-greenn-public-key",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
   // igual ao GREENN_WEBHOOK_TOKEN. A Greenn hoje envia apenas o token — o HMAC fica
   // disponível para quando/se a plataforma passar a assinar o payload.
   let authed = false;
-  let authMode: "hmac" | "token" | "" = "";
+  let authMode: "hmac" | "token" | "public_key" | "" = "";
   let sigHeader = "";
   let providedSig = "";
 
@@ -284,8 +284,22 @@ Deno.serve(async (req) => {
     }
   }
 
+  // (c) Fallback opcional: header `x-greenn-public-key` igual ao GREENN_PUBLIC_KEY.
+  // Só é aceito se o secret estiver configurado; comparação em tempo constante.
   if (!authed) {
-    await logIncident("__auth_error__", "Credencial ausente/ inválida — envie HMAC-SHA256 do body OU ?token=<GREENN_WEBHOOK_TOKEN>", {
+    const publicKey = Deno.env.get("GREENN_PUBLIC_KEY");
+    const provided = (req.headers.get("x-greenn-public-key") ?? "").trim();
+    if (publicKey && provided) {
+      const enc = new TextEncoder();
+      if (timingSafeEqualBytes(enc.encode(provided), enc.encode(publicKey))) {
+        authed = true;
+        authMode = "public_key" as typeof authMode;
+      }
+    }
+  }
+
+  if (!authed) {
+    await logIncident("__auth_error__", "Credencial ausente/ inválida — envie HMAC-SHA256 do body, ?token=<GREENN_WEBHOOK_TOKEN> ou header x-greenn-public-key", {
       user_agent: req.headers.get("user-agent"),
       had_signature_header: Boolean(providedSig),
       sig_header: sigHeader || null,
@@ -294,6 +308,7 @@ Deno.serve(async (req) => {
     return json({ error: providedSig ? "invalid_signature" : "missing_credentials" }, 401);
   }
   console.log("greenn-webhook: autenticado via", authMode);
+
 
   let payload: Record<string, unknown> = {};
   try {
