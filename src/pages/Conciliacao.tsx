@@ -425,11 +425,12 @@ const WebhookPanel = () => {
     } else {
       const r = data as ApiTest;
       setLastApiTest(r);
+      const firstFail = r.attempts?.find((a) => a.network_error || (a.response_status && a.response_status >= 400));
       toast({
         title: r.ok ? "API Greenn respondeu" : "Falha ao conectar à API",
-        description: r.ok
-          ? `HTTP ${r.response_status} em ${r.elapsed_ms}ms`
-          : r.message ?? r.network_error ?? r.error ?? `HTTP ${r.response_status ?? "?"}`,
+        description: r.ok && r.success
+          ? `HTTP ${r.success.response_status} em ${r.success.elapsed_ms}ms via ${r.success.base_url}`
+          : r.hint ?? r.message ?? firstFail?.network_error ?? r.error ?? "Nenhum host respondeu.",
         variant: r.ok ? "default" : "destructive",
       });
     }
