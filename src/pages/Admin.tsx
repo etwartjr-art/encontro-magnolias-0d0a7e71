@@ -431,8 +431,12 @@ const Admin = () => {
                     <TableCell className="font-light text-xs">{i.email}</TableCell>
                     <TableCell className="font-mono text-xs">{i.celular}</TableCell>
                     <TableCell className="whitespace-nowrap">
+                      {formatBRL(Math.abs(Number(i.valor) - 36.9) < 0.01 ? 39.9 : Number(i.valor))}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap font-medium">
                       {formatBRL(Number(i.valor))}
                     </TableCell>
+
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Badge
