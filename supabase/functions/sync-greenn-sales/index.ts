@@ -285,9 +285,10 @@ Deno.serve(async (req) => {
           const dText = await detail.response.text();
           const dJson = JSON.parse(dText);
           sale = dJson;
-          nome = nome || String(pick(sale, ["name", "buyer_name", "customer_name", "client_name"]) ?? "").trim();
-          email = email || String(pick(sale, ["email"]) ?? "").toLowerCase().trim();
-          celular = celular || normalizePhone(pick(sale, ["phone", "telephone", "cellphone", "celular", "whatsapp"]));
+          const c = (sale as any)?.client && typeof (sale as any).client === "object" ? (sale as any).client : null;
+          nome = nome || String(c?.name ?? pick(sale, ["buyer_name", "customer_name", "client_name"]) ?? "").trim();
+          email = email || String(c?.email ?? pick(sale, ["email"]) ?? "").toLowerCase().trim();
+          celular = celular || normalizePhone(c?.phone ?? pick(sale, ["phone", "telephone", "cellphone", "celular", "whatsapp"]));
         } catch { /* segue com o que tem */ }
       }
     }
