@@ -267,18 +267,35 @@ Deno.serve(async (req) => {
   const stats = { total: list.length, criadas: 0, atualizadas: 0, ignoradas: 0, erros: 0 };
   const detalhes: Array<Record<string, unknown>> = [];
 
-  for (const sale of list) {
+  for (const saleRaw of list) {
+    let sale: any = saleRaw;
     const saleId = String(pick(sale, ["sale_id", "id", "code"]) ?? "").trim();
+    if (!saleId) { stats.ignoradas++; continue; }
+
+    let nome = String(pick(sale, ["name", "buyer_name", "customer_name", "client_name"]) ?? "").trim();
+    let email = String(pick(sale, ["email"]) ?? "").toLowerCase().trim();
+    let celular = normalizePhone(pick(sale, ["phone", "telephone", "cellphone", "celular", "whatsapp"]));
+
+    // Se a listagem não trouxe dados do cliente (schema da Greenn v1), busca o detalhe /sales/{id}
+    if (!nome || !email) {
+      const detail = await fetchGreenn(`/sales/${saleId}`, apiKey);
+      if (detail.ok) {
+        try {
+          const dText = await detail.response.text();
+          const dJson = JSON.parse(dText);
+          sale = dJson;
+          nome = nome || String(pick(sale, ["name", "buyer_name", "customer_name", "client_name"]) ?? "").trim();
+          email = email || String(pick(sale, ["email"]) ?? "").toLowerCase().trim();
+          celular = celular || normalizePhone(pick(sale, ["phone", "telephone", "cellphone", "celular", "whatsapp"]));
+        } catch { /* segue com o que tem */ }
+      }
+    }
+
     const rawStatus = String(pick(sale, ["currentStatus", "current_status", "status", "sale_status"]) ?? "").toLowerCase();
-    const nome = String(pick(sale, ["name", "buyer_name", "customer_name", "client_name"]) ?? "").trim();
-    const email = String(pick(sale, ["email"]) ?? "").toLowerCase().trim();
-    const celular = normalizePhone(pick(sale, ["phone", "telephone", "cellphone", "celular", "whatsapp"]));
     const metodo = String(pick(sale, ["payment_method", "method"]) ?? "").trim() || null;
     const valorRaw = Number(pick(sale, ["net_amount", "amount", "total", "value"]) ?? 0);
-    const valor = valorRaw > 1000 ? valorRaw / 100 : valorRaw; // heurística: se vier em centavos
+    const valor = valorRaw > 1000 ? valorRaw / 100 : valorRaw; // heurística: centavos
     const paidAt = pick(sale, ["paid_at", "payment_date", "approved_at", "updated_at", "date"]);
-
-    if (!saleId) { stats.ignoradas++; continue; }
 
     const isPaid = PAID.has(rawStatus);
 
