@@ -230,11 +230,15 @@ Deno.serve(async (req) => {
       okPairs.push({ sale: s, inscricao: insc });
     }
 
-    // Inscrições marcadas como pagas no site, mas sem venda correspondente na Greenn
+    // Inscrições marcadas como pagas no site, mas sem venda correspondente na Greenn.
+    // Só é uma divergência real se o snapshot da Greenn for confiavelmente completo
+    // (fonte "api") E a inscrição não tiver greenn_sale_id — quando já existe sale_id
+    // vinculado, é uma venda real da Greenn que apenas não veio no lote consultado.
     for (const i of inscricoes ?? []) {
       if (i.status !== "pago") continue;
       if (matchedInscricaoIds.has(i.id)) continue;
-      if (i.greenn_sale_id && greenn.some((g) => g.sale_id === String(i.greenn_sale_id))) continue;
+      if (i.greenn_sale_id) continue; // tem sale_id -> venda real, ignorar
+      if (fonte !== "api") continue; // sem snapshot completo, não afirmar ausência
       divergencias.push({ tipo: "paga_sem_greenn", inscricao: i });
     }
 
