@@ -180,12 +180,18 @@ const Admin = () => {
 
   const stats = useMemo(() => {
     const pagas = items.filter((i) => i.status === "pago");
-    const receita = pagas.reduce((sum, i) => sum + Number(i.valor), 0);
+    const receitaLiquida = pagas.reduce((sum, i) => sum + Number(i.valor), 0);
+    const receitaBruta = pagas.reduce((sum, i) => {
+      const liquido = Number(i.valor);
+      const bruto = Math.abs(liquido - 36.9) < 0.01 ? 39.9 : liquido;
+      return sum + bruto;
+    }, 0);
     return {
       total: items.length,
       pagas: pagas.length,
       pendentes: items.filter((i) => i.status === "pendente").length,
-      receita,
+      receitaBruta,
+      receitaLiquida,
     };
   }, [items]);
 
