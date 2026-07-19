@@ -272,9 +272,10 @@ Deno.serve(async (req) => {
     const saleId = String(pick(sale, ["sale_id", "id", "code"]) ?? "").trim();
     if (!saleId) { stats.ignoradas++; continue; }
 
-    let nome = String(pick(sale, ["name", "buyer_name", "customer_name", "client_name"]) ?? "").trim();
-    let email = String(pick(sale, ["email"]) ?? "").toLowerCase().trim();
-    let celular = normalizePhone(pick(sale, ["phone", "telephone", "cellphone", "celular", "whatsapp"]));
+    const clientObj = (sale as any)?.client && typeof (sale as any).client === "object" ? (sale as any).client : null;
+    let nome = String(clientObj?.name ?? pick(sale, ["buyer_name", "customer_name", "client_name"]) ?? "").trim();
+    let email = String(clientObj?.email ?? pick(sale, ["email"]) ?? "").toLowerCase().trim();
+    let celular = normalizePhone(clientObj?.phone ?? pick(sale, ["phone", "telephone", "cellphone", "celular", "whatsapp"]));
 
     // Se a listagem não trouxe dados do cliente (schema da Greenn v1), busca o detalhe /sales/{id}
     if (!nome || !email) {
