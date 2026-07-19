@@ -85,6 +85,20 @@ type WebhookStatus = {
   logs_24h: number;
   ultimos: WebhookLog[];
 };
+type ApiTest = {
+  ok: boolean;
+  base_url?: string;
+  test_url?: string;
+  response_status?: number;
+  response?: unknown;
+  network_error?: string | null;
+  error_type?: string | null;
+  elapsed_ms?: number;
+  api_key_preview?: string;
+  error?: string;
+  message?: string;
+};
+
 type WebhookTest = {
   ok: boolean;
   sent_to?: string;
@@ -353,6 +367,9 @@ const WebhookPanel = () => {
   const [testing, setTesting] = useState(false);
   const [lastTest, setLastTest] = useState<WebhookTest | null>(null);
 
+  const [apiTesting, setApiTesting] = useState(false);
+  const [lastApiTest, setLastApiTest] = useState<ApiTest | null>(null);
+
   const loadStatus = async () => {
     setLoadingStatus(true);
     const { data, error } = await supabase.functions.invoke("webhook-diag", {
@@ -389,10 +406,33 @@ const WebhookPanel = () => {
     setTesting(false);
   };
 
+  const runApiTest = async () => {
+    setApiTesting(true);
+    setLastApiTest(null);
+    const { data, error } = await supabase.functions.invoke("webhook-diag", {
+      body: { action: "api_test" },
+    });
+    if (error) {
+      toast({ title: "Erro no teste da API", description: error.message, variant: "destructive" });
+    } else {
+      const r = data as ApiTest;
+      setLastApiTest(r);
+      toast({
+        title: r.ok ? "API Greenn respondeu" : "Falha ao conectar à API",
+        description: r.ok
+          ? `HTTP ${r.response_status} em ${r.elapsed_ms}ms`
+          : r.message ?? r.network_error ?? r.error ?? `HTTP ${r.response_status ?? "?"}`,
+        variant: r.ok ? "default" : "destructive",
+      });
+    }
+    setApiTesting(false);
+  };
+
   useEffect(() => {
     loadStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const copy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -512,6 +552,62 @@ const WebhookPanel = () => {
           </div>
         )}
       </section>
+
+      <section className="bg-ivory border border-rose-dusty/40 p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display text-xl">Testar conexão com a API Greenn</h2>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={runApiTest}
+            disabled={apiTesting}
+            className="rounded-none uppercase tracking-[0.2em] text-xs"
+          >
+            {apiTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
+            Testar API
+          </Button>
+        </div>
+        <p className="text-xs text-foreground/70 mb-3">
+          Faz uma requisição <span className="font-mono">GET /sales?limit=1</span> usando{" "}
+          <span className="font-mono">GREENN_API_BASE</span> e <span className="font-mono">GREENN_API_KEY</span>. Útil
+          para diagnosticar DNS, timeout ou credenciais inválidas.
+        </p>
+
+        {lastApiTest && (
+          <div
+            className={`border p-4 text-sm ${
+              lastApiTest.ok
+                ? "border-emerald-500/40 bg-emerald-50 text-emerald-900"
+                : "border-destructive/40 bg-destructive/5 text-destructive"
+            }`}
+          >
+            <div className="flex items-center gap-2 font-medium mb-2">
+              {lastApiTest.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+              {lastApiTest.ok ? "API respondeu com sucesso" : "Falha ao conectar à API"}
+            </div>
+            <div className="text-xs font-mono space-y-1 mb-2">
+              <div>URL: {lastApiTest.test_url ?? lastApiTest.base_url ?? "—"}</div>
+              <div>
+                HTTP {lastApiTest.response_status ?? "—"}
+                {typeof lastApiTest.elapsed_ms === "number" ? ` · ${lastApiTest.elapsed_ms}ms` : ""}
+                {lastApiTest.error_type ? ` · ${lastApiTest.error_type}` : ""}
+              </div>
+              {lastApiTest.api_key_preview && <div>Chave: {lastApiTest.api_key_preview}</div>}
+              {lastApiTest.network_error && <div>Erro de rede: {lastApiTest.network_error}</div>}
+              {lastApiTest.message && <div>{lastApiTest.message}</div>}
+            </div>
+            {lastApiTest.response !== undefined && lastApiTest.response !== null && (
+              <pre className="text-[11px] font-mono whitespace-pre-wrap break-all max-h-64 overflow-auto bg-background/60 p-2 border border-border/40">
+                {typeof lastApiTest.response === "string"
+                  ? lastApiTest.response
+                  : JSON.stringify(lastApiTest.response, null, 2)}
+              </pre>
+            )}
+          </div>
+        )}
+      </section>
+
+
 
       <section>
         <div className="flex items-center justify-between mb-3">
