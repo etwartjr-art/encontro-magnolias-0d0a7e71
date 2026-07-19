@@ -149,16 +149,16 @@ Deno.serve(async (req) => {
   if (action === "api_test") {
     const apiKey = Deno.env.get("GREENN_API_KEY") ?? "";
     const publicKey = Deno.env.get("GREENN_PUBLIC_KEY") ?? "";
-    const configured = (Deno.env.get("GREENN_API_BASE") ?? "").replace(/\/$/, "");
+    const rawBase = Deno.env.get("GREENN_API_BASE") ?? "";
+    const configuredBases = (rawBase.match(/https:\/\/[^\s"'`]+/g) ?? []).map((u) => u.replace(/\/+$/, ""));
     const DEFAULT_BASES = [
+      "https://apiadm.greenn.com.br/api/v1",
       "https://api.greenn.com.br/v1",
       "https://api.gdigital.com.br/v1",
       "https://api.gdigital.com.br",
       "https://xgrow-api.greenn.com.br/v1",
     ];
-    const bases = configured
-      ? [configured, ...DEFAULT_BASES.filter((b) => b !== configured)]
-      : DEFAULT_BASES;
+    const bases = Array.from(new Set([...configuredBases, ...DEFAULT_BASES]));
 
     if (!apiKey) {
       return json({
