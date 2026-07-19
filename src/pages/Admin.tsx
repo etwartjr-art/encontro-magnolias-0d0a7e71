@@ -31,6 +31,7 @@ import {
   CheckCircle2,
   ArrowLeft,
   Scale,
+  UserX,
 } from "lucide-react";
 
 type StatusInscricao =
