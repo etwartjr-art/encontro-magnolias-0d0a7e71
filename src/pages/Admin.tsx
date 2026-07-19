@@ -244,23 +244,30 @@ const Admin = () => {
       "Nome",
       "Email",
       "Celular",
-      "Valor",
+      "Valor Bruto",
+      "Valor Líquido",
       "Status",
       "Método",
       "Pago em",
       "Greenn Sale ID",
     ];
-    const rows = filtered.map((i) => [
-      new Date(i.criado_em).toLocaleString("pt-BR"),
-      i.nome,
-      i.email,
-      i.celular,
-      Number(i.valor).toFixed(2).replace(".", ","),
-      i.status,
-      i.metodo_pagamento ?? "",
-      i.pago_em ? new Date(i.pago_em).toLocaleString("pt-BR") : "",
-      i.greenn_sale_id ?? "",
-    ]);
+    const rows = filtered.map((i) => {
+      const liquido = Number(i.valor);
+      const bruto = Math.abs(liquido - 36.9) < 0.01 ? 39.9 : liquido;
+      return [
+        new Date(i.criado_em).toLocaleString("pt-BR"),
+        i.nome,
+        i.email,
+        i.celular,
+        bruto.toFixed(2).replace(".", ","),
+        liquido.toFixed(2).replace(".", ","),
+        i.status,
+        i.metodo_pagamento ?? "",
+        i.pago_em ? new Date(i.pago_em).toLocaleString("pt-BR") : "",
+        i.greenn_sale_id ?? "",
+      ];
+    });
+
     const csv =
       "\uFEFF" +
       [headers, ...rows]
@@ -407,7 +414,9 @@ const Admin = () => {
                   <TableHead>Nome</TableHead>
                   <TableHead>E-mail</TableHead>
                   <TableHead>Celular</TableHead>
-                  <TableHead>Valor</TableHead>
+                  <TableHead className="whitespace-nowrap">Valor Bruto</TableHead>
+                  <TableHead className="whitespace-nowrap">Valor Líquido</TableHead>
+
                   <TableHead>Status</TableHead>
                   <TableHead>Pago em</TableHead>
                 </TableRow>
@@ -422,8 +431,12 @@ const Admin = () => {
                     <TableCell className="font-light text-xs">{i.email}</TableCell>
                     <TableCell className="font-mono text-xs">{i.celular}</TableCell>
                     <TableCell className="whitespace-nowrap">
+                      {formatBRL(Math.abs(Number(i.valor) - 36.9) < 0.01 ? 39.9 : Number(i.valor))}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap font-medium">
                       {formatBRL(Number(i.valor))}
                     </TableCell>
+
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Badge
