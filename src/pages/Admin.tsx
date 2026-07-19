@@ -244,23 +244,30 @@ const Admin = () => {
       "Nome",
       "Email",
       "Celular",
-      "Valor",
+      "Valor Bruto",
+      "Valor Líquido",
       "Status",
       "Método",
       "Pago em",
       "Greenn Sale ID",
     ];
-    const rows = filtered.map((i) => [
-      new Date(i.criado_em).toLocaleString("pt-BR"),
-      i.nome,
-      i.email,
-      i.celular,
-      Number(i.valor).toFixed(2).replace(".", ","),
-      i.status,
-      i.metodo_pagamento ?? "",
-      i.pago_em ? new Date(i.pago_em).toLocaleString("pt-BR") : "",
-      i.greenn_sale_id ?? "",
-    ]);
+    const rows = filtered.map((i) => {
+      const liquido = Number(i.valor);
+      const bruto = Math.abs(liquido - 36.9) < 0.01 ? 39.9 : liquido;
+      return [
+        new Date(i.criado_em).toLocaleString("pt-BR"),
+        i.nome,
+        i.email,
+        i.celular,
+        bruto.toFixed(2).replace(".", ","),
+        liquido.toFixed(2).replace(".", ","),
+        i.status,
+        i.metodo_pagamento ?? "",
+        i.pago_em ? new Date(i.pago_em).toLocaleString("pt-BR") : "",
+        i.greenn_sale_id ?? "",
+      ];
+    });
+
     const csv =
       "\uFEFF" +
       [headers, ...rows]
