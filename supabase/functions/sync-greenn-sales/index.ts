@@ -15,7 +15,7 @@ const corsHeaders = {
 const extractUrls = (raw?: string): string[] => {
   if (!raw) return [];
   const matches = raw.match(/https:\/\/[^\s"'`]+/g) ?? [];
-  return matches.map((u) => u.replace(/[\/?#].*$/, (m) => m.startsWith("/") ? m.replace(/\/$/, "") : "")).map((u) => u.replace(/\/$/, ""));
+  return matches.map((u) => u.replace(/\/+$/, ""));
 };
 const configuredGreennApis = extractUrls(Deno.env.get("GREENN_API_BASE"));
 const DEFAULT_GREENN_CANDIDATES = [
