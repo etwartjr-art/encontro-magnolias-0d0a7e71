@@ -390,7 +390,7 @@ Deno.serve(async (req) => {
       nome,
       email: email || `sem-email-${saleId ?? crypto.randomUUID()}@magnolias.local`,
       celular: celular || "5500000000000",
-      valor: isFinite(valorGreenn) && valorGreenn > 0 ? valorGreenn : 39.9,
+      valor: isFinite(valorGreenn) && valorGreenn > 0 ? valorGreenn : 36.9,
       status: "pago",
       metodo_pagamento: metodo ?? "greenn",
       greenn_sale_id: saleId,
