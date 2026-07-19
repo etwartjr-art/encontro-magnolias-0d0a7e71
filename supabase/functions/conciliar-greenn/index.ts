@@ -9,15 +9,22 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
 };
 
-const configuredGreennApi = Deno.env.get("GREENN_API_BASE")?.replace(/\/$/, "");
+const extractUrls = (raw?: string): string[] => {
+  if (!raw) return [];
+  const matches = raw.match(/https:\/\/[^\s"'`]+/g) ?? [];
+  return matches.map((u) => u.replace(/\/+$/, ""));
+};
+const configuredGreennApis = extractUrls(Deno.env.get("GREENN_API_BASE"));
 const DEFAULT_GREENN_CANDIDATES = [
+  "https://apiadm.greenn.com.br/api/v1",
   "https://api.greenn.com.br/v1",
   "https://api.gdigital.com.br/v1",
   "https://api.gdigital.com.br",
 ];
-const GREENN_API_CANDIDATES = configuredGreennApi
-  ? [configuredGreennApi, ...DEFAULT_GREENN_CANDIDATES.filter((b) => b !== configuredGreennApi)]
-  : DEFAULT_GREENN_CANDIDATES;
+const GREENN_API_CANDIDATES = Array.from(new Set([
+  ...configuredGreennApis,
+  ...DEFAULT_GREENN_CANDIDATES,
+]));
 const FETCH_TIMEOUT_MS = Number(Deno.env.get("GREENN_FETCH_TIMEOUT_MS") ?? "8000");
 const FETCH_RETRIES = Number(Deno.env.get("GREENN_FETCH_RETRIES") ?? "1");
 
