@@ -99,22 +99,24 @@ Deno.serve(async (req) => {
     let fonte: "api" | "webhook_logs" = "api";
     let aviso: string | null = null;
 
-    const fetched = await fetchGreenn(`/sales?limit=200`, apiKey);
     let apiOk = false;
-    if (fetched.ok) {
-      const respText = await fetched.response.text();
-      let body: unknown = null;
-      try { body = JSON.parse(respText); } catch { /* ignore */ }
-      if (fetched.response.ok) {
-        // deno-lint-ignore no-explicit-any
-        const list: any[] =
-          (Array.isArray(body) ? body : null) ??
-          (Array.isArray((body as any)?.data) ? (body as any).data : null) ??
-          (Array.isArray((body as any)?.sales) ? (body as any).sales : null) ??
-          (Array.isArray((body as any)?.data?.sales) ? (body as any).data.sales : null) ??
-          [];
-        greenn = list.map(mapSale).filter((s) => s.sale_id);
-        apiOk = true;
+    if (apiKey) {
+      const fetched = await fetchGreenn(`/sales?limit=200`, apiKey);
+      if (fetched.ok) {
+        const respText = await fetched.response.text();
+        let body: unknown = null;
+        try { body = JSON.parse(respText); } catch { /* ignore */ }
+        if (fetched.response.ok) {
+          // deno-lint-ignore no-explicit-any
+          const list: any[] =
+            (Array.isArray(body) ? body : null) ??
+            (Array.isArray((body as any)?.data) ? (body as any).data : null) ??
+            (Array.isArray((body as any)?.sales) ? (body as any).sales : null) ??
+            (Array.isArray((body as any)?.data?.sales) ? (body as any).data.sales : null) ??
+            [];
+          greenn = list.map(mapSale).filter((s) => s.sale_id);
+          apiOk = true;
+        }
       }
     }
 
