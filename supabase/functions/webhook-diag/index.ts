@@ -149,63 +149,95 @@ Deno.serve(async (req) => {
   if (action === "api_test") {
     const apiKey = Deno.env.get("GREENN_API_KEY") ?? "";
     const publicKey = Deno.env.get("GREENN_PUBLIC_KEY") ?? "";
-    const rawBase = (Deno.env.get("GREENN_API_BASE") ?? "https://api.greenn.com.br/v1").replace(/\/$/, "");
-    const testUrl = `${rawBase}/sales?limit=1`;
+    const configured = (Deno.env.get("GREENN_API_BASE") ?? "").replace(/\/$/, "");
+    const DEFAULT_BASES = [
+      "https://api.greenn.com.br/v1",
+      "https://api.gdigital.com.br/v1",
+      "https://api.gdigital.com.br",
+      "https://xgrow-api.greenn.com.br/v1",
+    ];
+    const bases = configured
+      ? [configured, ...DEFAULT_BASES.filter((b) => b !== configured)]
+      : DEFAULT_BASES;
 
     if (!apiKey) {
       return json({
         ok: false,
-        base_url: rawBase,
-        test_url: testUrl,
+        base_url: configured || DEFAULT_BASES[0],
         error: "missing_GREENN_API_KEY",
         message: "Configure o segredo GREENN_API_KEY antes de testar a conexão.",
       });
     }
 
-    const started = Date.now();
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    let responseStatus = 0;
-    let responseBody: unknown = null;
-    let networkError: string | null = null;
-    let errorType: string | null = null;
+    const attempts: Array<Record<string, unknown>> = [];
+    let success: Record<string, unknown> | null = null;
 
-    try {
-      const res = await fetch(testUrl, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "x-api-key": apiKey,
-          ...(publicKey ? { "x-public-key": publicKey } : {}),
-          Accept: "application/json",
-        },
-        signal: controller.signal,
-      });
-      responseStatus = res.status;
-      const txt = await res.text();
-      try { responseBody = JSON.parse(txt); } catch { responseBody = txt.slice(0, 800); }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      networkError = msg;
-      if (/abort|timeout/i.test(msg)) errorType = "timeout";
-      else if (/dns|ENOTFOUND|not.*resolve/i.test(msg)) errorType = "dns";
-      else errorType = "network";
-    } finally {
-      clearTimeout(timeout);
+    for (const base of bases) {
+      const testUrl = `${base}/sales?limit=1`;
+      const started = Date.now();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 7000);
+      let responseStatus = 0;
+      let responseBody: unknown = null;
+      let networkError: string | null = null;
+      let errorType: string | null = null;
+
+      try {
+        const res = await fetch(testUrl, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "x-api-key": apiKey,
+            ...(publicKey ? { "x-public-key": publicKey } : {}),
+            Accept: "application/json",
+          },
+          signal: controller.signal,
+        });
+        responseStatus = res.status;
+        const txt = await res.text();
+        try { responseBody = JSON.parse(txt); } catch { responseBody = txt.slice(0, 400); }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        networkError = msg;
+        if (/abort|timeout/i.test(msg)) errorType = "timeout";
+        else if (/dns|ENOTFOUND|not.*resolve|lookup address/i.test(msg)) errorType = "dns";
+        else errorType = "network";
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      const attempt = {
+        base_url: base,
+        test_url: testUrl,
+        response_status: responseStatus,
+        response: responseBody,
+        network_error: networkError,
+        error_type: errorType,
+        elapsed_ms: Date.now() - started,
+      };
+      attempts.push(attempt);
+
+      if (!networkError && responseStatus >= 200 && responseStatus < 300) {
+        success = attempt;
+        break;
+      }
     }
 
+    const allDns = attempts.length > 0 && attempts.every((a) => a.error_type === "dns");
     return json({
-      ok: !networkError && responseStatus >= 200 && responseStatus < 300,
-      base_url: rawBase,
-      test_url: testUrl,
-      response_status: responseStatus,
-      response: responseBody,
-      network_error: networkError,
-      error_type: errorType,
-      elapsed_ms: Date.now() - started,
+      ok: Boolean(success),
+      success,
+      attempts,
+      all_dns_failed: allDns,
+      hint: allDns
+        ? "Todos os hosts candidatos retornaram NXDOMAIN. Peça ao suporte Greenn/XGrow a URL pública real da API REST e configure em GREENN_API_BASE."
+        : success
+        ? `Host funcional: ${success.base_url}. Configure GREENN_API_BASE com esse valor para fixar.`
+        : "Nenhum host respondeu 2xx. Verifique credenciais e URL base.",
       api_key_preview: `${apiKey.slice(0, 6)}…${apiKey.slice(-4)}`,
     });
   }
+
 
   return json({ error: "ação desconhecida" }, 400);
 });
