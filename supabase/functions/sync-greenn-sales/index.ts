@@ -437,7 +437,7 @@ Deno.serve(async (req) => {
       nome,
       email: email || `sem-email-${saleId}@magnolias.local`,
       celular: celular || "5500000000000",
-      valor: isFinite(valor) && valor > 0 ? valor : 39.9,
+      valor: isFinite(valor) && valor > 0 ? valor : 36.9,
       status: "pago",
       metodo_pagamento: metodo,
       greenn_sale_id: saleId,
