@@ -414,7 +414,9 @@ const Admin = () => {
                   <TableHead>Nome</TableHead>
                   <TableHead>E-mail</TableHead>
                   <TableHead>Celular</TableHead>
-                  <TableHead>Valor</TableHead>
+                  <TableHead className="whitespace-nowrap">Valor Bruto</TableHead>
+                  <TableHead className="whitespace-nowrap">Valor Líquido</TableHead>
+
                   <TableHead>Status</TableHead>
                   <TableHead>Pago em</TableHead>
                 </TableRow>
