@@ -123,7 +123,9 @@ Deno.serve(async (req) => {
     if (!apiOk) {
       // Fallback: usa greenn_webhook_logs (últimos 90 dias) para reconstruir as vendas.
       fonte = "webhook_logs";
-      aviso = "A API da Greenn não respondeu — conciliação feita com base nos webhooks já recebidos. Pode não incluir vendas cujo webhook não chegou.";
+      aviso = apiKey
+        ? "A API da Greenn não respondeu — conciliação feita com base nos webhooks já recebidos. Pode não incluir vendas cujo webhook não chegou."
+        : "GREENN_API_KEY não configurada — conciliação feita apenas com os webhooks recebidos. Pode não incluir vendas cujo webhook não chegou.";
       const { data: logs, error: logErr } = await admin
         .from("greenn_webhook_logs")
         .select("greenn_sale_id, status_recebido, payload, criado_em")
