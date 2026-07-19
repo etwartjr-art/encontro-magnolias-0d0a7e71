@@ -67,7 +67,6 @@ Deno.serve(async (req) => {
     if (!roleRow) return json({ error: "forbidden" }, 403);
 
     const apiKey = Deno.env.get("GREENN_API_KEY");
-    if (!apiKey) return json({ ok: false, error: "missing_GREENN_API_KEY" }, 503);
 
     type GreennSale = {
       sale_id: string;
@@ -100,29 +99,33 @@ Deno.serve(async (req) => {
     let fonte: "api" | "webhook_logs" = "api";
     let aviso: string | null = null;
 
-    const fetched = await fetchGreenn(`/sales?limit=200`, apiKey);
     let apiOk = false;
-    if (fetched.ok) {
-      const respText = await fetched.response.text();
-      let body: unknown = null;
-      try { body = JSON.parse(respText); } catch { /* ignore */ }
-      if (fetched.response.ok) {
-        // deno-lint-ignore no-explicit-any
-        const list: any[] =
-          (Array.isArray(body) ? body : null) ??
-          (Array.isArray((body as any)?.data) ? (body as any).data : null) ??
-          (Array.isArray((body as any)?.sales) ? (body as any).sales : null) ??
-          (Array.isArray((body as any)?.data?.sales) ? (body as any).data.sales : null) ??
-          [];
-        greenn = list.map(mapSale).filter((s) => s.sale_id);
-        apiOk = true;
+    if (apiKey) {
+      const fetched = await fetchGreenn(`/sales?limit=200`, apiKey);
+      if (fetched.ok) {
+        const respText = await fetched.response.text();
+        let body: unknown = null;
+        try { body = JSON.parse(respText); } catch { /* ignore */ }
+        if (fetched.response.ok) {
+          // deno-lint-ignore no-explicit-any
+          const list: any[] =
+            (Array.isArray(body) ? body : null) ??
+            (Array.isArray((body as any)?.data) ? (body as any).data : null) ??
+            (Array.isArray((body as any)?.sales) ? (body as any).sales : null) ??
+            (Array.isArray((body as any)?.data?.sales) ? (body as any).data.sales : null) ??
+            [];
+          greenn = list.map(mapSale).filter((s) => s.sale_id);
+          apiOk = true;
+        }
       }
     }
 
     if (!apiOk) {
       // Fallback: usa greenn_webhook_logs (últimos 90 dias) para reconstruir as vendas.
       fonte = "webhook_logs";
-      aviso = "A API da Greenn não respondeu — conciliação feita com base nos webhooks já recebidos. Pode não incluir vendas cujo webhook não chegou.";
+      aviso = apiKey
+        ? "A API da Greenn não respondeu — conciliação feita com base nos webhooks já recebidos. Pode não incluir vendas cujo webhook não chegou."
+        : "GREENN_API_KEY não configurada — conciliação feita apenas com os webhooks recebidos. Pode não incluir vendas cujo webhook não chegou.";
       const { data: logs, error: logErr } = await admin
         .from("greenn_webhook_logs")
         .select("greenn_sale_id, status_recebido, payload, criado_em")
