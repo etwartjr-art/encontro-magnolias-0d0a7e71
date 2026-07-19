@@ -367,6 +367,9 @@ const WebhookPanel = () => {
   const [testing, setTesting] = useState(false);
   const [lastTest, setLastTest] = useState<WebhookTest | null>(null);
 
+  const [apiTesting, setApiTesting] = useState(false);
+  const [lastApiTest, setLastApiTest] = useState<ApiTest | null>(null);
+
   const loadStatus = async () => {
     setLoadingStatus(true);
     const { data, error } = await supabase.functions.invoke("webhook-diag", {
@@ -403,10 +406,33 @@ const WebhookPanel = () => {
     setTesting(false);
   };
 
+  const runApiTest = async () => {
+    setApiTesting(true);
+    setLastApiTest(null);
+    const { data, error } = await supabase.functions.invoke("webhook-diag", {
+      body: { action: "api_test" },
+    });
+    if (error) {
+      toast({ title: "Erro no teste da API", description: error.message, variant: "destructive" });
+    } else {
+      const r = data as ApiTest;
+      setLastApiTest(r);
+      toast({
+        title: r.ok ? "API Greenn respondeu" : "Falha ao conectar à API",
+        description: r.ok
+          ? `HTTP ${r.response_status} em ${r.elapsed_ms}ms`
+          : r.message ?? r.network_error ?? r.error ?? `HTTP ${r.response_status ?? "?"}`,
+        variant: r.ok ? "default" : "destructive",
+      });
+    }
+    setApiTesting(false);
+  };
+
   useEffect(() => {
     loadStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const copy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
