@@ -229,7 +229,23 @@ Deno.serve(async (req) => {
   try { body = JSON.parse(bodyText); } catch { /* ignore */ }
 
   if (discover) {
-    return json({ status: resp.status, contentType: resp.headers.get("content-type"), sample: body ?? bodyText.slice(0, 4000) });
+    // Também sonda endpoints de cliente para descobrir onde ficam nome/email/telefone
+    const list0: any = Array.isArray(body) ? body : (body as any)?.data ?? (body as any)?.sales ?? [];
+    const sampleClientId = Array.isArray(list0) && list0[0]?.client_id;
+    const probes: any[] = [];
+    if (sampleClientId) {
+      for (const path of [`/clients/${sampleClientId}`, `/customers/${sampleClientId}`, `/clients?id=${sampleClientId}`, `/sales/${list0[0]?.id}`]) {
+        const r = await fetchGreenn(path, apiKey);
+        if (r.ok) {
+          const t = await r.response.text();
+          let parsed: any = null; try { parsed = JSON.parse(t); } catch {}
+          probes.push({ path, status: r.response.status, sample: parsed ?? t.slice(0, 1500) });
+        } else {
+          probes.push({ path, error: r.message.slice(0, 300) });
+        }
+      }
+    }
+    return json({ status: resp.status, contentType: resp.headers.get("content-type"), sample: body ?? bodyText.slice(0, 4000), probes });
   }
   if (!resp.ok) {
     await recordRun({
