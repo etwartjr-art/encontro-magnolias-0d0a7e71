@@ -10,6 +10,7 @@ const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const Auth = lazy(() => import("./pages/Auth.tsx"));
 const Admin = lazy(() => import("./pages/Admin.tsx"));
 const Conciliacao = lazy(() => import("./pages/Conciliacao.tsx"));
+const NaoPagas = lazy(() => import("./pages/NaoPagas.tsx"));
 
 const App = () => (
   <>
