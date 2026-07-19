@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
   // igual ao GREENN_WEBHOOK_TOKEN. A Greenn hoje envia apenas o token — o HMAC fica
   // disponível para quando/se a plataforma passar a assinar o payload.
   let authed = false;
-  let authMode: "hmac" | "token" | "" = "";
+  let authMode: "hmac" | "token" | "public_key" | "" = "";
   let sigHeader = "";
   let providedSig = "";
 
