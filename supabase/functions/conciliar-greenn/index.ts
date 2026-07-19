@@ -67,7 +67,6 @@ Deno.serve(async (req) => {
     if (!roleRow) return json({ error: "forbidden" }, 403);
 
     const apiKey = Deno.env.get("GREENN_API_KEY");
-    if (!apiKey) return json({ ok: false, error: "missing_GREENN_API_KEY" }, 503);
 
     type GreennSale = {
       sale_id: string;
