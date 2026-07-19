@@ -206,6 +206,8 @@ const extractSaleFields = (payload: Record<string, unknown>): SaleFields => {
   const nome = String(pickFirst(client?.name, payload.name, payload.nome) ?? "").trim();
   const metodo = String(pickFirst(sale?.method, payload.payment_method, payload.method, payload.metodo_pagamento) ?? "").trim() || null;
   const valorRaw = Number(pickFirst(sale?.amount, payload.net_amount, payload.amount, payload.total, payload.value) ?? 0);
+  let valorGreenn = valorRaw > 1000 ? valorRaw / 100 : valorRaw;
+  if (Math.abs(valorGreenn - 39.9) < 0.5) valorGreenn = 36.9;
 
   return {
     saleId,
@@ -214,7 +216,7 @@ const extractSaleFields = (payload: Record<string, unknown>): SaleFields => {
     email,
     nome,
     metodo,
-    valorGreenn: valorRaw > 1000 ? valorRaw / 100 : valorRaw,
+    valorGreenn,
     paidAt: normalizeDate(pickFirst(sale?.updated_at, sale?.paid_at, payload.updated_at, payload.paid_at, payload.date)),
   };
 };
