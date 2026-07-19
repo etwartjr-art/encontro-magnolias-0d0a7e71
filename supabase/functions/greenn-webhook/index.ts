@@ -207,7 +207,7 @@ const extractSaleFields = (payload: Record<string, unknown>): SaleFields => {
   const metodo = String(pickFirst(sale?.method, payload.payment_method, payload.method, payload.metodo_pagamento) ?? "").trim() || null;
   const valorRaw = Number(pickFirst(sale?.amount, payload.net_amount, payload.amount, payload.total, payload.value) ?? 0);
   let valorGreenn = valorRaw > 1000 ? valorRaw / 100 : valorRaw;
-  if (Math.abs(valorGreenn - 39.9) < 0.5) valorGreenn = 36.9;
+  if (valorGreenn >= 37.0 && valorGreenn <= 40.0) valorGreenn = 36.9;
 
   return {
     saleId,
