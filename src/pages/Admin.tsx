@@ -110,7 +110,7 @@ const Admin = () => {
       .select(
         "id, nome, email, celular, valor, status, metodo_pagamento, greenn_sale_id, pago_em, criado_em, atualizado_em"
       )
-      .order("criado_em", { ascending: false });
+      .order("pago_em", { ascending: false, nullsFirst: false });
 
     if (error) {
       toast({
