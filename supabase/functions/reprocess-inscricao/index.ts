@@ -209,7 +209,8 @@ Deno.serve(async (req) => {
   const metodo = String(pick(sale, ["payment_method", "method"]) ?? "").trim() || null;
   const paidAt = pick(sale, ["paid_at", "payment_date", "approved_at", "updated_at", "date"]);
   const valorRaw = Number(pick(sale, ["net_amount", "amount", "total", "value"]) ?? 0);
-  const valorGreenn = valorRaw > 1000 ? valorRaw / 100 : valorRaw;
+  let valorGreenn = valorRaw > 1000 ? valorRaw / 100 : valorRaw;
+  if (Math.abs(valorGreenn - 39.9) < 0.5) valorGreenn = 36.9;
   const isPaid = PAID.has(rawStatus);
   const buyer = {
     nome: String(pick(sale, ["name", "buyer_name", "customer_name", "client_name"]) ?? "").trim(),
