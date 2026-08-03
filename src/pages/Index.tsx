@@ -7,7 +7,6 @@ const SubscriptionForm = lazy(() =>
   import("@/components/SubscriptionForm").then((m) => ({ default: m.SubscriptionForm })),
 );
 import { Reveal } from "@/components/Reveal";
-import { RsvpForm } from "@/components/RsvpForm";
 // Endereço não exibido nesta edição — local a definir
 
 const Index = () => {
@@ -178,25 +177,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* RSVP */}
-      <section id="rsvp" className="py-16 sm:py-24 md:py-32 px-5 sm:px-6 bg-ivory scroll-mt-24">
-        <div className="max-w-5xl mx-auto">
-          <Reveal variant="up" className="text-center mb-10 sm:mb-14">
-            <p className="uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[10px] sm:text-xs text-rose-deep mb-4 sm:mb-6">
-              RSVP
-            </p>
-            <h2 className="font-display text-4xl sm:text-5xl md:text-6xl text-foreground">
-              Confirme sua <span className="italic text-rose-deep">presença</span>
-            </h2>
-            <p className="mt-4 text-sm sm:text-base text-foreground/60 font-light max-w-md mx-auto">
-              Nos diga se você estará conosco no 6º Encontro das Magnólias.
-            </p>
-          </Reveal>
-          <Reveal variant="up">
-            <RsvpForm />
-          </Reveal>
-        </div>
-      </section>
+
+
 
 
 
