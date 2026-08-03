@@ -34,7 +34,20 @@ const Index = () => {
               "radial-gradient(60% 50% at 50% 50%, hsl(var(--rose-soft) / 0.55) 0%, transparent 70%)",
           }}
         />
+        <div className="absolute inset-x-0 bottom-4 sm:bottom-8 md:bottom-12 flex justify-center px-5">
+          <Button
+            size="lg"
+            onClick={() =>
+              document.getElementById("inscricao")?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+            className="rounded-none px-7 sm:px-12 py-4 sm:py-6 text-[10px] sm:text-sm tracking-[0.25em] sm:tracking-[0.3em] uppercase font-light transition-elegant shadow-petal"
+            style={{ backgroundColor: "hsl(var(--rose-deep))", color: "hsl(var(--primary-foreground))" }}
+          >
+            Fazer inscrição
+          </Button>
+        </div>
       </header>
+
 
       {/* INTRO */}
       <section className="py-14 sm:py-20 md:py-28 px-5 sm:px-6 gradient-soft">
