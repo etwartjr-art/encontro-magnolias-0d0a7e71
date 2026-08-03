@@ -235,7 +235,6 @@ const NaoPagas = () => {
       Number(i.valor).toFixed(2).replace(".", ","),
       i.status,
       i.metodo_pagamento ?? "",
-      i.greenn_sale_id ?? "",
     ]);
     const csv =
       "\uFEFF" +

@@ -269,7 +269,6 @@ const Admin = () => {
         i.status,
         i.metodo_pagamento ?? "",
         i.pago_em ? new Date(i.pago_em).toLocaleString("pt-BR") : "",
-        i.greenn_sale_id ?? "",
       ];
     });
 
