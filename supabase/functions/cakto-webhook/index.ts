@@ -78,7 +78,11 @@ Deno.serve(async (req) => {
     body.secret ?? req.headers.get("x-cakto-secret") ?? url.searchParams.get("secret") ?? "",
   ).trim();
   if (!provided || !timingSafeEqual(provided, expectedSecret)) {
-    console.warn("cakto-webhook: secret inválido");
+    console.warn(
+      `cakto-webhook: secret inválido (recebido: ${provided ? `${provided.length} chars` : "ausente"}, esperado: ${expectedSecret.length} chars, origem: ${
+        body.secret ? "body" : req.headers.get("x-cakto-secret") ? "header" : url.searchParams.get("secret") ? "query" : "nenhuma"
+      })`,
+    );
     return json({ error: "unauthorized" }, 401);
   }
 
