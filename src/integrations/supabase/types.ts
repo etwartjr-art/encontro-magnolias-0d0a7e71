@@ -146,6 +146,33 @@ export type Database = {
         }
         Relationships: []
       }
+      rsvps: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          email: string
+          id: string
+          nome: string
+          presenca: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          email: string
+          id?: string
+          nome: string
+          presenca?: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          email?: string
+          id?: string
+          nome?: string
+          presenca?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
