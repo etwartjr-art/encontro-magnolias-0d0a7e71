@@ -10,33 +10,24 @@ import { Loader2, Check } from "lucide-react";
 const schema = z.object({
   nome: z.string().trim().min(2, "Informe seu nome completo").max(120, "Nome muito longo"),
   email: z.string().trim().email("E-mail inválido").max(255, "E-mail muito longo"),
-  presenca: z.enum(["sim", "nao", "talvez"]),
 });
-
-const OPCOES = [
-  { value: "sim", label: "Sim, estarei lá" },
-  { value: "talvez", label: "Talvez" },
-  { value: "nao", label: "Não poderei ir" },
-] as const;
 
 export const RsvpForm = () => {
   const { toast } = useToast();
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
-  const [presenca, setPresenca] = useState<"sim" | "nao" | "talvez">("sim");
   const [loading, setLoading] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [erros, setErros] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = schema.safeParse({ nome, email, presenca });
+    const parsed = schema.safeParse({ nome, email });
     if (!parsed.success) {
       const f = parsed.error.flatten().fieldErrors;
       setErros({
         nome: f.nome?.[0] ?? "",
         email: f.email?.[0] ?? "",
-        presenca: f.presenca?.[0] ?? "",
       });
       return;
     }
@@ -45,7 +36,7 @@ export const RsvpForm = () => {
     const { error } = await supabase.from("rsvps").insert({
       nome: parsed.data.nome,
       email: parsed.data.email,
-      presenca: parsed.data.presenca,
+      presenca: "sim",
     });
     setLoading(false);
 
@@ -65,10 +56,10 @@ export const RsvpForm = () => {
       <div className="max-w-xl mx-auto bg-ivory border border-rose-dusty/40 p-10 sm:p-12 text-center shadow-soft">
         <Check className="w-8 h-8 mx-auto mb-5 text-rose-deep" strokeWidth={1.2} />
         <p className="font-display text-2xl sm:text-3xl text-rose-deep mb-3">
-          Presença registrada
+          Presença confirmada
         </p>
         <p className="text-sm text-foreground/70 font-light">
-          Obrigada, {nome.split(" ")[0]}! Guardamos sua resposta com carinho.
+          Obrigada, {nome.split(" ")[0]}! Guardamos seu nome com carinho.
         </p>
       </div>
     );
@@ -112,29 +103,6 @@ export const RsvpForm = () => {
         />
         {erros.email && <p className="text-xs text-destructive">{erros.email}</p>}
       </div>
-
-      <fieldset className="space-y-3">
-        <legend className="uppercase tracking-[0.2em] text-[10px] text-sage mb-1">
-          Confirmação de presença
-        </legend>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {OPCOES.map((o) => (
-            <button
-              key={o.value}
-              type="button"
-              onClick={() => setPresenca(o.value)}
-              aria-pressed={presenca === o.value}
-              className={`border px-3 py-3 text-xs tracking-[0.15em] uppercase transition-elegant ${
-                presenca === o.value
-                  ? "border-rose-deep text-rose-deep bg-rose-soft/40"
-                  : "border-rose-dusty/40 text-foreground/60 hover:border-rose-dusty"
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      </fieldset>
 
       <Button
         type="submit"
