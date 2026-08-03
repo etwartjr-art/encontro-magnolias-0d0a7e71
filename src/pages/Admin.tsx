@@ -30,9 +30,24 @@ import {
   Clock,
   CheckCircle2,
   ArrowLeft,
-  
+  Webhook,
   UserX,
 } from "lucide-react";
+
+type WebhookDiag = {
+  ok: boolean;
+  endpoint?: string;
+  secret_length?: number;
+  diagnostico?: string;
+  testes: {
+    nome: string;
+    esperado: number;
+    status: number;
+    passou: boolean;
+    resposta?: string;
+    ms?: number;
+  }[];
+};
 
 type StatusInscricao =
   | "pendente"
@@ -104,6 +119,35 @@ const Admin = () => {
     "todos"
   );
   const [savingStatus, setSavingStatus] = useState<string | null>(null);
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  const [webhookResult, setWebhookResult] = useState<WebhookDiag | null>(null);
+
+  const handleTestWebhook = async () => {
+    setTestingWebhook(true);
+    setWebhookResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("cakto-webhook-test", {
+        body: {},
+      });
+      if (error) throw error;
+      setWebhookResult(data as WebhookDiag);
+      toast({
+        title: (data as WebhookDiag)?.ok ? "Webhook OK" : "Webhook com problema",
+        description: (data as WebhookDiag)?.diagnostico ?? "",
+        variant: (data as WebhookDiag)?.ok ? undefined : "destructive",
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      setWebhookResult({ ok: false, diagnostico: message, testes: [] });
+      toast({
+        title: "Falha ao testar webhook",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setTestingWebhook(false);
+    }
+  };
 
   const loadData = async () => {
     const { data, error } = await supabase
@@ -346,6 +390,20 @@ const Admin = () => {
               <Download className="w-4 h-4 mr-2" /> Exportar CSV
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              onClick={handleTestWebhook}
+              disabled={testingWebhook}
+              className="rounded-none uppercase tracking-[0.2em] text-xs"
+            >
+              {testingWebhook ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Webhook className="w-4 h-4 mr-2" />
+              )}
+              Testar webhook
+            </Button>
+            <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
@@ -355,6 +413,69 @@ const Admin = () => {
             </Button>
           </div>
         </header>
+
+        {webhookResult && (
+          <div
+            className={`mb-8 border p-4 ${
+              webhookResult.ok
+                ? "border-emerald-600/40 bg-emerald-600/5"
+                : "border-destructive/40 bg-destructive/5"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="uppercase tracking-[0.2em] text-xs text-muted-foreground">
+                  Diagnóstico do webhook Cakto
+                </p>
+                <p className="text-sm text-foreground mt-1">
+                  {webhookResult.diagnostico}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setWebhookResult(null)}
+                className="rounded-none text-xs"
+              >
+                Fechar
+              </Button>
+            </div>
+
+            {webhookResult.testes.length > 0 && (
+              <ul className="mt-3 space-y-1 text-sm">
+                {webhookResult.testes.map((t) => (
+                  <li key={t.nome} className="flex flex-wrap items-center gap-2">
+                    <Badge
+                      variant={t.passou ? "secondary" : "destructive"}
+                      className="rounded-none"
+                    >
+                      {t.status || "erro"}
+                    </Badge>
+                    <span className="text-foreground">{t.nome}</span>
+                    <span className="text-muted-foreground text-xs">
+                      esperado {t.esperado}
+                      {typeof t.ms === "number" ? ` · ${t.ms}ms` : ""}
+                    </span>
+                    {t.resposta && (
+                      <code className="text-xs text-muted-foreground break-all">
+                        {t.resposta}
+                      </code>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {webhookResult.endpoint && (
+              <p className="mt-3 text-xs text-muted-foreground break-all">
+                Endpoint: {webhookResult.endpoint}
+                {typeof webhookResult.secret_length === "number"
+                  ? ` · secret com ${webhookResult.secret_length} caracteres`
+                  : ""}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
           <StatCard icon={Users} label="Inscrições" value={String(stats.total)} />
