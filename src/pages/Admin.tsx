@@ -49,7 +49,7 @@ type Inscricao = {
   valor: number;
   status: StatusInscricao;
   metodo_pagamento: string | null;
-  greenn_sale_id: string | null;
+  
   pago_em: string | null;
   criado_em: string;
   atualizado_em: string;
@@ -109,7 +109,7 @@ const Admin = () => {
     const { data, error } = await supabase
       .from("inscricoes")
       .select(
-        "id, nome, email, celular, valor, status, metodo_pagamento, greenn_sale_id, pago_em, criado_em, atualizado_em"
+        "id, nome, email, celular, valor, status, metodo_pagamento, pago_em, criado_em, atualizado_em"
       )
       .order("pago_em", { ascending: false, nullsFirst: false });
 
@@ -255,7 +255,6 @@ const Admin = () => {
       "Status",
       "Método",
       "Pago em",
-      "Greenn Sale ID",
     ];
     const rows = filtered.map((i) => {
       const liquido = Number(i.valor);
