@@ -101,65 +101,12 @@ export type Database = {
         }
         Relationships: []
       }
-      greenn_webhook_logs: {
-        Row: {
-          criado_em: string
-          erro: string | null
-          event_hash: string | null
-          greenn_sale_id: string | null
-          id: string
-          inscricao_id: string | null
-          payload: Json
-          processado: boolean
-          status_mapeado: Database["public"]["Enums"]["inscricao_status"] | null
-          status_recebido: string | null
-        }
-        Insert: {
-          criado_em?: string
-          erro?: string | null
-          event_hash?: string | null
-          greenn_sale_id?: string | null
-          id?: string
-          inscricao_id?: string | null
-          payload: Json
-          processado?: boolean
-          status_mapeado?:
-            | Database["public"]["Enums"]["inscricao_status"]
-            | null
-          status_recebido?: string | null
-        }
-        Update: {
-          criado_em?: string
-          erro?: string | null
-          event_hash?: string | null
-          greenn_sale_id?: string | null
-          id?: string
-          inscricao_id?: string | null
-          payload?: Json
-          processado?: boolean
-          status_mapeado?:
-            | Database["public"]["Enums"]["inscricao_status"]
-            | null
-          status_recebido?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "greenn_webhook_logs_inscricao_id_fkey"
-            columns: ["inscricao_id"]
-            isOneToOne: false
-            referencedRelation: "inscricoes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       inscricoes: {
         Row: {
           atualizado_em: string
           celular: string
           criado_em: string
           email: string
-          greenn_payload: Json | null
-          greenn_sale_id: string | null
           id: string
           metodo_pagamento: string | null
           nome: string
@@ -172,8 +119,6 @@ export type Database = {
           celular: string
           criado_em?: string
           email: string
-          greenn_payload?: Json | null
-          greenn_sale_id?: string | null
           id?: string
           metodo_pagamento?: string | null
           nome: string
@@ -186,8 +131,6 @@ export type Database = {
           celular?: string
           criado_em?: string
           email?: string
-          greenn_payload?: Json | null
-          greenn_sale_id?: string | null
           id?: string
           metodo_pagamento?: string | null
           nome?: string
@@ -245,57 +188,6 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason?: string
-        }
-        Relationships: []
-      }
-      sync_runs: {
-        Row: {
-          atualizadas: number
-          criadas: number
-          detalhes: Json | null
-          duracao_ms: number | null
-          erro_mensagem: string | null
-          erros: number
-          finalizado_em: string | null
-          http_status: number | null
-          id: string
-          ignoradas: number
-          iniciado_em: string
-          origem: string
-          sucesso: boolean
-          total: number
-        }
-        Insert: {
-          atualizadas?: number
-          criadas?: number
-          detalhes?: Json | null
-          duracao_ms?: number | null
-          erro_mensagem?: string | null
-          erros?: number
-          finalizado_em?: string | null
-          http_status?: number | null
-          id?: string
-          ignoradas?: number
-          iniciado_em?: string
-          origem?: string
-          sucesso?: boolean
-          total?: number
-        }
-        Update: {
-          atualizadas?: number
-          criadas?: number
-          detalhes?: Json | null
-          duracao_ms?: number | null
-          erro_mensagem?: string | null
-          erros?: number
-          finalizado_em?: string | null
-          http_status?: number | null
-          id?: string
-          ignoradas?: number
-          iniciado_em?: string
-          origem?: string
-          sucesso?: boolean
-          total?: number
         }
         Relationships: []
       }
