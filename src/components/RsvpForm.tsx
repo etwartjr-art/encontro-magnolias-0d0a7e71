@@ -36,7 +36,6 @@ export const RsvpForm = () => {
     const { error } = await supabase.from("rsvps").insert({
       nome: parsed.data.nome,
       email: parsed.data.email,
-      presenca: "sim",
     });
     setLoading(false);
 
@@ -56,7 +55,7 @@ export const RsvpForm = () => {
       <div className="max-w-xl mx-auto bg-ivory border border-rose-dusty/40 p-10 sm:p-12 text-center shadow-soft">
         <Check className="w-8 h-8 mx-auto mb-5 text-rose-deep" strokeWidth={1.2} />
         <p className="font-display text-2xl sm:text-3xl text-rose-deep mb-3">
-          Presença confirmada
+          Nome registrado
         </p>
         <p className="text-sm text-foreground/70 font-light">
           Obrigada, {nome.split(" ")[0]}! Guardamos seu nome com carinho.
