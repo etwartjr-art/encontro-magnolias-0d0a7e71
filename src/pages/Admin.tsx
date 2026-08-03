@@ -30,7 +30,7 @@ import {
   Clock,
   CheckCircle2,
   ArrowLeft,
-  Scale,
+  
   UserX,
 } from "lucide-react";
 
@@ -49,7 +49,7 @@ type Inscricao = {
   valor: number;
   status: StatusInscricao;
   metodo_pagamento: string | null;
-  greenn_sale_id: string | null;
+  
   pago_em: string | null;
   criado_em: string;
   atualizado_em: string;
@@ -109,7 +109,7 @@ const Admin = () => {
     const { data, error } = await supabase
       .from("inscricoes")
       .select(
-        "id, nome, email, celular, valor, status, metodo_pagamento, greenn_sale_id, pago_em, criado_em, atualizado_em"
+        "id, nome, email, celular, valor, status, metodo_pagamento, pago_em, criado_em, atualizado_em"
       )
       .order("pago_em", { ascending: false, nullsFirst: false });
 
@@ -255,7 +255,6 @@ const Admin = () => {
       "Status",
       "Método",
       "Pago em",
-      "Greenn Sale ID",
     ];
     const rows = filtered.map((i) => {
       const liquido = Number(i.valor);
@@ -270,7 +269,6 @@ const Admin = () => {
         i.status,
         i.metodo_pagamento ?? "",
         i.pago_em ? new Date(i.pago_em).toLocaleString("pt-BR") : "",
-        i.greenn_sale_id ?? "",
       ];
     });
 
@@ -324,16 +322,6 @@ const Admin = () => {
             >
               <Link to="/admin/nao-pagas">
                 <UserX className="w-4 h-4 mr-2" /> Não pagas
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="rounded-none uppercase tracking-[0.2em] text-xs"
-            >
-              <Link to="/admin/conciliacao">
-                <Scale className="w-4 h-4 mr-2" /> Conciliação
               </Link>
             </Button>
             <Button

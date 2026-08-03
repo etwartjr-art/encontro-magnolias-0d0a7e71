@@ -47,7 +47,7 @@ type Inscricao = {
   valor: number;
   status: StatusInscricao;
   metodo_pagamento: string | null;
-  greenn_sale_id: string | null;
+  
   criado_em: string;
   atualizado_em: string;
 };
@@ -106,7 +106,7 @@ const NaoPagas = () => {
     const { data, error } = await supabase
       .from("inscricoes")
       .select(
-        "id, nome, email, celular, valor, status, metodo_pagamento, greenn_sale_id, criado_em, atualizado_em"
+        "id, nome, email, celular, valor, status, metodo_pagamento, criado_em, atualizado_em"
       )
       .in("status", NAO_PAGAS)
       .order("criado_em", { ascending: false });
@@ -226,7 +226,6 @@ const NaoPagas = () => {
       "Valor",
       "Status",
       "Método",
-      "Greenn Sale ID",
     ];
     const rows = filtered.map((i) => [
       new Date(i.criado_em).toLocaleString("pt-BR"),
@@ -236,7 +235,6 @@ const NaoPagas = () => {
       Number(i.valor).toFixed(2).replace(".", ","),
       i.status,
       i.metodo_pagamento ?? "",
-      i.greenn_sale_id ?? "",
     ]);
     const csv =
       "\uFEFF" +
