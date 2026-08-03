@@ -7,7 +7,6 @@ const SubscriptionForm = lazy(() =>
   import("@/components/SubscriptionForm").then((m) => ({ default: m.SubscriptionForm })),
 );
 import { Reveal } from "@/components/Reveal";
-import { RsvpForm } from "@/components/RsvpForm";
 // Endereço não exibido nesta edição — local a definir
 
 const Index = () => {
