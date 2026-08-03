@@ -104,6 +104,8 @@ export type Database = {
       inscricoes: {
         Row: {
           atualizado_em: string
+          cakto_order_id: string | null
+          cakto_payload: Json | null
           celular: string
           criado_em: string
           email: string
@@ -116,6 +118,8 @@ export type Database = {
         }
         Insert: {
           atualizado_em?: string
+          cakto_order_id?: string | null
+          cakto_payload?: Json | null
           celular: string
           criado_em?: string
           email: string
@@ -128,6 +132,8 @@ export type Database = {
         }
         Update: {
           atualizado_em?: string
+          cakto_order_id?: string | null
+          cakto_payload?: Json | null
           celular?: string
           criado_em?: string
           email?: string
