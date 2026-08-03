@@ -16,11 +16,11 @@ const Index = () => {
       <header className="relative w-full overflow-hidden">
         <img
           src="/img/magnolia-banner-640.webp"
-          srcSet="/img/magnolia-banner-640.webp 640w, /img/magnolia-banner-960.webp 960w, /__l5e/assets-v1/98ce4cd3-d09d-45aa-89fb-1e63bdead30d/magnolia-banner.webp 1280w"
+          srcSet="/img/magnolia-banner-640.webp 640w, /img/magnolia-banner-960.webp 960w, /__l5e/assets-v1/eb6a78d3-453c-4ca9-a9a8-a4e455d51f66/magnolia-banner-v6.webp 1280w"
           sizes="100vw"
           alt="6º Encontro das Magnólias"
           width={1280}
-          height={853}
+          height={854}
           fetchPriority="high"
           decoding="async"
           className="w-full h-auto object-cover animate-ken-burns will-change-transform scale-110"
