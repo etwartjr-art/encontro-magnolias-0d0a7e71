@@ -227,7 +227,7 @@ const Admin = () => {
     const receitaLiquida = pagas.reduce((sum, i) => sum + Number(i.valor), 0);
     const receitaBruta = pagas.reduce((sum, i) => {
       const liquido = Number(i.valor);
-      const bruto = Math.abs(liquido - 36.9) < 0.01 ? 39.9 : liquido;
+      const bruto = liquido;
       return sum + bruto;
     }, 0);
     return {
@@ -302,7 +302,7 @@ const Admin = () => {
     ];
     const rows = filtered.map((i) => {
       const liquido = Number(i.valor);
-      const bruto = Math.abs(liquido - 36.9) < 0.01 ? 39.9 : liquido;
+      const bruto = liquido;
       return [
         new Date(i.criado_em).toLocaleString("pt-BR"),
         i.nome,
@@ -547,7 +547,7 @@ const Admin = () => {
                     <TableCell className="font-light text-xs">{i.email}</TableCell>
                     <TableCell className="font-mono text-xs">{i.celular}</TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {formatBRL(Math.abs(Number(i.valor) - 36.9) < 0.01 ? 39.9 : Number(i.valor))}
+                      {formatBRL(Number(i.valor))}
                     </TableCell>
                     <TableCell className="whitespace-nowrap font-medium">
                       {formatBRL(Number(i.valor))}
