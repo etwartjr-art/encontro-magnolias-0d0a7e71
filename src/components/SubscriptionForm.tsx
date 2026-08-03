@@ -11,7 +11,7 @@ import { Loader2, Heart, ExternalLink, CheckCircle2, Clock, XCircle } from "luci
 // URL do checkout (plataforma de pagamento). Atualize aqui ao trocar de plataforma.
 const PAYMENT_BASE_URL = "https://pay.cakto.com.br/56yscrf_1013434";
 const STORAGE_KEY = "magnolias.inscricao.id";
-const VALOR = 39.9;
+const VALOR = 44.9;
 
 const subscriptionSchema = z.object({
   nome: z.string().trim().min(2, { message: "Informe seu nome completo" }).max(120, { message: "Nome muito longo" }),
@@ -206,13 +206,13 @@ export const SubscriptionForm = () => {
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
         ) : (
           <span className="tracking-[0.2em] sm:tracking-[0.3em] uppercase text-sm sm:text-base md:text-lg font-light">
-            Inscrição — R$ 39,90
+            INSCRIÇÃO — R$ 44,90
           </span>
         )}
       </Button>
 
       <p className="mt-6 text-center text-xs tracking-widest uppercase text-sage">
-        Pagamento seguro
+        PAGAMENTO SEGURO VIA CACTOS
       </p>
     </form>
   );
@@ -301,7 +301,7 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
       <div className="border-t border-rose-dusty/30 pt-8 mb-8 space-y-3 text-left max-w-sm mx-auto">
         <Row label="Nome" value={data.nome} />
         {data.email && <Row label="E-mail" value={data.email} />}
-        <Row label="Data" value="25 de Julho · 15:30h" />
+        <Row label="Data" value="22 de Agosto · 15:30h" />
         <Row label="Local" value="SALÃO DE FESTAS · RUA T-30 Nº 1284 · SETOR BUENO · RESIDENCIAL BUENO PARK · GOIÂNIA - GO" />
         <Row label="Código" value={data.id.slice(0, 8).toUpperCase()} />
       </div>

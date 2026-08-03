@@ -18,7 +18,7 @@ const Index = () => {
           src="/img/magnolia-banner-640.webp"
           srcSet="/img/magnolia-banner-640.webp 640w, /img/magnolia-banner-960.webp 960w, /__l5e/assets-v1/9439e6ea-9e02-4269-b4e5-431488f11ed7/magnolia-banner.webp 1280w"
           sizes="100vw"
-          alt="5º Encontro das Magnólias"
+          alt="6º Encontro das Magnólias"
           width={1280}
           height={853}
           fetchPriority="high"
@@ -43,7 +43,7 @@ const Index = () => {
           </p>
           <div className="flex items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8">
             <span className="h-px w-8 sm:w-12 bg-rose-dusty" />
-            <span className="font-display italic text-rose-dusty text-base sm:text-lg">quinta edição</span>
+            <span className="font-display italic text-rose-dusty text-base sm:text-lg">Sexta edição</span>
             <span className="h-px w-8 sm:w-12 bg-rose-dusty" />
           </div>
 
@@ -54,7 +54,7 @@ const Index = () => {
           </h1>
 
           <p className="text-foreground/70 text-sm sm:text-base md:text-lg leading-relaxed font-light">
-            Para o nosso quinto encontro, um momento preparado com muito{" "}
+            Para o nosso sexto encontro, um momento preparado com muito{" "}
             <span className="italic text-rose-deep">amor, fé e propósito</span>.
             Um tempo para mulheres que desejam crescer em Deus, fortalecer
             laços e viver o extraordinário dEle.
@@ -112,7 +112,7 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-rose-dusty/30">
             {[
-              { icon: Calendar, label: "Data", value: "25 de Julho", sub: "Sábado" },
+              { icon: Calendar, label: "Data", value: "22 de Agosto", sub: "Sábado" },
               { icon: Clock, label: "Horário", value: "15:30h", sub: "" },
               { icon: MapPin, label: "Local", value: "Goiânia", sub: "" },
             ].map(({ icon: Icon, label, value, sub }, i) => (
@@ -217,7 +217,7 @@ const Index = () => {
             Encontro das Magnólias
           </p>
           <p className="text-[10px] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] uppercase text-sage leading-relaxed">
-            QUINTA EDIÇÃO · GOIÂNIA · 25 DE JULHO · 15:30H
+            SEXTA EDIÇÃO · GOIÂNIA · 22 DE AGOSTO · 15:30H
           </p>
           <a
             href="/admin"
