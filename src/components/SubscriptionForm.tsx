@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Heart, ExternalLink, CheckCircle2, Clock, XCircle } from "lucide-react";
 
+// URL do checkout (plataforma de pagamento). Atualize aqui ao trocar de plataforma.
 const PAYMENT_BASE_URL = "https://payfast.greenn.com.br/pre-checkout/jmsez6d";
 const STORAGE_KEY = "magnolias.inscricao.id";
 const VALOR = 39.9;
@@ -129,7 +130,7 @@ export const SubscriptionForm = () => {
     });
     toast({
       title: "Inscrição registrada 🌸",
-      description: "Abrindo o checkout da Greenn...",
+      description: "Abrindo o checkout de pagamento...",
     });
 
     if (!paymentWindow || paymentWindow.closed) {
@@ -211,7 +212,7 @@ export const SubscriptionForm = () => {
       </Button>
 
       <p className="mt-6 text-center text-xs tracking-widest uppercase text-sage">
-        Pagamento seguro via Greenn
+        Pagamento seguro
       </p>
     </form>
   );
@@ -282,7 +283,7 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
           ? "Seu pagamento foi confirmado. Apresente este QR Code na entrada do evento."
           : isRejected
           ? "Não conseguimos confirmar seu pagamento. Você pode tentar novamente pelo botão abaixo."
-          : "Finalize o pagamento na aba aberta. Esta tela atualiza automaticamente assim que a Greenn confirmar."}
+          : "Finalize o pagamento na aba aberta. Esta tela atualiza automaticamente assim que o pagamento for confirmado."}
       </p>
 
       {isPaid && ticketToken && (
