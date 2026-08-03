@@ -1,0 +1,1 @@
+ALTER TABLE public.inscricoes ALTER COLUMN valor SET DEFAULT 44.90;
