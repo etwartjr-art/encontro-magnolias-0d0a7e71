@@ -34,6 +34,21 @@ import {
   UserX,
 } from "lucide-react";
 
+type WebhookDiag = {
+  ok: boolean;
+  endpoint?: string;
+  secret_length?: number;
+  diagnostico?: string;
+  testes: {
+    nome: string;
+    esperado: number;
+    status: number;
+    passou: boolean;
+    resposta?: string;
+    ms?: number;
+  }[];
+};
+
 type StatusInscricao =
   | "pendente"
   | "pago"
