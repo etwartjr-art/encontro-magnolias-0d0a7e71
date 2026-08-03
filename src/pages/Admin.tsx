@@ -104,6 +104,35 @@ const Admin = () => {
     "todos"
   );
   const [savingStatus, setSavingStatus] = useState<string | null>(null);
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  const [webhookResult, setWebhookResult] = useState<WebhookDiag | null>(null);
+
+  const handleTestWebhook = async () => {
+    setTestingWebhook(true);
+    setWebhookResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("cakto-webhook-test", {
+        body: {},
+      });
+      if (error) throw error;
+      setWebhookResult(data as WebhookDiag);
+      toast({
+        title: (data as WebhookDiag)?.ok ? "Webhook OK" : "Webhook com problema",
+        description: (data as WebhookDiag)?.diagnostico ?? "",
+        variant: (data as WebhookDiag)?.ok ? undefined : "destructive",
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      setWebhookResult({ ok: false, diagnostico: message, testes: [] });
+      toast({
+        title: "Falha ao testar webhook",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setTestingWebhook(false);
+    }
+  };
 
   const loadData = async () => {
     const { data, error } = await supabase
