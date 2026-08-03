@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Heart, ExternalLink, CheckCircle2, Clock, XCircle } from "lucide-react";
 
 // URL do checkout (plataforma de pagamento). Atualize aqui ao trocar de plataforma.
-const PAYMENT_BASE_URL = "https://payfast.greenn.com.br/pre-checkout/jmsez6d";
+const PAYMENT_BASE_URL = "https://pay.cakto.com.br/56yscrf_1013434";
 const STORAGE_KEY = "magnolias.inscricao.id";
 const VALOR = 39.9;
 
@@ -47,9 +47,9 @@ const toE164Digits = (masked: string) => {
 
 const buildCheckoutUrl = (nome: string, email: string, celular13: string) => {
   const url = new URL(PAYMENT_BASE_URL);
-  url.searchParams.set("fn", nome);
-  url.searchParams.set("em", email);
-  url.searchParams.set("ph", celular13);
+  url.searchParams.set("name", nome);
+  url.searchParams.set("email", email);
+  url.searchParams.set("phone", celular13);
   return url.toString();
 };
 
