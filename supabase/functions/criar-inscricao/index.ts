@@ -16,7 +16,7 @@ const supabase = createClient(
 
 const PHONE_RE = /^55\d{10,11}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const VALOR = 39.9;
+const VALOR = 44.9;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
