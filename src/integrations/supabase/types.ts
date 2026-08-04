@@ -118,6 +118,7 @@ export type Database = {
           thebank_id: string | null
           thebank_payload: Json | null
           valor: number
+          valor_liquido: number | null
         }
         Insert: {
           atualizado_em?: string
@@ -135,6 +136,7 @@ export type Database = {
           thebank_id?: string | null
           thebank_payload?: Json | null
           valor?: number
+          valor_liquido?: number | null
         }
         Update: {
           atualizado_em?: string
@@ -152,6 +154,7 @@ export type Database = {
           thebank_id?: string | null
           thebank_payload?: Json | null
           valor?: number
+          valor_liquido?: number | null
         }
         Relationships: []
       }

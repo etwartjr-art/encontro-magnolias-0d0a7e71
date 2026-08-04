@@ -95,6 +95,7 @@ type Inscricao = {
   email: string;
   celular: string;
   valor: number;
+  valor_liquido: number | null;
   status: StatusInscricao;
   metodo_pagamento: string | null;
   pago_em: string | null;
@@ -273,7 +274,7 @@ const Admin = () => {
     const { data, error } = await supabase
       .from("inscricoes")
       .select(
-        "id, nome, email, celular, valor, status, metodo_pagamento, pago_em, criado_em, atualizado_em, comprovante_url"
+        "id, nome, email, celular, valor, valor_liquido, status, metodo_pagamento, pago_em, criado_em, atualizado_em, comprovante_url"
       )
       .order("pago_em", { ascending: false, nullsFirst: false });
 
@@ -364,12 +365,8 @@ const Admin = () => {
 
   const stats = useMemo(() => {
     const pagas = items.filter((i) => i.status === "pago");
-    const receitaLiquida = pagas.reduce((sum, i) => sum + Number(i.valor), 0);
-    const receitaBruta = pagas.reduce((sum, i) => {
-      const liquido = Number(i.valor);
-      const bruto = liquido;
-      return sum + bruto;
-    }, 0);
+    const receitaLiquida = pagas.reduce((sum, i) => sum + Number(i.valor_liquido ?? 0), 0);
+    const receitaBruta = pagas.reduce((sum, i) => sum + Number(i.valor), 0);
     return {
       total: items.length,
       pagas: pagas.length,
@@ -446,8 +443,8 @@ const Admin = () => {
       "Comprovante",
     ];
     const rows = filtered.map((i) => {
-      const liquido = Number(i.valor);
-      const bruto = liquido;
+      const liquido = Number(i.valor_liquido ?? 0);
+      const bruto = Number(i.valor);
       return [
         new Date(i.criado_em).toLocaleString("pt-BR"),
         i.nome,
@@ -738,7 +735,7 @@ const Admin = () => {
                       {formatBRL(Number(i.valor))}
                     </TableCell>
                     <TableCell className="whitespace-nowrap font-medium">
-                      {formatBRL(Number(i.valor))}
+                      {formatBRL(Number(i.valor_liquido ?? 0))}
                     </TableCell>
 
                     <TableCell>

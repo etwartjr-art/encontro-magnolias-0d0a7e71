@@ -31,6 +31,7 @@ type Inscricao = {
   email: string;
   celular: string;
   valor: number;
+  valor_liquido: number;
   status: StatusInscricao;
 };
 
@@ -53,6 +54,7 @@ export const InscricaoDialog = ({
     email: "",
     celular: "",
     valor: 44.9,
+    valor_liquido: 41.56,
     status: "pendente",
   });
 
@@ -65,6 +67,7 @@ export const InscricaoDialog = ({
         email: "",
         celular: "",
         valor: 44.9,
+        valor_liquido: 41.56,
         status: "pendente",
       });
     }
@@ -120,38 +123,56 @@ export const InscricaoDialog = ({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="valor">Valor</Label>
+              <Label htmlFor="valor">Valor Bruto</Label>
               <Input
                 id="valor"
                 type="number"
                 step="0.01"
                 value={formData.valor}
-                onChange={(e) =>
-                  setFormData({ ...formData, valor: parseFloat(e.target.value) })
-                }
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setFormData({ 
+                    ...formData, 
+                    valor: val,
+                    valor_liquido: val * 0.9256 // Mantendo a proporção aproximada
+                  });
+                }}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(v) =>
-                  setFormData({ ...formData, status: v as StatusInscricao })
+              <Label htmlFor="valor_liquido">Valor Líquido</Label>
+              <Input
+                id="valor_liquido"
+                type="number"
+                step="0.01"
+                value={formData.valor_liquido}
+                onChange={(e) =>
+                  setFormData({ ...formData, valor_liquido: parseFloat(e.target.value) })
                 }
-              >
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pendente">Pendente</SelectItem>
-                  <SelectItem value="pago">Pago</SelectItem>
-                  <SelectItem value="recusado">Recusado</SelectItem>
-                  <SelectItem value="reembolsado">Reembolsado</SelectItem>
-                  <SelectItem value="chargeback">Chargeback</SelectItem>
-                </SelectContent>
-              </Select>
+                required
+              />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(v) =>
+                setFormData({ ...formData, status: v as StatusInscricao })
+              }
+            >
+              <SelectTrigger id="status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pendente">Pendente</SelectItem>
+                <SelectItem value="pago">Pago</SelectItem>
+                <SelectItem value="recusado">Recusado</SelectItem>
+                <SelectItem value="reembolsado">Reembolsado</SelectItem>
+                <SelectItem value="chargeback">Chargeback</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
