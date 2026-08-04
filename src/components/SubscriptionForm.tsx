@@ -144,6 +144,7 @@ export const SubscriptionForm = () => {
   }
 
   return (
+    <>
     <form
       onSubmit={handleSubmit}
       className="max-w-xl mx-auto bg-ivory border border-rose-dusty/40 p-8 md:p-12 shadow-petal"
@@ -204,6 +205,10 @@ export const SubscriptionForm = () => {
       </Button>
 
     </form>
+      <p className="mt-4 text-center text-[10px] tracking-widest uppercase text-sage/60">
+        Pagamento seguro via The Bank
+      </p>
+    </>
   );
 };
 
@@ -267,13 +272,26 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
 
       <StatusBadge status={status} checking={checking} />
 
-      <p className="text-foreground/70 font-light leading-relaxed max-w-md mx-auto mt-6 mb-10">
+      <p className="text-foreground/70 font-light leading-relaxed max-w-md mx-auto mt-6 mb-8">
         {isPaid
           ? "Seu pagamento foi confirmado. Apresente este QR Code na entrada do evento."
           : isRejected
           ? "Não conseguimos confirmar seu pagamento. Você pode tentar novamente pelo botão abaixo."
-          : "Sua pré-inscrição foi realizada. Fique atenta para as instruções de pagamento."}
+          : "Sua pré-inscrição foi realizada. Clique no botão abaixo para concluir o pagamento."}
       </p>
+
+      {!isPaid && (
+        <Button
+          onClick={() => window.open(checkoutUrl, "_blank")}
+          className="w-full sm:w-auto px-10 py-6 mb-10 rounded-none h-auto transition-elegant shadow-petal gap-2"
+          style={{ backgroundColor: "#98545B", color: "hsl(var(--primary-foreground))" }}
+        >
+          <span className="tracking-[0.2em] uppercase text-sm font-light">
+            Concluir Pagamento
+          </span>
+          <ExternalLink className="w-4 h-4 opacity-70" />
+        </Button>
+      )}
 
       {isPaid && ticketToken && (
         <div className="inline-block bg-white p-6 border border-rose-dusty/40 shadow-soft mb-8">
