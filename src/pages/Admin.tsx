@@ -579,7 +579,7 @@ const Admin = () => {
               <Users className="w-4 h-4" /> Inscrições
             </TabsTrigger>
             <TabsTrigger value="logs" className="rounded-none data-[state=active]:bg-rose-deep data-[state=active]:text-white flex items-center gap-2">
-              <History className="w-4 h-4" /> Logs de Webhook
+              <HistoryIcon className="w-4 h-4" /> Logs de Webhook
             </TabsTrigger>
           </TabsList>
 
