@@ -667,7 +667,8 @@ const Admin = () => {
               Total: {items.length} inscrição(ões)
             </p>
           </div>
-          </TabsContent>
+        )}
+      </TabsContent>
 
           <TabsContent value="logs">
             <div className="bg-ivory border border-rose-dusty/40 shadow-petal overflow-x-auto">
