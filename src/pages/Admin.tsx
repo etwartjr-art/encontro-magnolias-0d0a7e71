@@ -494,6 +494,14 @@ const Admin = () => {
           </div>
           <div className="flex items-center gap-2">
             <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddInscricao}
+              className="rounded-none uppercase tracking-[0.2em] text-xs"
+            >
+              <UserPlus className="w-4 h-4 mr-2" /> Adicionar
+            </Button>
+            <Button
               asChild
               variant="outline"
               size="sm"
