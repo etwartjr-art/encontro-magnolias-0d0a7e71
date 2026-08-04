@@ -184,6 +184,26 @@ const Admin = () => {
     }
   };
 
+  const loadLogs = async () => {
+    setLoadingLogs(true);
+    const { data, error } = await supabase
+      .from("thebank_webhook_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      toast({
+        title: "Erro ao carregar logs",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setWebhookLogs((data ?? []) as WebhookLog[]);
+    }
+    setLoadingLogs(false);
+  };
+
   useEffect(() => {
     let active = true;
 
