@@ -150,7 +150,7 @@ const Admin = () => {
     setTestingWebhook(true);
     setWebhookResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("cakto-webhook-test", {
+      const { data, error } = await supabase.functions.invoke("thebank-webhook-test", {
         body: {},
       });
       if (error) throw error;
@@ -508,7 +508,7 @@ const Admin = () => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="uppercase tracking-[0.2em] text-xs text-muted-foreground">
-                  Diagnóstico do webhook Cakto
+                  Diagnóstico do webhook The Bank
                 </p>
                 <p className="text-sm text-foreground mt-1">
                   {webhookResult.diagnostico}

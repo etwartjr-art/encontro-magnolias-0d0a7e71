@@ -1,6 +1,3 @@
-// Diagnóstico do endpoint cakto-webhook: dispara duas requisições reais
-// (secret inválido e secret válido com evento neutro) e devolve os resultados.
-// Não grava nada na tabela de inscrições.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -21,7 +18,6 @@ Deno.serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 
-  // Somente administradores autenticados podem rodar o diagnóstico.
   const authHeader = req.headers.get("Authorization") ?? "";
   if (!authHeader.startsWith("Bearer ")) return json({ error: "unauthorized" }, 401);
 
@@ -38,16 +34,7 @@ Deno.serve(async (req) => {
   });
   if (!isAdmin) return json({ error: "forbidden" }, 403);
 
-  const secret = Deno.env.get("CAKTO_WEBHOOK_SECRET");
-  if (!secret) {
-    return json({
-      ok: false,
-      configured: false,
-      message: "CAKTO_WEBHOOK_SECRET não está configurado.",
-    });
-  }
-
-  const endpoint = `${SUPABASE_URL}/functions/v1/cakto-webhook`;
+  const endpoint = `${SUPABASE_URL}/functions/v1/thebank-webhook`;
 
   const call = async (payload: Record<string, unknown>) => {
     const started = Date.now();
@@ -64,43 +51,32 @@ Deno.serve(async (req) => {
     }
   };
 
-  // 1) Secret inválido -> deve retornar 401
-  const invalido = await call({
-    secret: "secret-invalido-diagnostico",
-    event: "diagnostico",
-    data: {},
+  // 1) Teste de pagamento aprovado (simulado)
+  const testePagamento = await call({
+    id: "test_" + Math.random().toString(36).slice(2, 9),
+    status: "PAID",
+    customer: { email: "teste@exemplo.com" },
+    event: "payment_confirmed",
+    proof_url: "https://example.com/proof.pdf"
   });
 
-  // 2) Secret válido com evento neutro -> deve retornar 200 e ser ignorado
-  const valido = await call({ secret, event: "diagnostico", data: {} });
-
-  const authOk = valido.status === 200;
-  const rejectOk = invalido.status === 401;
+  const ok = testePagamento.status === 200;
 
   return json({
-    ok: authOk && rejectOk,
+    ok,
     endpoint,
-    secret_length: secret.length,
     testes: [
       {
-        nome: "Secret inválido",
-        esperado: 401,
-        status: invalido.status,
-        passou: rejectOk,
-        resposta: invalido.body,
-        ms: invalido.ms,
-      },
-      {
-        nome: "Secret válido (evento neutro)",
+        nome: "Simulação de Pagamento Aprovado",
         esperado: 200,
-        status: valido.status,
-        passou: authOk,
-        resposta: valido.body,
-        ms: valido.ms,
-      },
+        status: testePagamento.status,
+        passou: ok,
+        resposta: testePagamento.body,
+        ms: testePagamento.ms,
+      }
     ],
-    diagnostico: authOk
-      ? "Endpoint ativo e o secret salvo aqui é aceito. Se a Cakto ainda receber 401, o valor no painel dela é diferente deste."
-      : "O secret salvo aqui não é aceito pelo próprio endpoint — revise o valor de CAKTO_WEBHOOK_SECRET.",
+    diagnostico: ok
+      ? "Endpoint The Bank está respondendo corretamente. O teste enviou um payload simulado e recebeu sucesso."
+      : "O endpoint The Bank retornou um erro ao processar o teste simulado. Verifique os logs detalhados.",
   });
 });
