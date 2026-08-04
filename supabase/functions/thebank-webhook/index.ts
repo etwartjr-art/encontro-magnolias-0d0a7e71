@@ -64,7 +64,10 @@ Deno.serve(async (req) => {
           errorMessage = `DB Error: ${error.message}`;
         } else if (!updated || updated.length === 0) {
           processedStatus = "no_match";
-          errorMessage = "No pending inscription found";
+          errorMessage = `No pending inscription found for email: ${email} or id: ${thebankId}`;
+          console.log(errorMessage);
+        } else {
+          console.log(`Successfully updated inscription for ${email}. New status: pago`);
         }
       }
     } else {
