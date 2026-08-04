@@ -233,7 +233,7 @@ const Admin = () => {
         return;
       }
 
-      await loadData();
+      await Promise.all([loadData(), loadLogs()]);
       if (active) setLoading(false);
     };
 
