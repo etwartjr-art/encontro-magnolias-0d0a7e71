@@ -734,7 +734,7 @@ const Admin = () => {
               <div className="flex justify-end">
                 <Button 
                   variant="outline" 
-                  size="xs" 
+                  size="sm" 
                   onClick={handleCheckConfig} 
                   disabled={checkingConfig}
                   className="text-[10px] h-7 rounded-none uppercase tracking-wider"
