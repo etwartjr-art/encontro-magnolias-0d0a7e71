@@ -537,6 +537,8 @@ const Admin = () => {
 
                   <TableHead>Status</TableHead>
                   <TableHead>Pago em</TableHead>
+                  <TableHead>Ações</TableHead>
+                  <TableHead>Comprovante</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
