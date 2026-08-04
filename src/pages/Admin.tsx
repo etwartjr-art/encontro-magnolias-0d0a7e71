@@ -519,7 +519,6 @@ const Admin = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-8 rounded-none bg-rose-dusty/10 p-1">
             <TabsTrigger value="inscricoes" className="rounded-none data-[state=active]:bg-rose-deep data-[state=active]:text-white flex items-center gap-2">
