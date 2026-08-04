@@ -722,20 +722,29 @@ const Admin = () => {
                           {log.error_message || "—"}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 text-[10px]"
-                            onClick={() => {
-                              console.log(log.payload);
-                              toast({
-                                title: "Payload copiado para o console",
-                                description: "Verifique o console do navegador para detalhes.",
-                              });
-                            }}
-                          >
-                            Ver JSON
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-[10px]"
+                              onClick={() => {
+                                console.log("--- LOG AUDIT DETAIL ---");
+                                console.log("ID:", log.id);
+                                console.log("Timestamp:", log.created_at);
+                                console.log("Event Type:", log.event_type);
+                                console.log("Processed Status:", log.processed_status);
+                                console.log("Error Message:", log.error_message);
+                                console.log("Payload:", log.payload);
+                                console.log("------------------------");
+                                toast({
+                                  title: "Detalhes auditados no console",
+                                  description: "Verifique o console do navegador para o payload e status detalhado.",
+                                });
+                              }}
+                            >
+                              Audit
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
