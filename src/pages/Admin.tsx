@@ -171,6 +171,8 @@ const Admin = () => {
     } finally {
       setTestingWebhook(false);
     }
+  };
+
   const handleCheckConfig = async () => {
     setCheckingConfig(true);
     try {
