@@ -107,6 +107,7 @@ export type Database = {
           cakto_order_id: string | null
           cakto_payload: Json | null
           celular: string
+          comprovante_url: string | null
           criado_em: string
           email: string
           id: string
@@ -114,6 +115,8 @@ export type Database = {
           nome: string
           pago_em: string | null
           status: Database["public"]["Enums"]["inscricao_status"]
+          thebank_id: string | null
+          thebank_payload: Json | null
           valor: number
         }
         Insert: {
@@ -121,6 +124,7 @@ export type Database = {
           cakto_order_id?: string | null
           cakto_payload?: Json | null
           celular: string
+          comprovante_url?: string | null
           criado_em?: string
           email: string
           id?: string
@@ -128,6 +132,8 @@ export type Database = {
           nome: string
           pago_em?: string | null
           status?: Database["public"]["Enums"]["inscricao_status"]
+          thebank_id?: string | null
+          thebank_payload?: Json | null
           valor?: number
         }
         Update: {
@@ -135,6 +141,7 @@ export type Database = {
           cakto_order_id?: string | null
           cakto_payload?: Json | null
           celular?: string
+          comprovante_url?: string | null
           criado_em?: string
           email?: string
           id?: string
@@ -142,6 +149,8 @@ export type Database = {
           nome?: string
           pago_em?: string | null
           status?: Database["public"]["Enums"]["inscricao_status"]
+          thebank_id?: string | null
+          thebank_payload?: Json | null
           valor?: number
         }
         Relationships: []
