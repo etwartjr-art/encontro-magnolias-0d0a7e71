@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2,
@@ -32,6 +33,7 @@ import {
   ArrowLeft,
   Webhook,
   UserX,
+  History,
 } from "lucide-react";
 
 type WebhookDiag = {
