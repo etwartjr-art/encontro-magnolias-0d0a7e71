@@ -939,6 +939,29 @@ const Admin = () => {
           </TabsContent>
         </Tabs>
       </div>
+    <InscricaoDialog
+      isOpen={isDialogOpen}
+      onClose={() => setIsDialogOpen(false)}
+      onSave={handleSaveInscricao}
+      initialData={editingInscricao}
+    />
+
+    <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação não pode ser desfeita. Isso excluirá permanentemente a inscrição do banco de dados.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDeleteInscricao} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </main>
   );
 };
