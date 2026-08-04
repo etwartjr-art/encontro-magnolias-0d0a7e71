@@ -39,8 +39,21 @@ import {
   ArrowLeft,
   Webhook,
   UserX,
-  History,
+  UserPlus,
+  Trash2,
+  History as HistoryIcon,
 } from "lucide-react";
+import { InscricaoDialog } from "@/components/admin/InscricaoDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type WebhookLog = {
   id: string;
@@ -145,6 +158,65 @@ const Admin = () => {
   const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [activeTab, setActiveTab] = useState("inscricoes");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingInscricao, setEditingInscricao] = useState<Inscricao | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleAddInscricao = () => {
+    setEditingInscricao(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditInscricao = (inscricao: Inscricao) => {
+    setEditingInscricao(inscricao);
+    setIsDialogOpen(true);
+  };
+
+  const handleSaveInscricao = async (data: any) => {
+    try {
+      if (editingInscricao) {
+        const { error } = await supabase
+          .from("inscricoes")
+          .update(data)
+          .eq("id", editingInscricao.id);
+        if (error) throw error;
+        toast({ title: "Inscrição atualizada com sucesso" });
+      } else {
+        const { error } = await supabase.from("inscricoes").insert([data]);
+        if (error) throw error;
+        toast({ title: "Inscrição adicionada com sucesso" });
+      }
+      loadData();
+    } catch (e: any) {
+      toast({
+        title: "Erro ao salvar",
+        description: e.message,
+        variant: "destructive",
+      });
+      throw e;
+    }
+  };
+
+  const handleDeleteInscricao = async () => {
+    if (!deletingId) return;
+    try {
+      const { error } = await supabase
+        .from("inscricoes")
+        .delete()
+        .eq("id", deletingId);
+      if (error) throw error;
+      toast({ title: "Inscrição excluída" });
+      setItems((prev) => prev.filter((i) => i.id !== deletingId));
+    } catch (e: any) {
+      toast({
+        title: "Erro ao excluir",
+        description: e.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleTestWebhook = async () => {
     setTestingWebhook(true);
@@ -422,6 +494,14 @@ const Admin = () => {
           </div>
           <div className="flex items-center gap-2">
             <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddInscricao}
+              className="rounded-none uppercase tracking-[0.2em] text-xs"
+            >
+              <UserPlus className="w-4 h-4 mr-2" /> Adicionar
+            </Button>
+            <Button
               asChild
               variant="outline"
               size="sm"
@@ -566,7 +646,7 @@ const Admin = () => {
               <Users className="w-4 h-4" /> Inscrições
             </TabsTrigger>
             <TabsTrigger value="logs" className="rounded-none data-[state=active]:bg-rose-deep data-[state=active]:text-white flex items-center gap-2">
-              <History className="w-4 h-4" /> Logs de Webhook
+              <HistoryIcon className="w-4 h-4" /> Logs de Webhook
             </TabsTrigger>
           </TabsList>
 
@@ -668,7 +748,7 @@ const Admin = () => {
                             {savingStatus === i.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
-                              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                              <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
                             )}
                           </SelectTrigger>
                           <SelectContent>
@@ -685,6 +765,26 @@ const Admin = () => {
                       {i.pago_em
                         ? new Date(i.pago_em).toLocaleString("pt-BR")
                         : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 rounded-none"
+                          onClick={() => handleEditInscricao(i)}
+                        >
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 rounded-none hover:text-destructive"
+                          onClick={() => setDeletingId(i.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {(i as any).comprovante_url ? (
@@ -839,6 +939,29 @@ const Admin = () => {
           </TabsContent>
         </Tabs>
       </div>
+    <InscricaoDialog
+      isOpen={isDialogOpen}
+      onClose={() => setIsDialogOpen(false)}
+      onSave={handleSaveInscricao}
+      initialData={editingInscricao}
+    />
+
+    <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação não pode ser desfeita. Isso excluirá permanentemente a inscrição do banco de dados.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDeleteInscricao} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </main>
   );
 };
