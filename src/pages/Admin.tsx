@@ -41,6 +41,7 @@ import {
   UserX,
   UserPlus,
   Trash2,
+  History as HistoryIcon,
 } from "lucide-react";
 import { InscricaoDialog } from "@/components/admin/InscricaoDialog";
 import {
