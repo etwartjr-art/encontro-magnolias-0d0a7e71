@@ -748,7 +748,7 @@ const Admin = () => {
                             {savingStatus === i.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
-                              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                              <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
                             )}
                           </SelectTrigger>
                           <SelectContent>
