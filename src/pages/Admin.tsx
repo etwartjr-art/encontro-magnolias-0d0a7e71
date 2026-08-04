@@ -39,8 +39,20 @@ import {
   ArrowLeft,
   Webhook,
   UserX,
-  History,
+  UserPlus,
+  Trash2,
 } from "lucide-react";
+import { InscricaoDialog } from "@/components/admin/InscricaoDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type WebhookLog = {
   id: string;
