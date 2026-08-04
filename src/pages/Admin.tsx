@@ -158,6 +158,65 @@ const Admin = () => {
   const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [activeTab, setActiveTab] = useState("inscricoes");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingInscricao, setEditingInscricao] = useState<Inscricao | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleAddInscricao = () => {
+    setEditingInscricao(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditInscricao = (inscricao: Inscricao) => {
+    setEditingInscricao(inscricao);
+    setIsDialogOpen(true);
+  };
+
+  const handleSaveInscricao = async (data: any) => {
+    try {
+      if (editingInscricao) {
+        const { error } = await supabase
+          .from("inscricoes")
+          .update(data)
+          .eq("id", editingInscricao.id);
+        if (error) throw error;
+        toast({ title: "Inscrição atualizada com sucesso" });
+      } else {
+        const { error } = await supabase.from("inscricoes").insert([data]);
+        if (error) throw error;
+        toast({ title: "Inscrição adicionada com sucesso" });
+      }
+      loadData();
+    } catch (e: any) {
+      toast({
+        title: "Erro ao salvar",
+        description: e.message,
+        variant: "destructive",
+      });
+      throw e;
+    }
+  };
+
+  const handleDeleteInscricao = async () => {
+    if (!deletingId) return;
+    try {
+      const { error } = await supabase
+        .from("inscricoes")
+        .delete()
+        .eq("id", deletingId);
+      if (error) throw error;
+      toast({ title: "Inscrição excluída" });
+      setItems((prev) => prev.filter((i) => i.id !== deletingId));
+    } catch (e: any) {
+      toast({
+        title: "Erro ao excluir",
+        description: e.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleTestWebhook = async () => {
     setTestingWebhook(true);
