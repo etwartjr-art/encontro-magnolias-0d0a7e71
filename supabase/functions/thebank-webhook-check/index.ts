@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     const { error: logError } = await supabase.from("thebank_webhook_logs").select("count").limit(1);
 
     const diagnostico = {
-      ok: results.every(r => r.name === "THEBANK_WEBHOOK_SECRET" ? true : r.configured) && !dbError && !logError,
+      ok: results.every(r => r.configured) && !dbError && !logError,
       env: results,
       database: {
         inscricoes: !dbError,
