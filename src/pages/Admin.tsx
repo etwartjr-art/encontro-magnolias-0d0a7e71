@@ -277,7 +277,11 @@ const Admin = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    if (activeTab === "inscricoes") {
+      await loadData();
+    } else {
+      await loadLogs();
+    }
     setRefreshing(false);
   };
 
