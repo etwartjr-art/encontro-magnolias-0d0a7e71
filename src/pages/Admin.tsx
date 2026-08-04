@@ -520,12 +520,24 @@ const Admin = () => {
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
-          <StatCard icon={Users} label="Inscrições" value={String(stats.total)} />
-          <StatCard icon={CheckCircle2} label="Pagas" value={String(stats.pagas)} />
-          <StatCard icon={Clock} label="Pendentes" value={String(stats.pendentes)} />
-          <StatCard icon={DollarSign} label="Receita Paga (bruto)" value={formatBRL(stats.receitaBruta)} />
-          <StatCard icon={DollarSign} label="Receita Recebida (líquido)" value={formatBRL(stats.receitaLiquida)} />
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-8 rounded-none bg-rose-dusty/10 p-1">
+            <TabsTrigger value="inscricoes" className="rounded-none data-[state=active]:bg-rose-deep data-[state=active]:text-white flex items-center gap-2">
+              <Users className="w-4 h-4" /> Inscrições
+            </TabsTrigger>
+            <TabsTrigger value="logs" className="rounded-none data-[state=active]:bg-rose-deep data-[state=active]:text-white flex items-center gap-2">
+              <History className="w-4 h-4" /> Logs de Webhook
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="inscricoes" className="mt-0">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+              <StatCard icon={Users} label="Inscrições" value={String(stats.total)} />
+              <StatCard icon={CheckCircle2} label="Pagas" value={String(stats.pagas)} />
+              <StatCard icon={Clock} label="Pendentes" value={String(stats.pendentes)} />
+              <StatCard icon={DollarSign} label="Receita Paga (bruto)" value={formatBRL(stats.receitaBruta)} />
+              <StatCard icon={DollarSign} label="Receita Recebida (líquido)" value={formatBRL(stats.receitaLiquida)} />
+            </div>
 
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="w-56">
