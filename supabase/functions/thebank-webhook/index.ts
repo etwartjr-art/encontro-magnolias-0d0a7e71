@@ -35,14 +35,17 @@ Deno.serve(async (req) => {
         processedStatus = "error";
         errorMessage = "Missing identifier (email or id)";
       } else {
-        let query = supabase.from("inscricoes").update({ 
+        const updateData = { 
           status: "pago", 
           pago_em: new Date().toISOString(),
           metodo_pagamento: "thebank",
           thebank_id: thebankId,
           thebank_payload: payload,
           comprovante_url: proofUrl
-        });
+        };
+        console.log("Attempting to update inscription with data:", JSON.stringify(updateData, null, 2));
+        
+        let query = supabase.from("inscricoes").update(updateData);
 
         if (thebankId) {
           query = query.or(`thebank_id.eq.${thebankId},email.eq.${email}`);
