@@ -52,13 +52,15 @@ Deno.serve(async (req) => {
   };
 
   // 1) Teste de pagamento aprovado (simulado)
-  const testePagamento = await call({
+  const payloadTeste = {
     id: "test_" + Math.random().toString(36).slice(2, 9),
     status: "PAID",
     customer: { email: "teste@exemplo.com" },
     event: "payment_confirmed",
     proof_url: "https://example.com/proof.pdf"
-  });
+  };
+
+  const testePagamento = await call(payloadTeste);
 
   const ok = testePagamento.status === 200;
 
@@ -72,6 +74,7 @@ Deno.serve(async (req) => {
         status: testePagamento.status,
         passou: ok,
         resposta: testePagamento.body,
+        payload: payloadTeste,
         ms: testePagamento.ms,
       }
     ],
