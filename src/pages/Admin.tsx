@@ -11,6 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import { AlertTriangle, CheckCircle } from "lucide-react";
+import {
   Table,
   TableBody,
   TableCell,
@@ -133,6 +139,8 @@ const Admin = () => {
   );
   const [savingStatus, setSavingStatus] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
+  const [checkingConfig, setCheckingConfig] = useState(false);
+  const [configStatus, setConfigStatus] = useState<any>(null);
   const [webhookResult, setWebhookResult] = useState<WebhookDiag | null>(null);
   const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -162,6 +170,29 @@ const Admin = () => {
       });
     } finally {
       setTestingWebhook(false);
+    }
+  };
+
+  const handleCheckConfig = async () => {
+    setCheckingConfig(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("thebank-webhook-check");
+      if (error) throw error;
+      setConfigStatus(data);
+      toast({
+        title: data.ok ? "Configuração OK" : "Configuração pendente",
+        description: data.ok ? "Tudo pronto para receber transações." : "Verifique os detalhes na aba de logs.",
+        variant: data.ok ? undefined : "destructive",
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      toast({
+        title: "Erro ao validar configuração",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingConfig(false);
     }
   };
 
@@ -233,7 +264,7 @@ const Admin = () => {
         return;
       }
 
-      await Promise.all([loadData(), loadLogs()]);
+      await Promise.all([loadData(), loadLogs(), handleCheckConfig()]);
       if (active) setLoading(false);
     };
 
@@ -538,7 +569,7 @@ const Admin = () => {
               <StatCard icon={DollarSign} label="Receita Recebida (líquido)" value={formatBRL(stats.receitaLiquida)} />
             </div>
 
-        <div className="flex flex-wrap items-center gap-3 mb-6">
+            <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="w-56">
             <Select
               value={statusFilter}
@@ -671,6 +702,49 @@ const Admin = () => {
       </TabsContent>
 
           <TabsContent value="logs">
+            <div className="mb-6 space-y-4">
+              {configStatus && (
+                <Alert variant={configStatus.ok ? "default" : "destructive"} className="rounded-none border-rose-dusty/40">
+                  {configStatus.ok ? <CheckCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                  <AlertTitle className="uppercase tracking-wider text-xs">Status da Infraestrutura</AlertTitle>
+                  <AlertDescription className="text-xs mt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="font-semibold mb-1">Webhook URL:</p>
+                        <code className="bg-muted p-1 block break-all">{configStatus.webhook_url}</code>
+                      </div>
+                      <div>
+                        <p className="font-semibold mb-1">Variáveis de Ambiente:</p>
+                        <ul className="space-y-1">
+                          {configStatus.env.map((ev: any) => (
+                            <li key={ev.name} className="flex items-center gap-2">
+                              <Badge variant={ev.configured ? "outline" : "destructive"} className="h-4 text-[9px]">
+                                {ev.configured ? "OK" : "MISSING"}
+                              </Badge>
+                              {ev.name}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              <div className="flex justify-end">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCheckConfig} 
+                  disabled={checkingConfig}
+                  className="text-[10px] h-7 rounded-none uppercase tracking-wider"
+                >
+                  {checkingConfig && <Loader2 className="w-3 h-3 mr-2 animate-spin" />}
+                  Revalidar Configuração
+                </Button>
+              </div>
+            </div>
+
             <div className="bg-ivory border border-rose-dusty/40 shadow-petal overflow-x-auto">
               <Table>
                 <TableHeader>
