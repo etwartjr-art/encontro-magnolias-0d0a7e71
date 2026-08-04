@@ -233,6 +233,39 @@ export type Database = {
         }
         Relationships: []
       }
+      thebank_webhook_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          event_type: string | null
+          id: string
+          method: string | null
+          payload: Json | null
+          processed_status: string | null
+          status_code: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          method?: string | null
+          payload?: Json | null
+          processed_status?: string | null
+          status_code?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          method?: string | null
+          payload?: Json | null
+          processed_status?: string | null
+          status_code?: number | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
