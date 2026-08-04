@@ -77,6 +77,7 @@ type WebhookDiag = {
     status: number;
     passou: boolean;
     resposta?: string;
+    payload?: any;
     ms?: number;
   }[];
 };
@@ -620,9 +621,20 @@ const Admin = () => {
                       {typeof t.ms === "number" ? ` · ${t.ms}ms` : ""}
                     </span>
                     {t.resposta && (
-                      <code className="text-xs text-muted-foreground break-all">
-                        {t.resposta}
-                      </code>
+                      <div className="w-full mt-1">
+                        <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">Resposta:</p>
+                        <code className="text-xs text-rose-deep/80 bg-rose-deep/5 p-2 block break-all border border-rose-deep/10">
+                          {t.resposta}
+                        </code>
+                      </div>
+                    )}
+                    {t.payload && (
+                      <div className="w-full mt-2">
+                        <p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">Payload Enviado:</p>
+                        <pre className="text-[10px] text-emerald-700 bg-emerald-500/5 p-2 block overflow-x-auto border border-emerald-500/10 font-mono">
+                          {JSON.stringify(t.payload, null, 2)}
+                        </pre>
+                      </div>
                     )}
                   </li>
                 ))}
