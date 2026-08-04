@@ -767,6 +767,26 @@ const Admin = () => {
                         : "—"}
                     </TableCell>
                     <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 rounded-none"
+                          onClick={() => handleEditInscricao(i)}
+                        >
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 rounded-none hover:text-destructive"
+                          onClick={() => setDeletingId(i.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       {(i as any).comprovante_url ? (
                         <a 
                           href={(i as any).comprovante_url} 
