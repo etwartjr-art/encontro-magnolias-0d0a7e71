@@ -134,6 +134,9 @@ const Admin = () => {
   const [savingStatus, setSavingStatus] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookResult, setWebhookResult] = useState<WebhookDiag | null>(null);
+  const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [activeTab, setActiveTab] = useState("inscricoes");
 
   const handleTestWebhook = async () => {
     setTestingWebhook(true);
