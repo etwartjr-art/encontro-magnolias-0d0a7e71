@@ -668,7 +668,83 @@ const Admin = () => {
               Total: {items.length} inscrição(ões)
             </p>
           </div>
-        )}
+          </TabsContent>
+
+          <TabsContent value="logs">
+            <div className="bg-ivory border border-rose-dusty/40 shadow-petal overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Evento</TableHead>
+                    <TableHead>Status Proc.</TableHead>
+                    <TableHead>HTTP</TableHead>
+                    <TableHead>Erro</TableHead>
+                    <TableHead>Payload</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loadingLogs ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-10">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-rose-deep" />
+                      </TableCell>
+                    </TableRow>
+                  ) : webhookLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                        Nenhum log encontrado.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    webhookLogs.map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell className="text-[10px] text-foreground/70 whitespace-nowrap">
+                          {new Date(log.created_at).toLocaleString("pt-BR")}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-[10px] uppercase">
+                            {log.event_type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={log.processed_status === "success" ? "default" : log.processed_status === "error" ? "destructive" : "secondary"}
+                            className="text-[10px] uppercase"
+                          >
+                            {log.processed_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-[10px]">
+                          {log.status_code}
+                        </TableCell>
+                        <TableCell className="max-w-[150px] truncate text-[10px] text-destructive">
+                          {log.error_message || "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-[10px]"
+                            onClick={() => {
+                              console.log(log.payload);
+                              toast({
+                                title: "Payload copiado para o console",
+                                description: "Verifique o console do navegador para detalhes.",
+                              });
+                            }}
+                          >
+                            Ver JSON
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </main>
   );
