@@ -487,6 +487,16 @@ const Admin = () => {
           </div>
         </header>
 
+        {(!configStatus || !configStatus.ok) && !loading && (
+          <Alert variant="destructive" className="mb-8 rounded-none border-destructive/40 bg-destructive/5">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle className="uppercase tracking-wider text-xs">Atenção: Configuração Incompleta</AlertTitle>
+            <AlertDescription className="text-xs mt-1">
+              {configStatus ? "Uma ou mais variáveis de ambiente estão ausentes. Verifique a aba 'Logs de Webhook' para detalhes." : "Não foi possível validar a configuração do sistema. O processamento de pagamentos pode falhar."}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {webhookResult && (
           <div
             className={`mb-8 border p-4 ${
