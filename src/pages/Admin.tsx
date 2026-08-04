@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2,
@@ -32,7 +33,19 @@ import {
   ArrowLeft,
   Webhook,
   UserX,
+  History,
 } from "lucide-react";
+
+type WebhookLog = {
+  id: string;
+  created_at: string;
+  payload: any;
+  status_code: number;
+  method: string;
+  processed_status: string;
+  error_message: string;
+  event_type: string;
+};
 
 type WebhookDiag = {
   ok: boolean;
@@ -64,10 +77,10 @@ type Inscricao = {
   valor: number;
   status: StatusInscricao;
   metodo_pagamento: string | null;
-  
   pago_em: string | null;
   criado_em: string;
   atualizado_em: string;
+  comprovante_url?: string;
 };
 
 const STATUS_OPTIONS: { value: StatusInscricao | "todos"; label: string }[] = [
@@ -121,6 +134,9 @@ const Admin = () => {
   const [savingStatus, setSavingStatus] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookResult, setWebhookResult] = useState<WebhookDiag | null>(null);
+  const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [activeTab, setActiveTab] = useState("inscricoes");
 
   const handleTestWebhook = async () => {
     setTestingWebhook(true);
@@ -168,6 +184,26 @@ const Admin = () => {
     }
   };
 
+  const loadLogs = async () => {
+    setLoadingLogs(true);
+    const { data, error } = await supabase
+      .from("thebank_webhook_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      toast({
+        title: "Erro ao carregar logs",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setWebhookLogs((data ?? []) as WebhookLog[]);
+    }
+    setLoadingLogs(false);
+  };
+
   useEffect(() => {
     let active = true;
 
@@ -197,7 +233,7 @@ const Admin = () => {
         return;
       }
 
-      await loadData();
+      await Promise.all([loadData(), loadLogs()]);
       if (active) setLoading(false);
     };
 
@@ -241,7 +277,11 @@ const Admin = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    if (activeTab === "inscricoes") {
+      await loadData();
+    } else {
+      await loadLogs();
+    }
     setRefreshing(false);
   };
 
@@ -479,13 +519,24 @@ const Admin = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
-          <StatCard icon={Users} label="Inscrições" value={String(stats.total)} />
-          <StatCard icon={CheckCircle2} label="Pagas" value={String(stats.pagas)} />
-          <StatCard icon={Clock} label="Pendentes" value={String(stats.pendentes)} />
-          <StatCard icon={DollarSign} label="Receita Paga (bruto)" value={formatBRL(stats.receitaBruta)} />
-          <StatCard icon={DollarSign} label="Receita Recebida (líquido)" value={formatBRL(stats.receitaLiquida)} />
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-8 rounded-none bg-rose-dusty/10 p-1">
+            <TabsTrigger value="inscricoes" className="rounded-none data-[state=active]:bg-rose-deep data-[state=active]:text-white flex items-center gap-2">
+              <Users className="w-4 h-4" /> Inscrições
+            </TabsTrigger>
+            <TabsTrigger value="logs" className="rounded-none data-[state=active]:bg-rose-deep data-[state=active]:text-white flex items-center gap-2">
+              <History className="w-4 h-4" /> Logs de Webhook
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="inscricoes" className="mt-0">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+              <StatCard icon={Users} label="Inscrições" value={String(stats.total)} />
+              <StatCard icon={CheckCircle2} label="Pagas" value={String(stats.pagas)} />
+              <StatCard icon={Clock} label="Pendentes" value={String(stats.pendentes)} />
+              <StatCard icon={DollarSign} label="Receita Paga (bruto)" value={formatBRL(stats.receitaBruta)} />
+              <StatCard icon={DollarSign} label="Receita Recebida (líquido)" value={formatBRL(stats.receitaLiquida)} />
+            </div>
 
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="w-56">
@@ -617,6 +668,83 @@ const Admin = () => {
             </p>
           </div>
         )}
+      </TabsContent>
+
+          <TabsContent value="logs">
+            <div className="bg-ivory border border-rose-dusty/40 shadow-petal overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Evento</TableHead>
+                    <TableHead>Status Proc.</TableHead>
+                    <TableHead>HTTP</TableHead>
+                    <TableHead>Erro</TableHead>
+                    <TableHead>Payload</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loadingLogs ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-10">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-rose-deep" />
+                      </TableCell>
+                    </TableRow>
+                  ) : webhookLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                        Nenhum log encontrado.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    webhookLogs.map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell className="text-[10px] text-foreground/70 whitespace-nowrap">
+                          {new Date(log.created_at).toLocaleString("pt-BR")}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-[10px] uppercase">
+                            {log.event_type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={log.processed_status === "success" ? "default" : log.processed_status === "error" ? "destructive" : "secondary"}
+                            className="text-[10px] uppercase"
+                          >
+                            {log.processed_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-[10px]">
+                          {log.status_code}
+                        </TableCell>
+                        <TableCell className="max-w-[150px] truncate text-[10px] text-destructive">
+                          {log.error_message || "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-[10px]"
+                            onClick={() => {
+                              console.log(log.payload);
+                              toast({
+                                title: "Payload copiado para o console",
+                                description: "Verifique o console do navegador para detalhes.",
+                              });
+                            }}
+                          >
+                            Ver JSON
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </main>
   );
