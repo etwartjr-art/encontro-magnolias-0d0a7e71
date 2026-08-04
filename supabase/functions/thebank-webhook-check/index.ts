@@ -16,8 +16,7 @@ Deno.serve(async (req) => {
   try {
     const envVars = [
       "SUPABASE_URL",
-      "SUPABASE_SERVICE_ROLE_KEY",
-      "THEBANK_WEBHOOK_SECRET" // Adicionando como placeholder para o futuro ou se já existir
+      "SUPABASE_SERVICE_ROLE_KEY"
     ];
 
     const results = envVars.map(name => ({
