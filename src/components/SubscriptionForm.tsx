@@ -97,11 +97,7 @@ export const SubscriptionForm = () => {
 
     const celular13 = toE164Digits(result.data.celular);
     const email = result.data.email.toLowerCase();
-    const checkoutUrl = buildCheckoutUrl(result.data.nome, email, celular13);
-
-    // Abre a aba antes do await para não ser bloqueada.
-    const paymentWindow = window.open(checkoutUrl, "_blank", "noopener,noreferrer");
-
+    
     setLoading(true);
     const { data, error } = await supabase.functions.invoke("criar-inscricao", {
       body: {
@@ -130,12 +126,8 @@ export const SubscriptionForm = () => {
     });
     toast({
       title: "Inscrição registrada 🌸",
-      description: "Abrindo o checkout de pagamento...",
+      description: "Suas informações foram salvas com sucesso.",
     });
-
-    if (!paymentWindow || paymentWindow.closed) {
-      window.location.href = checkoutUrl;
-    }
   };
 
   if (success) {
@@ -211,9 +203,6 @@ export const SubscriptionForm = () => {
         )}
       </Button>
 
-      <p className="mt-6 text-center text-xs tracking-widest uppercase text-sage">
-        PAGAMENTO SEGURO VIA CACTOS
-      </p>
     </form>
   );
 };
@@ -270,7 +259,7 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
     <div className="max-w-2xl mx-auto bg-ivory border border-rose-dusty/40 p-8 md:p-14 text-center shadow-petal animate-fade-up">
       <Heart className="w-10 h-10 mx-auto text-rose-deep mb-6" strokeWidth={1.2} />
       <p className="uppercase tracking-[0.4em] text-xs text-rose-deep mb-4">
-        {isPaid ? "Vaga confirmada" : "Inscrição registrada"}
+        {isPaid ? "Vaga confirmada" : "Nome registrado"}
       </p>
       <h3 className="font-display text-3xl md:text-5xl text-foreground mb-4">
         Que alegria, <span className="italic text-rose-deep">{data.nome.split(" ")[0]}</span>!
@@ -283,7 +272,7 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
           ? "Seu pagamento foi confirmado. Apresente este QR Code na entrada do evento."
           : isRejected
           ? "Não conseguimos confirmar seu pagamento. Você pode tentar novamente pelo botão abaixo."
-          : "Finalize o pagamento na aba aberta. Esta tela atualiza automaticamente assim que o pagamento for confirmado."}
+          : "Sua pré-inscrição foi realizada. Fique atenta para as instruções de pagamento."}
       </p>
 
       {isPaid && ticketToken && (
@@ -306,16 +295,6 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
         <Row label="Código" value={data.id.slice(0, 8).toUpperCase()} />
       </div>
 
-      {!isPaid && data.celular && (
-        <Button
-          onClick={() => window.open(checkoutUrl, "_blank", "noopener,noreferrer")}
-          className="rounded-none px-10 py-6 text-sm tracking-[0.25em] uppercase font-light transition-elegant shadow-petal"
-          style={{ backgroundColor: "#98545B", color: "hsl(var(--primary-foreground))" }}
-        >
-          <ExternalLink className="w-4 h-4 mr-2" />
-          {isRejected ? "Tentar novamente" : "Reabrir checkout"}
-        </Button>
-      )}
 
       <button
         type="button"
