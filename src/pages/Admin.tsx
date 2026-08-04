@@ -153,7 +153,7 @@ const Admin = () => {
     const { data, error } = await supabase
       .from("inscricoes")
       .select(
-        "id, nome, email, celular, valor, status, metodo_pagamento, pago_em, criado_em, atualizado_em"
+        "id, nome, email, celular, valor, status, metodo_pagamento, pago_em, criado_em, atualizado_em, comprovante_url"
       )
       .order("pago_em", { ascending: false, nullsFirst: false });
 
@@ -299,6 +299,7 @@ const Admin = () => {
       "Status",
       "Método",
       "Pago em",
+      "Comprovante",
     ];
     const rows = filtered.map((i) => {
       const liquido = Number(i.valor);
@@ -313,6 +314,7 @@ const Admin = () => {
         i.status,
         i.metodo_pagamento ?? "",
         i.pago_em ? new Date(i.pago_em).toLocaleString("pt-BR") : "",
+        (i as any).comprovante_url ?? "",
       ];
     });
 
@@ -589,6 +591,20 @@ const Admin = () => {
                       {i.pago_em
                         ? new Date(i.pago_em).toLocaleString("pt-BR")
                         : "—"}
+                    </TableCell>
+                    <TableCell>
+                      {(i as any).comprovante_url ? (
+                        <a 
+                          href={(i as any).comprovante_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-rose-deep hover:underline text-xs flex items-center gap-1"
+                        >
+                          <Download className="w-3 h-3" /> Ver
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">-</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
