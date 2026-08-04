@@ -36,6 +36,17 @@ import {
   History,
 } from "lucide-react";
 
+type WebhookLog = {
+  id: string;
+  created_at: string;
+  payload: any;
+  status_code: number;
+  method: string;
+  processed_status: string;
+  error_message: string;
+  event_type: string;
+};
+
 type WebhookDiag = {
   ok: boolean;
   endpoint?: string;
@@ -66,10 +77,10 @@ type Inscricao = {
   valor: number;
   status: StatusInscricao;
   metodo_pagamento: string | null;
-  
   pago_em: string | null;
   criado_em: string;
   atualizado_em: string;
+  comprovante_url?: string;
 };
 
 const STATUS_OPTIONS: { value: StatusInscricao | "todos"; label: string }[] = [
