@@ -16,7 +16,8 @@ const supabase = createClient(
 
 const PHONE_RE = /^55\d{10,11}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const VALOR = 44.9;
+const VALOR_BRUTO = 44.9;
+const VALOR_LIQUIDO = 41.56;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -35,7 +36,7 @@ Deno.serve(async (req) => {
 
   const { data, error } = await supabase
     .from("inscricoes")
-    .insert({ nome, email, celular, valor: VALOR })
+    .insert({ nome, email, celular, valor: VALOR_BRUTO, valor_liquido: VALOR_LIQUIDO })
     .select("id, nome, email, celular")
     .single();
 

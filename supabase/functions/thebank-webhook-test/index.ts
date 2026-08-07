@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
   });
   if (!isAdmin) return json({ error: "forbidden" }, 403);
 
-  const endpoint = `${SUPABASE_URL}/functions/v1/thebank-webhook`;
+  const endpoint = `${SUPABASE_URL.split("//")[0]}//${SUPABASE_URL.split("//")[1].split(".")[0]}.functions.supabase.co/thebank-webhook`;
 
   const call = async (payload: Record<string, unknown>) => {
     const started = Date.now();
