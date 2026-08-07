@@ -41,7 +41,10 @@ Deno.serve(async (req) => {
     try {
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-thebank-token": Deno.env.get("THEBANK_WEBHOOK_TOKEN") ?? Deno.env.get("Webhooks_the_bank") ?? "",
+        },
         body: JSON.stringify(payload),
       });
       const text = await res.text();
