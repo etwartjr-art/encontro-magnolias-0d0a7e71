@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
         logs: !logError,
         error: dbError?.message || logError?.message || null
       },
-      webhook_url: `https://${Deno.env.get("SUPABASE_PROJECT_REF") || "seu-projeto"}.supabase.co/functions/v1/thebank-webhook`
+      webhook_url: `https://${Deno.env.get("SUPABASE_URL")?.split("//")[1]?.split(".")[0] || "seu-projeto"}.functions.supabase.co/thebank-webhook`
     };
 
     return new Response(JSON.stringify(diagnostico, null, 2), {
