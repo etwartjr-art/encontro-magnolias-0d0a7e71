@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-thebank-token, x-thebank-signature",
 };
 
 const supabase = createClient(
@@ -10,15 +10,65 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+const SECRET = Deno.env.get("THEBANK_WEBHOOK_TOKEN") ?? Deno.env.get("Webhooks_the_bank") ?? "";
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+async function hmacHex(secret: string, raw: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(raw));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+
+  // Fail-closed: sem segredo configurado o webhook não processa nada.
+  if (!SECRET) {
+    console.error("THEBANK_WEBHOOK_TOKEN not configured");
+    return json({ error: "webhook_not_configured" }, 503);
+  }
+
+  const raw = await req.text();
+
+  const url = new URL(req.url);
+  const provided =
+    req.headers.get("x-thebank-token") ??
+    url.searchParams.get("token") ??
+    (req.headers.get("Authorization")?.startsWith("Bearer ")
+      ? req.headers.get("Authorization")!.slice(7)
+      : null);
+
+  const signature = (req.headers.get("x-thebank-signature") ?? "").replace(/^sha256=/, "").toLowerCase();
+
+  let authorized = false;
+  if (provided && provided === SECRET) authorized = true;
+  if (!authorized && signature) {
+    authorized = signature === (await hmacHex(SECRET, raw));
+  }
+
+  if (!authorized) {
+    console.warn("Rejected unauthenticated The Bank webhook request");
+    return json({ error: "unauthorized" }, 401);
+  }
 
   let body: any = null;
   let processedStatus = "success";
   let errorMessage = "";
-  
+
   try {
-    const payload = await req.json();
+    const payload = JSON.parse(raw);
     body = payload;
     console.log("The Bank Webhook received:", JSON.stringify(payload, null, 2));
 
@@ -26,8 +76,7 @@ Deno.serve(async (req) => {
     const status = (payload.status || payload.payment_status || "").toUpperCase();
     const email = payload.customer?.email?.toLowerCase() || payload.email?.toLowerCase();
     const proofUrl = payload.proof_url || payload.receipt_url || payload.comprovante_url;
-    const eventType = payload.event || payload.type || (status ? `payment_${status.toLowerCase()}` : "unknown");
-    
+
     const isPaid = ["PAID", "CONFIRMED", "APPROVED", "SUCCESS", "COMPLETED", "PAGO"].includes(status);
 
     if (isPaid) {
@@ -35,16 +84,15 @@ Deno.serve(async (req) => {
         processedStatus = "error";
         errorMessage = "Missing identifier (email or id)";
       } else {
-        const updateData = { 
-          status: "pago", 
+        const updateData = {
+          status: "pago",
           pago_em: new Date().toISOString(),
           metodo_pagamento: "thebank",
           thebank_id: thebankId,
           thebank_payload: payload,
-          comprovante_url: proofUrl
+          comprovante_url: proofUrl,
         };
-        console.log("Attempting to update inscription with data:", JSON.stringify(updateData, null, 2));
-        
+
         let query = supabase.from("inscricoes").update(updateData);
 
         if (thebankId) {
@@ -65,9 +113,6 @@ Deno.serve(async (req) => {
         } else if (!updated || updated.length === 0) {
           processedStatus = "no_match";
           errorMessage = `No pending inscription found for email: ${email} or id: ${thebankId}`;
-          console.log(errorMessage);
-        } else {
-          console.log(`Successfully updated inscription for ${email}. New status: pago`);
         }
       }
     } else {
@@ -75,35 +120,27 @@ Deno.serve(async (req) => {
       errorMessage = `Status ${status} is not considered paid`;
     }
 
-    // Log the webhook
     await supabase.from("thebank_webhook_logs").insert({
       payload: body,
       status_code: 200,
       method: req.method,
       processed_status: processedStatus,
       error_message: errorMessage,
-      event_type: payload.event || payload.type || (status ? `payment_${status.toLowerCase()}` : "unknown")
+      event_type: payload.event || payload.type || (status ? `payment_${status.toLowerCase()}` : "unknown"),
     });
 
-    return new Response(JSON.stringify({ success: true, processedStatus }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ success: true, processedStatus });
   } catch (error) {
     console.error("Webhook error:", error);
-    
-    // Log error
+
     await supabase.from("thebank_webhook_logs").insert({
       payload: body,
       status_code: 400,
       method: req.method,
       processed_status: "error",
-      error_message: error.message
+      error_message: (error as Error).message,
     });
 
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
+    return json({ error: "invalid_request" }, 400);
   }
 });
-
