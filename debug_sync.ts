@@ -1,5 +1,5 @@
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -9,7 +9,6 @@ const supabase = createClient(
 async function checkSync() {
   console.log("Verificando logs de webhook e inscrições pendentes...");
   
-  // 1. Verificar logs que falharam por 'no_match'
   const { data: logs } = await supabase
     .from("thebank_webhook_logs")
     .select("*")
@@ -24,26 +23,24 @@ async function checkSync() {
       const email = (log.payload?.customer?.email || log.payload?.email || "").toLowerCase().trim();
       const txId = log.payload?.id || log.payload?.transaction_id;
       
-      console.log(`Analisando log: ${log.id} | Email: ${email} | TX: ${txId}`);
+      console.log(`Analisando log: ${log.id} | Email Webhook: "${email}" | TX: ${txId}`);
       
-      // 2. Tentar encontrar a inscrição manualmente
       const { data: inscricoes } = await supabase
         .from("inscricoes")
         .select("*")
         .ilike("email", `%${email}%`);
         
       if (inscricoes && inscricoes.length > 0) {
-        console.log(`  -> Encontradas ${inscricoes.length} inscrições possíveis para este e-mail.`);
+        console.log(`  -> Encontradas ${inscricoes.length} inscrições possíveis.`);
         inscricoes.forEach(i => {
-          console.log(`     ID: ${i.id} | Status: ${i.status} | Email Real: ${i.email}`);
+          console.log(`     ID: ${i.id} | Status: ${i.status} | Email Banco: "${i.email}"`);
         });
       } else {
-        console.log(`  -> Nenhuma inscrição encontrada no banco para o e-mail ${email}`);
+        console.log(`  -> Nenhuma inscrição encontrada no banco para o e-mail "${email}"`);
       }
     }
   }
 
-  // 3. Verificar se as inscrições pendentes recentes têm algo em comum
   const { data: pendentes } = await supabase
     .from("inscricoes")
     .select("*")
@@ -53,7 +50,7 @@ async function checkSync() {
     
   console.log("\nInscrições pendentes recentes:");
   pendentes?.forEach(p => {
-    console.log(`- ${p.nome} (${p.email}) - Criada em: ${p.criado_em}`);
+    console.log(`- ${p.nome} | Email: "${p.email}" | Criada em: ${p.criado_em}`);
   });
 }
 
