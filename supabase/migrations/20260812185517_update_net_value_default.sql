@@ -1,0 +1,1 @@
+ALTER TABLE public.inscricoes ALTER COLUMN valor_liquido SET DEFAULT 40.61; UPDATE public.inscricoes SET valor_liquido = 40.61 WHERE status = 'pago' AND valor = 44.90 AND (valor_liquido = 0 OR valor_liquido = 41.56);
