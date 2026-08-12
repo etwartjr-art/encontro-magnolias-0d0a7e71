@@ -13,7 +13,7 @@ const supabase = createClient(
 const SECRET = Deno.env.get("THEBANK_WEBHOOK_TOKEN") ?? Deno.env.get("Webhooks_the_bank") ?? "";
 
 // Valor líquido padrão quando o provedor não informa o valor recebido.
-const VALOR_LIQUIDO = 41.56;
+const VALOR_LIQUIDO = 40.61;
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {

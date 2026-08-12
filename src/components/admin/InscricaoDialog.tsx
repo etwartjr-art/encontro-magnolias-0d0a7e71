@@ -54,7 +54,7 @@ export const InscricaoDialog = ({
     email: "",
     celular: "",
     valor: 44.9,
-    valor_liquido: 41.56,
+    valor_liquido: 40.61,
     status: "pendente",
   });
 
@@ -67,7 +67,7 @@ export const InscricaoDialog = ({
         email: "",
         celular: "",
         valor: 44.9,
-        valor_liquido: 41.56,
+        valor_liquido: 40.61,
         status: "pendente",
       });
     }
@@ -134,7 +134,7 @@ export const InscricaoDialog = ({
                   setFormData({ 
                     ...formData, 
                     valor: val,
-                    valor_liquido: val * 0.9256 // Mantendo a proporção aproximada
+                    valor_liquido: val * 0.9044 // Mantendo a proporção R$ 44,90 -> R$ 40,61
                   });
                 }}
                 required
