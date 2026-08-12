@@ -580,7 +580,6 @@ const Admin = () => {
               )}
               Testar webhook
             </Button>
-            </Button>
             <Button
               variant="outline"
               size="sm"
