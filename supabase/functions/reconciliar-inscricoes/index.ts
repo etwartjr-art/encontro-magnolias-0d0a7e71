@@ -1,14 +1,19 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-client@2.45.1"
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const VALOR_BRUTO = 44.90;
 const VALOR_LIQUIDO = 40.61;
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
-serve(async (req) => {
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+  });
+
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS })
   }
@@ -17,20 +22,19 @@ serve(async (req) => {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    );
 
     // Verificar se é admin
-    const authHeader = req.headers.get('Authorization')!
-    const { data: { user }, error: userError } = await createClient(
+    const authHeader = req.headers.get('Authorization')!;
+    const userClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    ).auth.getUser(authHeader.replace('Bearer ', ''))
+    );
+    
+    const { data: { user }, error: userError } = await userClient.auth.getUser(authHeader.replace('Bearer ', ''));
 
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Não autorizado' }), {
-        status: 401,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-      })
+      return json({ error: 'Não autorizado' }, 401);
     }
 
     const { data: roleData } = await supabaseClient
@@ -38,23 +42,22 @@ serve(async (req) => {
       .select('role')
       .eq('user_id', user.id)
       .eq('role', 'admin')
-      .maybeSingle()
+      .maybeSingle();
 
     if (!roleData) {
-      return new Response(JSON.stringify({ error: 'Acesso negado' }), {
-        status: 403,
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-      })
+      return json({ error: 'Acesso negado' }, 403);
     }
 
     console.log("Iniciando reconciliação em lote...");
 
     // 1. Corrigir inscrições pagas com valor líquido zero ou incorreto para o valor padrão de 44.90
+    // Filtramos por valor bruto 44.90 e valor líquido que seja nulo, zero, ou o antigo incorreto 41.56
     const { data: toUpdate, error: fetchError } = await supabaseClient
       .from('inscricoes')
       .select('id, valor, valor_liquido, status')
       .eq('status', 'pago')
-      .or(`valor_liquido.is.null,valor_liquido.eq.0,valor_liquido.eq.41.56`)
+      .eq('valor', VALOR_BRUTO)
+      .or(`valor_liquido.is.null,valor_liquido.eq.0,valor_liquido.eq.41.56`);
 
     if (fetchError) throw fetchError;
 
@@ -63,34 +66,22 @@ serve(async (req) => {
       console.log(`Encontradas ${toUpdate.length} inscrições para atualizar.`);
       
       for (const item of toUpdate) {
-        // Se o valor for o padrão (44.90), atualizamos para o novo líquido padrão (40.61)
-        if (Number(item.valor) === VALOR_BRUTO) {
-          const { error: updateError } = await supabaseClient
-            .from('inscricoes')
-            .update({ valor_liquido: VALOR_LIQUIDO })
-            .eq('id', item.id);
-          
-          if (!updateError) updatedCount++;
-        }
+        const { error: updateError } = await supabaseClient
+          .from('inscricoes')
+          .update({ valor_liquido: VALOR_LIQUIDO })
+          .eq('id', item.id);
+        
+        if (!updateError) updatedCount++;
       }
     }
 
-    return new Response(
-      JSON.stringify({ 
-        message: 'Reconciliação concluída', 
-        total_processado: toUpdate?.length || 0,
-        total_atualizado: updatedCount 
-      }),
-      {
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
+    return json({ 
+      message: 'Reconciliação concluída', 
+      total_processado: toUpdate?.length || 0,
+      total_atualizado: updatedCount 
+    });
   } catch (error) {
     console.error("Erro na reconciliação:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-      status: 400,
-    })
+    return json({ error: error.message }, 400);
   }
-})
+});
