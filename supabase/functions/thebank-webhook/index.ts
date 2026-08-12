@@ -101,10 +101,13 @@ Deno.serve(async (req) => {
 
         let query = supabase.from("inscricoes").update(updateData);
 
+        // Fallback: se não encontrar pelo ID do The Bank ou e-mail exato, 
+        // tenta uma busca mais flexível para capturar casos onde o e-mail pode ter espaços
+        // ou ser ligeiramente diferente (embora o ideal seja correspondência exata).
         if (thebankId) {
-          query = query.or(`thebank_id.eq.${thebankId},email.eq.${email}`);
+          query = query.or(`thebank_id.eq.${thebankId},email.ilike.${email}`);
         } else {
-          query = query.eq("email", email);
+          query = query.ilike("email", email);
         }
 
         const { data: updated, error } = await query
