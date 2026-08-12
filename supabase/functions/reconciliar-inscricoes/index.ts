@@ -25,7 +25,11 @@ Deno.serve(async (req) => {
     );
 
     // Verificar se é admin
-    const authHeader = req.headers.get('Authorization')!;
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return json({ error: 'Faltando cabeçalho de autorização' }, 401);
+    }
+
     const userClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -51,7 +55,6 @@ Deno.serve(async (req) => {
     console.log("Iniciando reconciliação em lote...");
 
     // 1. Corrigir inscrições pagas com valor líquido zero ou incorreto para o valor padrão de 44.90
-    // Filtramos por valor bruto 44.90 e valor líquido que seja nulo, zero, ou o antigo incorreto 41.56
     const { data: toUpdate, error: fetchError } = await supabaseClient
       .from('inscricoes')
       .select('id, valor, valor_liquido, status')
