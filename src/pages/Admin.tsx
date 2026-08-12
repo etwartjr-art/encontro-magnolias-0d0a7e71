@@ -154,6 +154,7 @@ const Admin = () => {
   );
   const [savingStatus, setSavingStatus] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
   const [checkingConfig, setCheckingConfig] = useState(false);
   const [configStatus, setConfigStatus] = useState<any>(null);
   const [webhookResult, setWebhookResult] = useState<WebhookDiag | null>(null);
@@ -161,6 +162,7 @@ const Admin = () => {
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [activeTab, setActiveTab] = useState("inscricoes");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isReconcileConfirmOpen, setIsReconcileConfirmOpen] = useState(false);
   const [editingInscricao, setEditingInscricao] = useState<Inscricao | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -244,6 +246,30 @@ const Admin = () => {
       });
     } finally {
       setTestingWebhook(false);
+    }
+  };
+
+  const handleReconcile = async () => {
+    setReconciling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("reconciliar-inscricoes");
+      if (error) throw error;
+      
+      toast({
+        title: "Reconciliação concluída",
+        description: `${data.total_atualizado} inscrições foram atualizadas de um total de ${data.total_processado} verificadas.`,
+      });
+      await loadData();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      toast({
+        title: "Erro na reconciliação",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setReconciling(false);
+      setIsReconcileConfirmOpen(false);
     }
   };
 
@@ -553,6 +579,20 @@ const Admin = () => {
                 <Webhook className="w-4 h-4 mr-2" />
               )}
               Testar webhook
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsReconcileConfirmOpen(true)}
+              disabled={reconciling}
+              className="rounded-none uppercase tracking-[0.2em] text-xs"
+            >
+              {reconciling ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              Reconciliar
             </Button>
             <Button
               variant="ghost"
@@ -967,6 +1007,23 @@ const Admin = () => {
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={handleDeleteInscricao} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
             Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog open={isReconcileConfirmOpen} onOpenChange={setIsReconcileConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Reconciliação em Lote</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação irá recalcular o valor líquido (R$ 40,61) de todas as inscrições pagas de R$ 44,90 que estão com o valor incorreto ou zerado. Deseja continuar?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleReconcile} className="bg-rose-deep text-white hover:bg-rose-deep/90">
+            Confirmar Reconciliação
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
