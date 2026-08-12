@@ -84,13 +84,16 @@ Deno.serve(async (req) => {
         processedStatus = "error";
         errorMessage = "Missing identifier (email or id)";
       } else {
-        const updateData = {
+        const rawNet = payload.net_amount ?? payload.valor_liquido ?? payload.amount_net;
+        const net = Number(rawNet);
+        const updateData: Record<string, unknown> = {
           status: "pago",
           pago_em: new Date().toISOString(),
           metodo_pagamento: "thebank",
           thebank_id: thebankId,
           thebank_payload: payload,
           comprovante_url: proofUrl,
+          valor_liquido: Number.isFinite(net) && net > 0 ? net : VALOR_LIQUIDO,
         };
 
         let query = supabase.from("inscricoes").update(updateData);
