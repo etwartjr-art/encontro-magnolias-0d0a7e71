@@ -155,6 +155,7 @@ const Admin = () => {
   const [savingStatus, setSavingStatus] = useState<string | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [reconciling, setReconciling] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [checkingConfig, setCheckingConfig] = useState(false);
   const [configStatus, setConfigStatus] = useState<any>(null);
   const [webhookResult, setWebhookResult] = useState<WebhookDiag | null>(null);
@@ -593,6 +594,20 @@ const Admin = () => {
                 <RefreshCw className="w-4 h-4 mr-2" />
               )}
               Reconciliar
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSyncPayments}
+              disabled={syncing}
+              className="rounded-none uppercase tracking-[0.2em] text-xs"
+            >
+              {syncing ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              Sincronizar pagamentos
             </Button>
             <Button
               variant="ghost"
