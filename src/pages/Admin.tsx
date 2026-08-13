@@ -250,6 +250,30 @@ const Admin = () => {
     }
   };
 
+  const handleSyncPayments = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-thebank-payments", {
+        body: {},
+      });
+      if (error) throw error;
+      toast({
+        title: data?.ok ? "Sincronização concluída" : "Sincronização indisponível",
+        description: data?.diagnostico ?? "",
+        variant: data?.ok ? undefined : "destructive",
+      });
+      await loadData();
+    } catch (e) {
+      toast({
+        title: "Erro ao sincronizar",
+        description: e instanceof Error ? e.message : String(e),
+        variant: "destructive",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleReconcile = async () => {
     setReconciling(true);
     try {
