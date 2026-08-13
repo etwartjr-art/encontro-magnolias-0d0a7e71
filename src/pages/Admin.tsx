@@ -900,48 +900,96 @@ const Admin = () => {
       </TabsContent>
 
           <TabsContent value="logs">
-            <div className="mb-6 space-y-4">
+            <div className="mb-6 space-y-6">
               {configStatus && (
-                <Alert variant={configStatus.ok ? "default" : "destructive"} className="rounded-none border-rose-dusty/40">
-                  {configStatus.ok ? <CheckCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-                  <AlertTitle className="uppercase tracking-wider text-xs">Status da Infraestrutura</AlertTitle>
-                  <AlertDescription className="text-xs mt-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="font-semibold mb-1">Webhook URL:</p>
-                        <code className="bg-muted p-1 block break-all">{configStatus.webhook_url}</code>
+                <div className="bg-ivory border border-rose-dusty/40 p-6 shadow-soft">
+                  <div className="flex items-center gap-2 mb-4 text-rose-deep">
+                    <Webhook className="w-5 h-5" strokeWidth={1.5} />
+                    <h3 className="uppercase tracking-[0.2em] text-sm font-medium">Guia de Configuração Webhook</h3>
+                  </div>
+                  
+                  <div className="space-y-6 text-sm">
+                    <section className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-rose-deep text-white rounded-full w-5 h-5 p-0 flex items-center justify-center text-[10px]">1</Badge>
+                        <p className="font-medium">Copie a URL do Webhook</p>
                       </div>
-                      <div>
-                        <p className="font-semibold mb-1">Variáveis de Ambiente:</p>
-                        <ul className="space-y-1">
-                          {configStatus.env.map((ev: any) => (
-                            <li key={ev.name} className="flex items-center gap-2">
-                              <Badge variant={ev.configured ? "outline" : "destructive"} className="h-4 text-[9px]">
-                                {ev.configured ? "OK" : "MISSING"}
-                              </Badge>
-                              {ev.name}
-                            </li>
-                          ))}
-                        </ul>
+                      <div className="bg-muted p-3 border border-rose-dusty/20 flex items-center justify-between gap-4 group">
+                        <code className="text-xs break-all font-mono">{configStatus.webhook_url}</code>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 text-[10px] uppercase tracking-wider shrink-0"
+                          onClick={() => {
+                            navigator.clipboard.writeText(configStatus.webhook_url);
+                            toast({ title: "URL copiada!", description: "Cole esta URL no painel do The Bank." });
+                          }}
+                        >
+                          Copiar
+                        </Button>
                       </div>
-                    </div>
-                  </AlertDescription>
-                </Alert>
+                    </section>
+
+                    <section className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-rose-deep text-white rounded-full w-5 h-5 p-0 flex items-center justify-center text-[10px]">2</Badge>
+                        <p className="font-medium">Configure no Painel The Bank</p>
+                      </div>
+                      <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-7 text-xs">
+                        <li>Acesse o menu de <strong>Configurações / Webhooks</strong> na plataforma The Bank.</li>
+                        <li>Clique em "Adicionar novo Webhook".</li>
+                        <li>Cole a URL acima no campo "URL de destino".</li>
+                        <li>Selecione o evento <strong>"Transação Paga"</strong> (ou similar).</li>
+                        <li>Salve as configurações.</li>
+                      </ul>
+                    </section>
+
+                    <section className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-rose-deep text-white rounded-full w-5 h-5 p-0 flex items-center justify-center text-[10px]">3</Badge>
+                        <p className="font-medium">Valide a Conexão</p>
+                      </div>
+                      <div className="ml-7 flex flex-wrap items-center gap-3">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleTestWebhook} 
+                          disabled={testingWebhook}
+                          className="rounded-none uppercase tracking-[0.2em] text-[10px] h-8"
+                        >
+                          {testingWebhook ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : <Webhook className="w-3 h-3 mr-2" />}
+                          Simular Evento de Teste
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={handleCheckConfig} 
+                          disabled={checkingConfig}
+                          className="text-[10px] h-8 rounded-none uppercase tracking-wider"
+                        >
+                          {checkingConfig && <Loader2 className="w-3 h-3 mr-2 animate-spin" />}
+                          Revalidar Infraestrutura
+                        </Button>
+                      </div>
+                      
+                      {!configStatus.ok && (
+                        <div className="ml-7 mt-4 p-3 border border-destructive/20 bg-destructive/5 flex items-start gap-3">
+                          <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-destructive font-medium text-xs uppercase tracking-wider">Atenção</p>
+                            <p className="text-[11px] text-destructive/80 mt-1">
+                              Algumas variáveis de ambiente estão ausentes ({configStatus.env.filter((e: any) => !e.configured).map((e: any) => e.name).join(", ")}). 
+                              Isso pode impedir que pagamentos reais sejam processados.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  </div>
+                </div>
               )}
-              
-              <div className="flex justify-end">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleCheckConfig} 
-                  disabled={checkingConfig}
-                  className="text-[10px] h-7 rounded-none uppercase tracking-wider"
-                >
-                  {checkingConfig && <Loader2 className="w-3 h-3 mr-2 animate-spin" />}
-                  Revalidar Configuração
-                </Button>
-              </div>
             </div>
+
 
             <div className="bg-ivory border border-rose-dusty/40 shadow-petal overflow-x-auto">
               <Table>
