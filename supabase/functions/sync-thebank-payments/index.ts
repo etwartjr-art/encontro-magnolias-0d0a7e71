@@ -1,109 +1,175 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const THEBANK_API_KEY = Deno.env.get("THEBANK_API_KEY"); // O usuário precisará configurar esta secret
+const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const THEBANK_API_KEY = Deno.env.get("THEBANK_API_KEY") ?? "";
+const CRON_SECRET = Deno.env.get("SYNC_CRON_SECRET") ?? "";
 const VALOR_LIQUIDO_PADRAO = 40.61;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const PAID = ["PAID", "CONFIRMED", "APPROVED", "SUCCESS", "COMPLETED", "PAGO", "PAGA"];
+
+// Endpoints candidatos da plataforma (a API do The Bank não é pública/documentada).
+const ENDPOINTS = [
+  "https://api.thebank.com.br/v1/transactions",
+  "https://api.thebank.com.br/v1/sales",
+  "https://api.thebank.com.br/api/v1/transactions",
+];
+
+async function isAdminRequest(req: Request): Promise<boolean> {
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (!authHeader.startsWith("Bearer ")) return false;
+  const token = authHeader.slice(7);
+  if (token === SERVICE_ROLE) return true;
+
+  const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: userData } = await userClient.auth.getUser();
+  if (!userData?.user) return false;
+  const { data: isAdmin } = await admin.rpc("has_role", {
+    _user_id: userData.user.id,
+    _role: "admin",
+  });
+  return !!isAdmin;
+}
 
 Deno.serve(async (req) => {
-  // Apenas chamadas autenticadas via CRON ou manualmente com service role
-  const authHeader = req.headers.get("Authorization");
-  if (authHeader !== `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
-     // Se for do PG_CRON, ele pode passar o segredo via query param se configurado, 
-     // mas aqui vamos simplificar para service_role ou verificar um segredo específico.
-     const url = new URL(req.url);
-     const cronSecret = Deno.env.get("SYNC_CRON_SECRET");
-     if (!cronSecret || url.searchParams.get("secret") !== cronSecret) {
-       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
-     }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const url = new URL(req.url);
+  const viaCron = !!CRON_SECRET && url.searchParams.get("secret") === CRON_SECRET;
+
+  if (!viaCron && !(await isAdminRequest(req))) {
+    return json({ error: "unauthorized" }, 401);
   }
+
+  const diagnostico: Record<string, unknown> = {};
 
   if (!THEBANK_API_KEY) {
-    console.error("THEBANK_API_KEY not configured");
-    return new Response(JSON.stringify({ error: "The Bank API Key missing" }), { status: 500 });
+    return json({
+      ok: false,
+      diagnostico:
+        "A chave da API da plataforma (THEBANK_API_KEY) não está configurada. Sem ela só o webhook consegue atualizar pagamentos.",
+      atualizados: 0,
+    });
   }
 
-  try {
-    // 1. Buscar inscrições pendentes
-    const { data: pendentes, error: fetchError } = await supabase
-      .from("inscricoes")
-      .select("*")
-      .eq("status", "pendente")
-      .order("criado_em", { ascending: false })
-      .limit(50);
+  // 1) Inscrições pendentes
+  const { data: pendentes, error: fetchError } = await admin
+    .from("inscricoes")
+    .select("id, nome, email, valor, criado_em")
+    .eq("status", "pendente")
+    .order("criado_em", { ascending: false })
+    .limit(100);
 
-    if (fetchError) throw fetchError;
-    if (!pendentes || pendentes.length === 0) {
-      return new Response(JSON.stringify({ message: "Nenhuma inscrição pendente para sincronizar" }), { status: 200 });
-    }
+  if (fetchError) return json({ ok: false, erro: fetchError.message }, 500);
+  if (!pendentes?.length) {
+    return json({ ok: true, atualizados: 0, diagnostico: "Nenhuma inscrição pendente." });
+  }
 
-    let atualizados = 0;
-    const logs = [];
+  // 2) Descobre qual endpoint responde com a chave configurada
+  let endpointOk: string | null = null;
+  const tentativas: { endpoint: string; status: number; corpo: string }[] = [];
 
-    for (const inscricao of pendentes) {
-      try {
-        // 2. Consultar status no The Bank via API
-        // Nota: O endpoint exato depende da documentação do The Bank. 
-        // Geralmente é algo como GET /v1/transactions?email=... ou similar.
-        // Como não temos a doc completa, vamos implementar uma busca por email/identificador.
-        
-        const response = await fetch(`https://api.thebank.com.br/v1/transactions?email=${encodeURIComponent(inscricao.email)}`, {
-          headers: {
-            "Authorization": `Bearer ${THEBANK_API_KEY}`,
-            "Content-Type": "application/json"
-          }
-        });
-
-        if (!response.ok) {
-           console.error(`Erro ao consultar The Bank para ${inscricao.email}: ${response.status}`);
-           continue;
-        }
-
-        const data = await response.json();
-        const transacoes = data.data || data; // Ajustar conforme formato real
-
-        // Procurar transação paga correspondente
-        const paga = Array.isArray(transacoes) ? transacoes.find((t: any) => 
-          ["PAID", "CONFIRMED", "APPROVED", "SUCCESS", "COMPLETED", "PAGO"].includes((t.status || "").toUpperCase()) &&
-          Number(t.amount) >= Number(inscricao.valor)
-        ) : null;
-
-        if (paga) {
-          const netAmount = paga.net_amount ?? paga.valor_liquido ?? paga.amount_net;
-          const net = Number(netAmount);
-
-          const { error: updateError } = await supabase
-            .from("inscricoes")
-            .update({
-              status: "pago",
-              pago_em: paga.paid_at || new Date().toISOString(),
-              metodo_pagamento: "thebank_sync",
-              thebank_id: paga.id || paga.transaction_id,
-              thebank_payload: paga,
-              valor_liquido: Number.isFinite(net) && net > 0 ? net : VALOR_LIQUIDO_PADRAO,
-            })
-            .eq("id", inscricao.id);
-
-          if (!updateError) {
-            atualizados++;
-            logs.push({ email: inscricao.email, status: "pago" });
-          }
-        }
-      } catch (e) {
-        console.error(`Erro processando ${inscricao.email}:`, e);
+  for (const base of ENDPOINTS) {
+    try {
+      const res = await fetch(base, {
+        headers: {
+          Authorization: `Bearer ${THEBANK_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const corpo = (await res.text()).slice(0, 300);
+      tentativas.push({ endpoint: base, status: res.status, corpo });
+      if (res.ok) {
+        endpointOk = base;
+        break;
       }
+    } catch (e) {
+      tentativas.push({ endpoint: base, status: 0, corpo: String(e).slice(0, 200) });
     }
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      processados: pendentes.length, 
-      atualizados,
-      logs
-    }), { status: 200 });
-
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
+  diagnostico.tentativas = tentativas;
+
+  if (!endpointOk) {
+    return json({
+      ok: false,
+      atualizados: 0,
+      pendentes: pendentes.length,
+      diagnostico:
+        "Nenhum endpoint da API da plataforma respondeu com a chave configurada. Enquanto isso, o webhook é a única via automática de atualização.",
+      detalhes: diagnostico,
+    });
+  }
+
+  // 3) Consulta cada pendente e atualiza os pagos
+  let atualizados = 0;
+  const resultados: unknown[] = [];
+
+  for (const inscricao of pendentes) {
+    try {
+      const res = await fetch(
+        `${endpointOk}?email=${encodeURIComponent(inscricao.email)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${THEBANK_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+      const lista = Array.isArray(data) ? data : (data.data ?? data.items ?? []);
+      const paga = Array.isArray(lista)
+        ? lista.find((t: Record<string, unknown>) =>
+            PAID.includes(String(t.status ?? t.payment_status ?? "").toUpperCase()),
+          )
+        : null;
+
+      if (!paga) continue;
+
+      const net = Number(paga.net_amount ?? paga.valor_liquido ?? paga.amount_net);
+      const { error: updErr } = await admin
+        .from("inscricoes")
+        .update({
+          status: "pago",
+          pago_em: paga.paid_at ?? new Date().toISOString(),
+          metodo_pagamento: "thebank",
+          thebank_id: paga.id ?? paga.transaction_id ?? null,
+          thebank_payload: paga,
+          valor_liquido: Number.isFinite(net) && net > 0 ? net : VALOR_LIQUIDO_PADRAO,
+        })
+        .eq("id", inscricao.id);
+
+      if (!updErr) {
+        atualizados++;
+        resultados.push({ email: inscricao.email, status: "pago" });
+      }
+    } catch (e) {
+      console.error("Erro sincronizando", inscricao.email, e);
+    }
+  }
+
+  return json({
+    ok: true,
+    endpoint: endpointOk,
+    processados: pendentes.length,
+    atualizados,
+    resultados,
+    diagnostico: `${atualizados} de ${pendentes.length} inscrições pendentes foram confirmadas como pagas.`,
+  });
 });
