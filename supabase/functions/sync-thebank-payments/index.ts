@@ -90,31 +90,40 @@ Deno.serve(async (req) => {
     return json({ ok: true, atualizados: 0, diagnostico: "Nenhuma inscrição pendente." });
   }
 
-  // 2) Descobre qual endpoint responde com a chave configurada
+  // 2) Descobre qual endpoint + formato de autenticação respondem com a chave configurada
   let endpointOk: string | null = null;
-  const tentativas: { endpoint: string; status: number; corpo: string }[] = [];
+  let authOk: Record<string, string> | null = null;
+  const tentativas: { endpoint: string; auth: string; status: number; corpo: string }[] = [];
 
   for (const base of ENDPOINTS) {
-    try {
-      const res = await fetch(base, {
-        headers: {
-          Authorization: `Bearer ${THEBANK_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const corpo = (await res.text()).slice(0, 300);
-      tentativas.push({ endpoint: base, status: res.status, corpo });
-      if (res.ok) {
-        endpointOk = base;
-        break;
+    for (const variante of AUTH_VARIANTS) {
+      try {
+        const res = await fetch(base, {
+          headers: { ...variante.headers, "Content-Type": "application/json" },
+        });
+        const corpo = (await res.text()).slice(0, 300);
+        tentativas.push({ endpoint: base, auth: variante.nome, status: res.status, corpo });
+        if (res.ok) {
+          endpointOk = base;
+          authOk = variante.headers;
+          break;
+        }
+      } catch (e) {
+        tentativas.push({
+          endpoint: base,
+          auth: variante.nome,
+          status: 0,
+          corpo: String(e).slice(0, 200),
+        });
       }
-    } catch (e) {
-      tentativas.push({ endpoint: base, status: 0, corpo: String(e).slice(0, 200) });
+      // 404 = caminho inexistente: não adianta tentar outros formatos de auth
+      if (tentativas[tentativas.length - 1]?.status === 404) break;
     }
+    if (endpointOk) break;
   }
   diagnostico.tentativas = tentativas;
 
-  if (!endpointOk) {
+  if (!endpointOk || !authOk) {
     return json({
       ok: false,
       atualizados: 0,
@@ -134,10 +143,7 @@ Deno.serve(async (req) => {
       const res = await fetch(
         `${endpointOk}?email=${encodeURIComponent(inscricao.email)}`,
         {
-          headers: {
-            Authorization: `Bearer ${THEBANK_API_KEY}`,
-            "Content-Type": "application/json",
-          },
+          headers: { ...authOk, "Content-Type": "application/json" },
         },
       );
       if (!res.ok) continue;
