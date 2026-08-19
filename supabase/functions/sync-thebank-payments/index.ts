@@ -136,12 +136,15 @@ Deno.serve(async (req) => {
   diagnostico.tentativas = tentativas;
 
   if (!endpointOk || !authOk) {
+    const chaveRejeitada = tentativas.some((t) => t.status === 401 || t.status === 403);
     return json({
       ok: false,
       atualizados: 0,
       pendentes: pendentes.length,
-      diagnostico:
-        "Nenhum endpoint da API da plataforma respondeu com a chave configurada. Enquanto isso, o webhook é a única via automática de atualização.",
+      motivo: chaveRejeitada ? "chave_rejeitada" : "endpoint_indisponivel",
+      diagnostico: chaveRejeitada
+        ? "A plataforma respondeu, mas recusou a chave de API configurada (401). Gere uma nova chave de API no painel do The Bank e atualize o segredo THEBANK_API_KEY. Enquanto isso, o webhook continua sendo a via automática de atualização."
+        : "A API da plataforma não respondeu em nenhum endereço conhecido. O webhook continua sendo a via automática de atualização — confirme o cadastro da URL do webhook no painel do The Bank.",
       detalhes: diagnostico,
     });
   }
