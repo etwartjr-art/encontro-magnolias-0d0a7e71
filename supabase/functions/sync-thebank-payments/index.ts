@@ -23,10 +23,19 @@ const json = (body: unknown, status = 200) =>
 const PAID = ["PAID", "CONFIRMED", "APPROVED", "SUCCESS", "COMPLETED", "PAGO", "PAGA"];
 
 // Endpoints candidatos da plataforma (a API do The Bank não é pública/documentada).
+// /v1/sales responde 401 sem credencial (existe); os demais respondem 404.
 const ENDPOINTS = [
-  "https://api.thebank.com.br/v1/transactions",
   "https://api.thebank.com.br/v1/sales",
+  "https://api.thebank.com.br/v1/transactions",
   "https://api.thebank.com.br/api/v1/transactions",
+];
+
+// A plataforma pode esperar a chave em formatos diferentes; tentamos todos.
+const AUTH_VARIANTS: { nome: string; headers: Record<string, string> }[] = [
+  { nome: "bearer", headers: { Authorization: `Bearer ${THEBANK_API_KEY}` } },
+  { nome: "x-api-key", headers: { "x-api-key": THEBANK_API_KEY } },
+  { nome: "api-key", headers: { "api-key": THEBANK_API_KEY } },
+  { nome: "authorization-raw", headers: { Authorization: THEBANK_API_KEY } },
 ];
 
 async function isAdminRequest(req: Request): Promise<boolean> {
@@ -38,6 +47,18 @@ async function isAdminRequest(req: Request): Promise<boolean> {
   const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
     global: { headers: { Authorization: authHeader } },
   });
+
+  // Chamada interna (cron) com chave de serviço válida, ainda que diferente da env atual:
+  // uma chave de serviço consegue ler uma tabela protegida por RLS; anon/usuário não.
+  try {
+    const svcProbe = createClient(SUPABASE_URL, token);
+    const { error: probeErr } = await svcProbe
+      .from("thebank_webhook_logs")
+      .select("id")
+      .limit(1);
+    if (!probeErr) return true;
+  } catch (_e) { /* segue para validação de usuário */ }
+
   const { data: userData } = await userClient.auth.getUser();
   if (!userData?.user) return false;
   const { data: isAdmin } = await admin.rpc("has_role", {
@@ -81,37 +102,49 @@ Deno.serve(async (req) => {
     return json({ ok: true, atualizados: 0, diagnostico: "Nenhuma inscrição pendente." });
   }
 
-  // 2) Descobre qual endpoint responde com a chave configurada
+  // 2) Descobre qual endpoint + formato de autenticação respondem com a chave configurada
   let endpointOk: string | null = null;
-  const tentativas: { endpoint: string; status: number; corpo: string }[] = [];
+  let authOk: Record<string, string> | null = null;
+  const tentativas: { endpoint: string; auth: string; status: number; corpo: string }[] = [];
 
   for (const base of ENDPOINTS) {
-    try {
-      const res = await fetch(base, {
-        headers: {
-          Authorization: `Bearer ${THEBANK_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const corpo = (await res.text()).slice(0, 300);
-      tentativas.push({ endpoint: base, status: res.status, corpo });
-      if (res.ok) {
-        endpointOk = base;
-        break;
+    for (const variante of AUTH_VARIANTS) {
+      try {
+        const res = await fetch(base, {
+          headers: { ...variante.headers, "Content-Type": "application/json" },
+        });
+        const corpo = (await res.text()).slice(0, 300);
+        tentativas.push({ endpoint: base, auth: variante.nome, status: res.status, corpo });
+        if (res.ok) {
+          endpointOk = base;
+          authOk = variante.headers;
+          break;
+        }
+      } catch (e) {
+        tentativas.push({
+          endpoint: base,
+          auth: variante.nome,
+          status: 0,
+          corpo: String(e).slice(0, 200),
+        });
       }
-    } catch (e) {
-      tentativas.push({ endpoint: base, status: 0, corpo: String(e).slice(0, 200) });
+      // 404 = caminho inexistente: não adianta tentar outros formatos de auth
+      if (tentativas[tentativas.length - 1]?.status === 404) break;
     }
+    if (endpointOk) break;
   }
   diagnostico.tentativas = tentativas;
 
-  if (!endpointOk) {
+  if (!endpointOk || !authOk) {
+    const chaveRejeitada = tentativas.some((t) => t.status === 401 || t.status === 403);
     return json({
       ok: false,
       atualizados: 0,
       pendentes: pendentes.length,
-      diagnostico:
-        "Nenhum endpoint da API da plataforma respondeu com a chave configurada. Enquanto isso, o webhook é a única via automática de atualização.",
+      motivo: chaveRejeitada ? "chave_rejeitada" : "endpoint_indisponivel",
+      diagnostico: chaveRejeitada
+        ? "A plataforma respondeu, mas recusou a chave de API configurada (401). Gere uma nova chave de API no painel do The Bank e atualize o segredo THEBANK_API_KEY. Enquanto isso, o webhook continua sendo a via automática de atualização."
+        : "A API da plataforma não respondeu em nenhum endereço conhecido. O webhook continua sendo a via automática de atualização — confirme o cadastro da URL do webhook no painel do The Bank.",
       detalhes: diagnostico,
     });
   }
@@ -125,10 +158,7 @@ Deno.serve(async (req) => {
       const res = await fetch(
         `${endpointOk}?email=${encodeURIComponent(inscricao.email)}`,
         {
-          headers: {
-            Authorization: `Bearer ${THEBANK_API_KEY}`,
-            "Content-Type": "application/json",
-          },
+          headers: { ...authOk, "Content-Type": "application/json" },
         },
       );
       if (!res.ok) continue;
