@@ -48,12 +48,15 @@ async function isAdminRequest(req: Request): Promise<boolean> {
     global: { headers: { Authorization: authHeader } },
   });
 
-  // Chamada interna (cron) com chave de serviço válida, ainda que diferente da env atual.
+  // Chamada interna (cron) com chave de serviço válida, ainda que diferente da env atual:
+  // uma chave de serviço consegue ler uma tabela protegida por RLS; anon/usuário não.
   try {
-    const { data: claims } = await userClient.auth.getClaims(token);
-    if ((claims as { claims?: { role?: string } } | null)?.claims?.role === "service_role") {
-      return true;
-    }
+    const svcProbe = createClient(SUPABASE_URL, token);
+    const { error: probeErr } = await svcProbe
+      .from("thebank_webhook_logs")
+      .select("id")
+      .limit(1);
+    if (!probeErr) return true;
   } catch (_e) { /* segue para validação de usuário */ }
 
   const { data: userData } = await userClient.auth.getUser();
