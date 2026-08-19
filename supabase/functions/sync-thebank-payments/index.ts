@@ -47,6 +47,15 @@ async function isAdminRequest(req: Request): Promise<boolean> {
   const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
     global: { headers: { Authorization: authHeader } },
   });
+
+  // Chamada interna (cron) com chave de serviço válida, ainda que diferente da env atual.
+  try {
+    const { data: claims } = await userClient.auth.getClaims(token);
+    if ((claims as { claims?: { role?: string } } | null)?.claims?.role === "service_role") {
+      return true;
+    }
+  } catch (_e) { /* segue para validação de usuário */ }
+
   const { data: userData } = await userClient.auth.getUser();
   if (!userData?.user) return false;
   const { data: isAdmin } = await admin.rpc("has_role", {
