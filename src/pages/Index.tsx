@@ -160,8 +160,14 @@ const Index = () => {
               <h3 className="font-display uppercase tracking-[0.3em] sm:tracking-[0.4em] text-3xl sm:text-4xl md:text-5xl text-rose-deep">
                 Inscrição
               </h3>
-              <p className="mt-3 sm:mt-4 text-sm sm:text-base text-foreground/60 font-light max-w-md mx-auto">
-                Preencha seus dados e venha florescer conosco.
+              <div className="mt-4 sm:mt-6 inline-flex items-center gap-3 px-6 py-3 border-2 border-rose-deep bg-rose-deep/10">
+                <span className="w-2 h-2 rounded-full bg-rose-deep animate-pulse" />
+                <p className="font-display uppercase tracking-[0.25em] text-sm sm:text-base text-rose-deep">
+                  Encerrado
+                </p>
+              </div>
+              <p className="mt-4 sm:mt-6 text-sm sm:text-base text-foreground/60 font-light max-w-md mx-auto">
+                As inscrições para esta edição estão encerradas.
               </p>
             </div>
             <Suspense
