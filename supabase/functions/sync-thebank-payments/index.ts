@@ -23,10 +23,19 @@ const json = (body: unknown, status = 200) =>
 const PAID = ["PAID", "CONFIRMED", "APPROVED", "SUCCESS", "COMPLETED", "PAGO", "PAGA"];
 
 // Endpoints candidatos da plataforma (a API do The Bank não é pública/documentada).
+// /v1/sales responde 401 sem credencial (existe); os demais respondem 404.
 const ENDPOINTS = [
-  "https://api.thebank.com.br/v1/transactions",
   "https://api.thebank.com.br/v1/sales",
+  "https://api.thebank.com.br/v1/transactions",
   "https://api.thebank.com.br/api/v1/transactions",
+];
+
+// A plataforma pode esperar a chave em formatos diferentes; tentamos todos.
+const AUTH_VARIANTS: { nome: string; headers: Record<string, string> }[] = [
+  { nome: "bearer", headers: { Authorization: `Bearer ${THEBANK_API_KEY}` } },
+  { nome: "x-api-key", headers: { "x-api-key": THEBANK_API_KEY } },
+  { nome: "api-key", headers: { "api-key": THEBANK_API_KEY } },
+  { nome: "authorization-raw", headers: { Authorization: THEBANK_API_KEY } },
 ];
 
 async function isAdminRequest(req: Request): Promise<boolean> {
