@@ -77,5 +77,5 @@ Deno.serve(async (req) => {
   const sig = await hmac(payloadB64);
   const token = `${payloadB64}.${sig}`;
 
-  return json({ token, evento: "7º Encontro das Magnólias" });
+  return json({ token, evento: "Encontro das Magnólias" });
 });
