@@ -18,7 +18,7 @@ const Index = () => {
           src="/img/magnolia-banner-640.webp"
           srcSet="/img/magnolia-banner-640.webp 640w, /img/magnolia-banner-960.webp 960w, /__l5e/assets-v1/eb6a78d3-453c-4ca9-a9a8-a4e455d51f66/magnolia-banner-v6.webp 1280w"
           sizes="100vw"
-          alt="7º Encontro das Magnólias"
+          alt="Encontro das Magnólias"
           width={1280}
           height={854}
           fetchPriority="high"

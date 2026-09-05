@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Endereço oficial do 3º Encontro das Magnólias.
+ * Endereço oficial do Encontro das Magnólias.
  * Fonte única de verdade — usar SEMPRE estes campos para exibir o endereço,
  * gerar QR codes, links de mapa, metadados, etc.
  */
