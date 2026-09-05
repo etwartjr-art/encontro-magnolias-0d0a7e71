@@ -16,7 +16,7 @@ const Index = () => {
       <header className="relative w-full overflow-hidden">
         <img
           src="/img/magnolia-banner-640.webp"
-          srcSet="/img/magnolia-banner-640.webp 640w, /img/magnolia-banner-960.webp 960w, /__l5e/assets-v1/9e919225-7b23-460f-bcf5-3e6eb6c4ecc7/magnolia-banner-v7.webp 1280w"
+          srcSet="/img/magnolia-banner-640.webp 640w, /img/magnolia-banner-960.webp 960w, /img/magnolia-banner-1280.webp 1280w"
           sizes="100vw"
           alt="Encontro das Magnólias"
           width={1280}
