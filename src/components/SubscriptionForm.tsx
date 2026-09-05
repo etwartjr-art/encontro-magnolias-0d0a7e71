@@ -308,7 +308,7 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
       <div className="border-t border-rose-dusty/30 pt-8 mb-8 space-y-3 text-left max-w-sm mx-auto">
         <Row label="Nome" value={data.nome} />
         {data.email && <Row label="E-mail" value={data.email} />}
-        <Row label="Data" value="22 de Agosto · 15:30h" />
+        <Row label="Data" value="19 de Setembro · 15:30h" />
         <Row label="Local" value="SALÃO DE FESTAS · RUA T-30 Nº 1284 · SETOR BUENO · RESIDENCIAL BUENO PARK · GOIÂNIA - GO" />
         <Row label="Código" value={data.id.slice(0, 8).toUpperCase()} />
       </div>

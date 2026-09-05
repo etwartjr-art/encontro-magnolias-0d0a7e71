@@ -18,7 +18,7 @@ const Index = () => {
           src="/img/magnolia-banner-640.webp"
           srcSet="/img/magnolia-banner-640.webp 640w, /img/magnolia-banner-960.webp 960w, /__l5e/assets-v1/eb6a78d3-453c-4ca9-a9a8-a4e455d51f66/magnolia-banner-v6.webp 1280w"
           sizes="100vw"
-          alt="6º Encontro das Magnólias"
+          alt="7º Encontro das Magnólias"
           width={1280}
           height={854}
           fetchPriority="high"
@@ -125,7 +125,7 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-rose-dusty/30">
             {[
-              { icon: Calendar, label: "Data", value: "22 de Agosto", sub: "Sábado" },
+              { icon: Calendar, label: "Data", value: "19 de Setembro", sub: "Sábado" },
               { icon: Clock, label: "Horário", value: "15:30h", sub: "" },
               { icon: MapPin, label: "Local", value: "Goiânia", sub: "" },
             ].map(({ icon: Icon, label, value, sub }, i) => (
@@ -163,12 +163,9 @@ const Index = () => {
               <div className="mt-4 sm:mt-6 inline-flex items-center gap-3 px-6 py-3 border-2 border-rose-deep bg-rose-deep/10">
                 <span className="w-2 h-2 rounded-full bg-rose-deep animate-pulse" />
                 <p className="font-display uppercase tracking-[0.25em] text-sm sm:text-base text-rose-deep">
-                  Encerrado
+                  Inscrições abertas
                 </p>
               </div>
-              <p className="mt-4 sm:mt-6 text-sm sm:text-base text-foreground/60 font-light max-w-md mx-auto">
-                As inscrições para esta edição estão encerradas.
-              </p>
             </div>
             <Suspense
               fallback={
