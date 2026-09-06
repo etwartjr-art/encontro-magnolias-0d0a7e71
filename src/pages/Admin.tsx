@@ -40,6 +40,7 @@ import {
   Webhook,
   UserX,
   UserPlus,
+  Printer,
   Trash2,
   History as HistoryIcon,
 } from "lucide-react";
