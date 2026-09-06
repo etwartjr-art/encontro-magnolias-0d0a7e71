@@ -15,11 +15,14 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const nextParam = new URLSearchParams(window.location.search).get("next");
+  const destino = nextParam && /^\/(?!\/)/.test(nextParam) ? nextParam : "/admin";
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate("/admin", { replace: true });
+      if (data.session) window.location.replace(destino);
     });
-  }, [navigate]);
+  }, [destino]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,13 +33,13 @@ const Auth = () => {
       toast({ title: "Falha no login", description: error.message, variant: "destructive" });
       return;
     }
-    navigate("/admin", { replace: true });
+    window.location.replace(destino);
   };
 
   const handleGoogle = async () => {
     setLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/admin`,
+      redirect_uri: `${window.location.origin}${destino}`,
     });
     if (result.error) {
       setLoading(false);
@@ -44,7 +47,7 @@ const Auth = () => {
       return;
     }
     if (result.redirected) return;
-    navigate("/admin", { replace: true });
+    window.location.replace(destino);
   };
 
   return (
