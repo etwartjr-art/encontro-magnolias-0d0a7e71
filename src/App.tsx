@@ -23,6 +23,7 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           
           <Route path="/admin/nao-pagas" element={<NaoPagas />} />
+          <Route path="/admin/lista-presenca" element={<ListaPresenca />} />
           <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
