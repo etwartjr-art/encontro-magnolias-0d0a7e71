@@ -149,8 +149,9 @@ const Index = () => {
               Endereço do Encontro
             </p>
             <p className="font-['Arial_Black'] text-foreground leading-snug text-lg text-center">
-              SALÃO DE FESTAS · RUA T-30 Nº 1284, SETOR BUENO<br />
-              RESIDENCIAL BUENO PARK · GOIÂNIA - GO.
+              SALÃO DE FESTAS · RESIDENCIAL ILHAS GALAPAGOS<br />
+              RUA FLEMINGTON QD 1 LT21 · VILA DOS ALPES<br />
+              GOIÂNIA - GO.
             </p>
           </Reveal>
 
