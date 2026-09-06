@@ -571,6 +571,16 @@ const Admin = () => {
               </Link>
             </Button>
             <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="rounded-none uppercase tracking-[0.2em] text-xs"
+            >
+              <Link to="/admin/lista-presenca">
+                <Printer className="w-4 h-4 mr-2" /> Lista de presença
+              </Link>
+            </Button>
+            <Button
               variant="outline"
               size="sm"
               onClick={handleRefresh}
