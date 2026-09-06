@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "sdk_version": "2.0.2",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://vgytoyfmpvocnjghssji.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "site-magnolia",
+      "version": "0.1.0",
+      "title": "Site Magnolia"
+    },
+    "tools": [
+      {
+        "name": "listar_inscricoes",
+        "title": "Listar inscrições",
+        "description": "Lista as inscrições do Encontro das Magnólias, com filtro opcional por status ou por busca em nome/e-mail.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pendente",
+                "pago",
+                "recusado",
+                "reembolsado",
+                "chargeback"
+              ],
+              "description": "Filtra pelo status da inscrição."
+            },
+            "busca": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Texto para buscar em nome ou e-mail."
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "description": "Máximo de registros retornados."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "resumo_inscricoes",
+        "title": "Resumo das inscrições",
+        "description": "Retorna totais por status e a receita bruta e líquida das inscrições pagas do Encontro das Magnólias.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "atualizar_status_inscricao",
+        "title": "Atualizar status da inscrição",
+        "description": "Atualiza o status de pagamento de uma inscrição (por id ou e-mail). Ao marcar como paga, registra a data do pagamento.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Identificador da inscrição."
+            },
+            "email": {
+              "type": "string",
+              "format": "email",
+              "description": "E-mail da inscrição, quando o id não for conhecido."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "pendente",
+                "pago",
+                "recusado",
+                "reembolsado",
+                "chargeback"
+              ],
+              "description": "Novo status da inscrição."
+            },
+            "valor_liquido": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Valor líquido recebido, se diferente do padrão."
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
