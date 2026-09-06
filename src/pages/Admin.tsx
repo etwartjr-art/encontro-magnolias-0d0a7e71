@@ -40,6 +40,7 @@ import {
   Webhook,
   UserX,
   UserPlus,
+  Printer,
   Trash2,
   History as HistoryIcon,
 } from "lucide-react";
@@ -568,6 +569,16 @@ const Admin = () => {
             >
               <Link to="/admin/nao-pagas">
                 <UserX className="w-4 h-4 mr-2" /> Não pagas
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="rounded-none uppercase tracking-[0.2em] text-xs"
+            >
+              <Link to="/admin/lista-presenca">
+                <Printer className="w-4 h-4 mr-2" /> Lista de presença
               </Link>
             </Button>
             <Button

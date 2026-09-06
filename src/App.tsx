@@ -10,6 +10,7 @@ const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const Auth = lazy(() => import("./pages/Auth.tsx"));
 const Admin = lazy(() => import("./pages/Admin.tsx"));
 const NaoPagas = lazy(() => import("./pages/NaoPagas.tsx"));
+const ListaPresenca = lazy(() => import("./pages/ListaPresenca.tsx"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent.tsx"));
 
 const App = () => (
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           
           <Route path="/admin/nao-pagas" element={<NaoPagas />} />
+          <Route path="/admin/lista-presenca" element={<ListaPresenca />} />
           <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
