@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Heart, ExternalLink, CheckCircle2, Clock, XCircle } from "lucide-react";
 
 // URL do checkout (plataforma de pagamento). Atualize aqui ao trocar de plataforma.
-const PAYMENT_BASE_URL = "https://checkout.thebank.com.br/7490438824791138304";
+const PAYMENT_BASE_URL = "https://checkout.thebank.com.br/7502169602555367424";
 const STORAGE_KEY = "magnolias.inscricao.id";
 const VALOR = 44.9;
 
