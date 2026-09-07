@@ -61,6 +61,8 @@ export const SubscriptionForm = () => {
   const [form, setForm] = useState({ nome: "", email: "", celular: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const navigate = useNavigate();
+
   // Retoma inscrição pendente salva no navegador.
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
