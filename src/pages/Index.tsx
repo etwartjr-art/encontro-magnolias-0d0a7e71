@@ -12,27 +12,19 @@ import { Reveal } from "@/components/Reveal";
 const Index = () => {
   return (
     <div className="min-h-screen bg-ivory text-foreground overflow-x-hidden">
-      {/* HERO BANNER */}
-      <header className="relative w-full overflow-hidden">
-        <img
-          src="/img/magnolia-banner-640.webp"
-          srcSet="/img/magnolia-banner-640.webp 640w, /img/magnolia-banner-960.webp 960w, /img/magnolia-banner-1280.webp 1280w"
-          sizes="100vw"
-          alt="Encontro das Magnólias"
-          width={1280}
-          height={854}
-          fetchPriority="high"
-          decoding="async"
-          className="w-full h-auto object-cover animate-ken-burns will-change-transform scale-110"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 animate-shimmer mix-blend-soft-light"
-          style={{
-            background:
-              "radial-gradient(60% 50% at 50% 50%, hsl(var(--rose-soft) / 0.55) 0%, transparent 70%)",
-          }}
-        />
+      {/* HERO LOGO */}
+      <header className="relative w-full overflow-hidden gradient-soft">
+        <div className="relative max-w-3xl mx-auto px-6 sm:px-10 pt-10 sm:pt-16 md:pt-20 pb-20 sm:pb-24 md:pb-28 flex flex-col items-center text-center">
+          <img
+            src="/img/logo-oficial-das-magnolias.jpeg"
+            alt="Encontro das Magnólias"
+            width={1024}
+            height={1024}
+            fetchPriority="high"
+            decoding="async"
+            className="w-full max-w-md sm:max-w-lg md:max-w-xl h-auto animate-fade-up"
+          />
+        </div>
         <div className="absolute inset-x-0 bottom-4 sm:bottom-8 md:bottom-12 flex justify-center px-5">
           <Button
             size="lg"
@@ -67,7 +59,7 @@ const Index = () => {
           </h1>
 
           <p className="text-foreground/70 text-sm sm:text-base md:text-lg leading-relaxed font-light">
-            Para o nosso sexto encontro, um momento preparado com muito{" "}
+            Para o nosso sétimo encontro, um momento preparado com muito{" "}
             <span className="italic text-rose-deep">amor, fé e propósito</span>.
             Um tempo para mulheres que desejam crescer em Deus, fortalecer
             laços e viver o extraordinário dEle.
