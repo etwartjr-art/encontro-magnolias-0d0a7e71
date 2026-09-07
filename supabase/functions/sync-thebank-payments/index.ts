@@ -9,6 +9,7 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const THEBANK_API_KEY = Deno.env.get("THEBANK_API_KEY") ?? "";
+const THEBANK_ORG_ID = Deno.env.get("THEBANK_ORG_ID") ?? "";
 const CRON_SECRET = Deno.env.get("SYNC_CRON_SECRET") ?? "";
 const VALOR_LIQUIDO_PADRAO = 40.61;
 
@@ -30,12 +31,15 @@ const ENDPOINTS = [
   "https://api.thebank.com.br/api/v1/transactions",
 ];
 
+// A plataforma exige o identificador da organização junto da chave.
+const ORG_HEADER = THEBANK_ORG_ID ? { "X-Organization-Id": THEBANK_ORG_ID } : {};
+
 // A plataforma pode esperar a chave em formatos diferentes; tentamos todos.
 const AUTH_VARIANTS: { nome: string; headers: Record<string, string> }[] = [
-  { nome: "bearer", headers: { Authorization: `Bearer ${THEBANK_API_KEY}` } },
-  { nome: "x-api-key", headers: { "x-api-key": THEBANK_API_KEY } },
-  { nome: "api-key", headers: { "api-key": THEBANK_API_KEY } },
-  { nome: "authorization-raw", headers: { Authorization: THEBANK_API_KEY } },
+  { nome: "bearer", headers: { Authorization: `Bearer ${THEBANK_API_KEY}`, ...ORG_HEADER } },
+  { nome: "x-api-key", headers: { "x-api-key": THEBANK_API_KEY, ...ORG_HEADER } },
+  { nome: "api-key", headers: { "api-key": THEBANK_API_KEY, ...ORG_HEADER } },
+  { nome: "authorization-raw", headers: { Authorization: THEBANK_API_KEY, ...ORG_HEADER } },
 ];
 
 async function isAdminRequest(req: Request): Promise<boolean> {
