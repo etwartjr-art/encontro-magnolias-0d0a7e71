@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin, Loader2 } from "lucide-react";
 import branchImage from "@/assets/magnolia-branch.webp";
+import logoAsset from "@/assets/logo_oficial_das_magnolias.jpeg.asset.json";
 
 const SubscriptionForm = lazy(() =>
   import("@/components/SubscriptionForm").then((m) => ({ default: m.SubscriptionForm })),
