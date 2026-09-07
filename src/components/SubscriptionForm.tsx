@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,8 @@ export const SubscriptionForm = () => {
   const [success, setSuccess] = useState<SuccessData | null>(null);
   const [form, setForm] = useState({ nome: "", email: "", celular: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const navigate = useNavigate();
 
   // Retoma inscrição pendente salva no navegador.
   useEffect(() => {
@@ -134,6 +136,7 @@ export const SubscriptionForm = () => {
     return (
       <SuccessPanel
         data={success}
+        navigate={navigate}
         onNew={() => {
           localStorage.removeItem(STORAGE_KEY);
           setSuccess(null);
@@ -212,10 +215,17 @@ export const SubscriptionForm = () => {
   );
 };
 
-const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void }) => {
+const SuccessPanel = ({
+  data,
+  navigate,
+  onNew,
+}: {
+  data: SuccessData;
+  navigate: (path: string) => void;
+  onNew: () => void;
+}) => {
   const [status, setStatus] = useState<StatusValue>("pendente");
   const [checking, setChecking] = useState(false);
-  const [ticketToken, setTicketToken] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
 
   const checkoutUrl = data.celular
@@ -243,22 +253,12 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
   const isPaid = status === "pago";
   const isRejected = status === "recusado" || status === "chargeback" || status === "reembolsado";
 
-  // Solicita ticket assinado ao servidor SOMENTE quando o pagamento está confirmado.
-  // O QR só é válido se o backend concordar que a inscrição está paga.
+  // Redireciona para a página de agradecimento quando o pagamento é confirmado.
   useEffect(() => {
-    if (!isPaid || ticketToken) return;
-    let cancelled = false;
-    (async () => {
-      const { data: res, error } = await supabase.functions.invoke("emitir-ticket", {
-        body: { id: data.id },
-      });
-      if (cancelled) return;
-      if (!error && res?.token) setTicketToken(res.token as string);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [isPaid, data.id, ticketToken]);
+    if (!isPaid) return;
+    const timer = window.setTimeout(() => navigate(`/obrigado?id=${data.id}`), 1200);
+    return () => window.clearTimeout(timer);
+  }, [isPaid, data.id, navigate]);
 
   return (
     <div className="max-w-2xl mx-auto bg-ivory border border-rose-dusty/40 p-8 md:p-14 text-center shadow-petal animate-fade-up">
@@ -274,7 +274,7 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
 
       <p className="text-foreground/70 font-light leading-relaxed max-w-md mx-auto mt-6 mb-8">
         {isPaid
-          ? "Seu pagamento foi confirmado. Apresente este QR Code na entrada do evento."
+          ? "Seu pagamento foi confirmado. Você será redirecionada para a página de confirmação..."
           : isRejected
           ? "Não conseguimos confirmar seu pagamento. Você pode tentar novamente pelo botão abaixo."
           : "Sua pré-inscrição foi realizada. Clique no botão abaixo para concluir o pagamento."}
@@ -293,15 +293,9 @@ const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void })
         </Button>
       )}
 
-      {isPaid && ticketToken && (
-        <div className="inline-block bg-white p-6 border border-rose-dusty/40 shadow-soft mb-8">
-          <QRCodeSVG value={ticketToken} size={220} level="M" fgColor="#9d4d5a" bgColor="#ffffff" />
-        </div>
-      )}
-
-      {isPaid && !ticketToken && (
+      {isPaid && (
         <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-sage mb-8">
-          <Loader2 className="w-3 h-3 animate-spin" /> Gerando ticket seguro...
+          <Loader2 className="w-3 h-3 animate-spin" /> Redirecionando...
         </div>
       )}
 

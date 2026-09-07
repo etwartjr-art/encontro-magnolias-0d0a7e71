@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
   const { data, error } = await supabase
     .from("inscricoes")
-    .select("status, nome, pago_em")
+    .select("status, nome, pago_em, comprovante_url")
     .eq("id", id)
     .maybeSingle();
 
