@@ -12,6 +12,7 @@ const Admin = lazy(() => import("./pages/Admin.tsx"));
 const NaoPagas = lazy(() => import("./pages/NaoPagas.tsx"));
 const ListaPresenca = lazy(() => import("./pages/ListaPresenca.tsx"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent.tsx"));
+const Obrigado = lazy(() => import("./pages/Obrigado.tsx"));
 
 const App = () => (
   <>
@@ -20,6 +21,7 @@ const App = () => (
       <Suspense fallback={null}>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/obrigado" element={<Obrigado />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin" element={<Admin />} />
           
