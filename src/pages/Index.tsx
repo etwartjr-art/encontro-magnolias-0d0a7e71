@@ -14,7 +14,7 @@ const Index = () => {
     <div className="min-h-screen bg-ivory text-foreground overflow-x-hidden">
       {/* HERO LOGO */}
       <header className="relative w-full overflow-hidden gradient-soft">
-        <div className="relative max-w-3xl mx-auto px-6 sm:px-10 py-10 sm:py-16 md:py-20 flex flex-col items-center text-center">
+        <div className="relative max-w-3xl mx-auto px-6 sm:px-10 pt-10 sm:pt-16 md:pt-20 pb-20 sm:pb-24 md:pb-28 flex flex-col items-center text-center">
           <img
             src="/img/logo-oficial-das-magnolias.jpeg"
             alt="Encontro das Magnólias"
