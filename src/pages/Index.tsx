@@ -59,7 +59,7 @@ const Index = () => {
           </h1>
 
           <p className="text-foreground/70 text-sm sm:text-base md:text-lg leading-relaxed font-light">
-            Para o nosso sexto encontro, um momento preparado com muito{" "}
+            Para o nosso sétimo encontro, um momento preparado com muito{" "}
             <span className="italic text-rose-deep">amor, fé e propósito</span>.
             Um tempo para mulheres que desejam crescer em Deus, fortalecer
             laços e viver o extraordinário dEle.
