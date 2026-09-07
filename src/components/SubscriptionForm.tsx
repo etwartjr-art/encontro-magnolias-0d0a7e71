@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -218,7 +217,6 @@ export const SubscriptionForm = () => {
 const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void }) => {
   const [status, setStatus] = useState<StatusValue>("pendente");
   const [checking, setChecking] = useState(false);
-  const [ticketToken, setTicketToken] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
 
   const checkoutUrl = data.celular
