@@ -2,7 +2,6 @@ import { lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, MapPin, Loader2 } from "lucide-react";
 import branchImage from "@/assets/magnolia-branch.webp";
-import logoAsset from "@/assets/logo_oficial_das_magnolias.jpeg.asset.json";
 
 const SubscriptionForm = lazy(() =>
   import("@/components/SubscriptionForm").then((m) => ({ default: m.SubscriptionForm })),
@@ -17,7 +16,7 @@ const Index = () => {
       <header className="relative w-full overflow-hidden gradient-soft">
         <div className="relative max-w-3xl mx-auto px-6 sm:px-10 py-10 sm:py-16 md:py-20 flex flex-col items-center text-center">
           <img
-            src={logoAsset.url}
+            src="/img/logo-oficial-das-magnolias.jpeg"
             alt="Encontro das Magnólias"
             width={1024}
             height={1024}
