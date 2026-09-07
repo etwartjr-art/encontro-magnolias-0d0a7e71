@@ -31,12 +31,15 @@ const ENDPOINTS = [
   "https://api.thebank.com.br/api/v1/transactions",
 ];
 
+// A plataforma exige o identificador da organização junto da chave.
+const ORG_HEADER = THEBANK_ORG_ID ? { "X-Organization-Id": THEBANK_ORG_ID } : {};
+
 // A plataforma pode esperar a chave em formatos diferentes; tentamos todos.
 const AUTH_VARIANTS: { nome: string; headers: Record<string, string> }[] = [
-  { nome: "bearer", headers: { Authorization: `Bearer ${THEBANK_API_KEY}` } },
-  { nome: "x-api-key", headers: { "x-api-key": THEBANK_API_KEY } },
-  { nome: "api-key", headers: { "api-key": THEBANK_API_KEY } },
-  { nome: "authorization-raw", headers: { Authorization: THEBANK_API_KEY } },
+  { nome: "bearer", headers: { Authorization: `Bearer ${THEBANK_API_KEY}`, ...ORG_HEADER } },
+  { nome: "x-api-key", headers: { "x-api-key": THEBANK_API_KEY, ...ORG_HEADER } },
+  { nome: "api-key", headers: { "api-key": THEBANK_API_KEY, ...ORG_HEADER } },
+  { nome: "authorization-raw", headers: { Authorization: THEBANK_API_KEY, ...ORG_HEADER } },
 ];
 
 async function isAdminRequest(req: Request): Promise<boolean> {
