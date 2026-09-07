@@ -29,6 +29,7 @@ export default function Obrigado() {
   const [data, setData] = useState<InscricaoData | null>(null);
   const [ticketToken, setTicketToken] = useState<string | null>(null);
   const [ticketLoading, setTicketLoading] = useState(false);
+  const [ticketError, setTicketError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -67,25 +68,34 @@ export default function Obrigado() {
   }, [loading, data, navigate]);
 
   // Emite o ticket assim que confirmamos que está pago.
-  useEffect(() => {
-    if (!id || !data || data.status !== "pago" || ticketToken || ticketLoading) return;
-
-    let cancelled = false;
+  const emitirTicket = async () => {
+    if (!id || ticketLoading) return;
     setTicketLoading(true);
-    (async () => {
+    setTicketError(null);
+    try {
       const { data: res, error } = await supabase.functions.invoke("emitir-ticket", {
         body: { id },
       });
-      if (cancelled) return;
-      if (!error && res?.token) {
+      if (error) {
+        console.error("emitir-ticket error:", error);
+        setTicketError("Não foi possível gerar o comprovante agora. Tente novamente.");
+      } else if (res?.token) {
         setTicketToken(res.token as string);
+      } else {
+        setTicketError("Resposta inesperada ao gerar o comprovante.");
       }
+    } catch (err) {
+      console.error("emitir-ticket exception:", err);
+      setTicketError("Erro de conexão ao gerar o comprovante.");
+    } finally {
       setTicketLoading(false);
-    })();
+    }
+  };
 
-    return () => {
-      cancelled = true;
-    };
+  useEffect(() => {
+    if (!id || !data || data.status !== "pago" || ticketToken || ticketLoading) return;
+    emitirTicket();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, id, ticketToken, ticketLoading]);
 
   const handleShare = async () => {
