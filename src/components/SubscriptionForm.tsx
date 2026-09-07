@@ -136,6 +136,7 @@ export const SubscriptionForm = () => {
     return (
       <SuccessPanel
         data={success}
+        navigate={navigate}
         onNew={() => {
           localStorage.removeItem(STORAGE_KEY);
           setSuccess(null);
@@ -214,7 +215,15 @@ export const SubscriptionForm = () => {
   );
 };
 
-const SuccessPanel = ({ data, onNew }: { data: SuccessData; onNew: () => void }) => {
+const SuccessPanel = ({
+  data,
+  navigate,
+  onNew,
+}: {
+  data: SuccessData;
+  navigate: (path: string) => void;
+  onNew: () => void;
+}) => {
   const [status, setStatus] = useState<StatusValue>("pendente");
   const [checking, setChecking] = useState(false);
   const timerRef = useRef<number | null>(null);
