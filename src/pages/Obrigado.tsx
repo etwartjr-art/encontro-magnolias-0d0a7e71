@@ -204,6 +204,17 @@ export default function Obrigado() {
               <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-sage">
                 <Loader2 className="w-3 h-3 animate-spin" /> Gerando comprovante seguro...
               </div>
+            ) : ticketError ? (
+              <div className="max-w-sm mx-auto">
+                <p className="text-sm text-destructive mb-4">{ticketError}</p>
+                <Button
+                  onClick={emitirTicket}
+                  variant="outline"
+                  className="rounded-none px-6 py-3 tracking-[0.15em] uppercase text-xs font-light border-rose-dusty/50 hover:bg-rose-soft/30"
+                >
+                  Tentar novamente
+                </Button>
+              </div>
             ) : null}
           </div>
 
