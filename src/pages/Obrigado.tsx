@@ -13,6 +13,7 @@ type InscricaoData = {
   status: StatusValue;
   nome: string;
   pago_em: string | null;
+  comprovante_url: string | null;
 };
 
 const EVENT_DATE = "19 de Setembro de 2026";
@@ -242,6 +243,19 @@ export default function Obrigado() {
             <InfoRow icon={Calendar} label="Data" value={EVENT_DATE} />
             <InfoRow icon={Clock} label="Horário" value={EVENT_TIME} />
             <InfoRow icon={MapPin} label="Local" value={EVENT_LOCATION} />
+            {data.comprovante_url && (
+              <div className="pt-2">
+                <a
+                  href={data.comprovante_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-rose-deep hover:underline"
+                >
+                  <Download className="w-4 h-4" />
+                  Baixar comprovante de pagamento
+                </a>
+              </div>
+            )}
           </div>
         </section>
 
