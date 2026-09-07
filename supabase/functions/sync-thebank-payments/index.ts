@@ -9,6 +9,7 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const THEBANK_API_KEY = Deno.env.get("THEBANK_API_KEY") ?? "";
+const THEBANK_ORG_ID = Deno.env.get("THEBANK_ORG_ID") ?? "";
 const CRON_SECRET = Deno.env.get("SYNC_CRON_SECRET") ?? "";
 const VALOR_LIQUIDO_PADRAO = 40.61;
 
